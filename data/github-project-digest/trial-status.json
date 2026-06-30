@@ -1,0 +1,51 @@
+{
+  "date": "2026-06-29",
+  "timezone": "Asia/Shanghai",
+  "status": "passed_with_recovered_anomaly",
+  "checks": {
+    "three_slots_distinct": true,
+    "links_and_metrics_verified_live": true,
+    "required_fields_complete": true,
+    "history_90_day_read": true,
+    "history_append_written": true,
+    "history_append_readback_pending": false,
+    "history_append_readback_verified": true,
+    "feedback_read": true,
+    "weekly_digest_can_read_daily_results": true
+  },
+  "main_recommendation_count": 3,
+  "history_entries_before_run": 0,
+  "history_entries_detected_before_append": 3,
+  "history_entries_after_append": 6,
+  "history_entries_added_by_this_run": 3,
+  "history_duplicates_in_90_days": [],
+  "feedback_entries_read": 0,
+  "verification": {
+    "verified_at": "2026-06-29T12:35:40+08:00",
+    "sources": [
+      "GitHub repository pages",
+      "GitHub commit pages",
+      "GitHub release pages",
+      "GitHub API with cache disabled"
+    ],
+    "repos": [
+      "DeusData/codebase-memory-mcp",
+      "simplex-chat/simplex-chat",
+      "altic-dev/FluidVoice"
+    ]
+  },
+  "anomalies": [
+    {
+      "stage": "initial_candidate_scan",
+      "error": "Unauthenticated GitHub Search API rate limit reached; reset at 2026-06-29T04:35:29Z.",
+      "impact": "No failed or cached scanner output was used as a live fact.",
+      "recovery": "After reset, reran final repository checks with --no-cache and obtained live GitHub API data."
+    },
+    {
+      "stage": "history_readback",
+      "error": "Three same-date history rows from another concurrent process appeared after the initial empty-file read.",
+      "impact": "The history file contains six valid rows for 2026-06-29, three from this report and three from the concurrent process.",
+      "recovery": "Preserved all existing rows, verified no repository overlap, and validated this run's three appended rows independently."
+    }
+  ]
+}
