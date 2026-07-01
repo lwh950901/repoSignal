@@ -1,5 +1,3 @@
-import { existsSync, readFileSync, readdirSync } from "node:fs";
-import { join, resolve } from "node:path";
 import { marked } from "marked";
 
 export type ProjectKind = "爆发型" | "实用型" | "潜力型" | "周精选";
@@ -41,7 +39,15 @@ export interface DigestIndexItem {
   href: string;
 }
 
-const DATA_ROOT = resolve(process.cwd(), "data/github-project-digest");
+const dailyMarkdownFiles = import.meta.glob(
+  "../../data/github-project-digest/daily/*.md",
+  { eager: true, import: "default", query: "?raw" },
+) as Record<string, string>;
+
+const weeklyMarkdownFiles = import.meta.glob(
+  "../../data/github-project-digest/weekly/*.md",
+  { eager: true, import: "default", query: "?raw" },
+) as Record<string, string>;
 
 function cleanInline(value = ""): string {
   return value
@@ -160,25 +166,20 @@ export function parseWeeklyReport(markdown: string, filename: string): DigestRep
 }
 
 function loadReports(
-  directory: "daily" | "weekly",
+  files: Record<string, string>,
   parser: (markdown: string, filename: string) => DigestReport,
 ): DigestReport[] {
-  const path = join(DATA_ROOT, directory);
-  if (!existsSync(path)) return [];
-
-  return readdirSync(path)
-    .filter((filename) => filename.endsWith(".md"))
-    .sort()
-    .reverse()
-    .map((filename) => parser(readFileSync(join(path, filename), "utf8"), filename));
+  return Object.entries(files)
+    .map(([path, markdown]) => parser(markdown, path.split("/").at(-1) ?? path))
+    .sort((a, b) => b.slug.localeCompare(a.slug));
 }
 
 export function loadDailyReports(): DigestReport[] {
-  return loadReports("daily", parseDailyReport);
+  return loadReports(dailyMarkdownFiles, parseDailyReport);
 }
 
 export function loadWeeklyReports(): DigestReport[] {
-  return loadReports("weekly", parseWeeklyReport);
+  return loadReports(weeklyMarkdownFiles, parseWeeklyReport);
 }
 
 export function selectDefaultReport(
