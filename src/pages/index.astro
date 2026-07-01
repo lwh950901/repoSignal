@@ -9,7 +9,7 @@ const report = selectDefaultReport(dailyReports, weeklyReports);
 const searchItems = createSearchIndex([...dailyReports, ...weeklyReports]);
 ---
 
-<BaseLayout title="项目发现日志｜GitHub 优质项目" searchItems={searchItems}>
+<BaseLayout title="RepoSignal｜GitHub 优质项目" searchItems={searchItems}>
   {report ? (
     <ReportView report={report} dailyReports={dailyReports} weeklyReports={weeklyReports} />
   ) : (

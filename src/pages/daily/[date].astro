@@ -14,6 +14,6 @@ const weeklyReports = loadWeeklyReports();
 const searchItems = createSearchIndex([...dailyReports, ...weeklyReports]);
 ---
 
-<BaseLayout title={`${report.date}｜项目发现日志`} description={report.theme} searchItems={searchItems}>
+<BaseLayout title={`${report.date}｜RepoSignal`} description={report.theme} searchItems={searchItems}>
   <ReportView report={report} dailyReports={dailyReports} weeklyReports={weeklyReports} />
 </BaseLayout>

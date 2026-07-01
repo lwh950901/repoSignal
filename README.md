@@ -1,4 +1,4 @@
-# GitHub 项目发现日志
+# RepoSignal
 
 将 `data/github-project-digest` 中持续生成的日报与周报发布为静态项目档案库。网站使用 Astro 在构建阶段读取 Markdown，不需要数据库或服务端运行时。
 
