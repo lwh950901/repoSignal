@@ -1,0 +1,52 @@
+---
+import "../styles/global.css";
+import SearchPalette from "../components/SearchPalette.astro";
+import type { DigestIndexItem } from "../lib/digests";
+
+interface Props {
+  title: string;
+  description?: string;
+  searchItems: DigestIndexItem[];
+}
+
+const {
+  title,
+  description = "持续发现值得使用、学习和二次开发的 GitHub 项目。",
+  searchItems,
+} = Astro.props;
+---
+
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width" />
+    <meta name="description" content={description} />
+    <meta name="theme-color" content="#f3f5f2" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Noto+Sans+SC:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 64 64%22><rect width=%2264%22 height=%2264%22 rx=%2214%22 fill=%22%2317201b%22/><path d=%22M17 20h30v5H17zm0 10h23v5H17zm0 10h30v5H17z%22 fill=%22%23e4c95a%22/></svg>" />
+    <title>{title}</title>
+  </head>
+  <body>
+    <a class="skip-link" href="#main-content">跳到主要内容</a>
+    <header class="site-header">
+      <a class="brand" href="/" aria-label="项目发现日志首页">
+        <span class="brand-mark" aria-hidden="true">⌁</span>
+        <span>项目发现日志</span>
+      </a>
+      <nav class="site-actions" aria-label="主要导航">
+        <a href="/weekly/2026-W27/">周精选</a>
+        <button class="search-trigger" type="button" data-search-open aria-label="打开项目搜索">
+          <span>搜索</span><kbd>⌘ K</kbd>
+        </button>
+      </nav>
+    </header>
+    <slot />
+    <SearchPalette items={searchItems} />
+  </body>
+</html>

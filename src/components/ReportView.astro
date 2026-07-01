@@ -1,0 +1,52 @@
+---
+import { marked } from "marked";
+import type { DigestReport } from "../lib/digests";
+import DateRail from "./DateRail.astro";
+import ProjectEntry from "./ProjectEntry.astro";
+
+interface Props {
+  report: DigestReport;
+  dailyReports: DigestReport[];
+  weeklyReports: DigestReport[];
+}
+
+const { report, dailyReports, weeklyReports } = Astro.props;
+const introHtml = report.introduction ? marked.parse(report.introduction) as string : "";
+---
+
+<main id="main-content" class="archive-shell">
+  <DateRail dailyReports={dailyReports} weeklyReports={weeklyReports} currentSlug={report.slug} />
+  <section class:list={["report", { "report--daily": report.type === "daily" }] }>
+    {report.type === "daily" ? (
+      <h1 class="visually-hidden">{report.title}</h1>
+    ) : (
+      <header class="report-hero">
+        <div class="report-kicker">
+          <span>WEEKLY SELECTION</span>
+          <time datetime={report.date}>{report.date}</time>
+        </div>
+        <h1>{report.theme || "值得打开的 GitHub 项目"}</h1>
+        {introHtml && <div class="report-intro prose" set:html={introHtml}></div>}
+        <div class="report-ledger" aria-label="本期摘要">
+          <span><strong>{report.projects.length}</strong> 个项目</span>
+          <span><strong>{report.projects.filter((project) => project.score && project.score >= 85).length}</strong> 个高分推荐</span>
+          <span>更新于 <strong>{report.date}</strong></span>
+        </div>
+      </header>
+    )}
+
+    {report.projects.length > 0 ? (
+      <div class="project-list">
+        {report.projects.map((project, index) => <ProjectEntry project={project} index={index} />)}
+      </div>
+    ) : (
+      <div class="empty-state">
+        <p>这期报告暂时没有可结构化展示的项目。</p>
+        <details>
+          <summary>阅读原始报告</summary>
+          <div class="prose" set:html={report.html}></div>
+        </details>
+      </div>
+    )}
+  </section>
+</main>

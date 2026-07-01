@@ -1,0 +1,19 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import ReportView from "../../components/ReportView.astro";
+import { createSearchIndex, loadDailyReports, loadWeeklyReports, type DigestReport } from "../../lib/digests";
+
+export function getStaticPaths() {
+  return loadWeeklyReports().map((report) => ({ params: { week: report.slug }, props: { report } }));
+}
+
+interface Props { report: DigestReport }
+const { report } = Astro.props;
+const dailyReports = loadDailyReports();
+const weeklyReports = loadWeeklyReports();
+const searchItems = createSearchIndex([...dailyReports, ...weeklyReports]);
+---
+
+<BaseLayout title={`${report.slug}｜每周精选`} description={report.introduction} searchItems={searchItems}>
+  <ReportView report={report} dailyReports={dailyReports} weeklyReports={weeklyReports} />
+</BaseLayout>

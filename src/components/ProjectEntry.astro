@@ -1,0 +1,52 @@
+---
+import type { ProjectRecord } from "../lib/digests";
+
+interface Props {
+  project: ProjectRecord;
+  index: number;
+}
+
+const { project, index } = Astro.props;
+const scoreLabel = project.score ? `${project.score}/100` : "精选";
+---
+
+<article class="project-entry" id={project.id}>
+  <div class="project-entry__index" aria-hidden="true">{String(index + 1).padStart(2, "0")}</div>
+  <div class="project-entry__content">
+    <header class="project-heading">
+      <div>
+        <span class:list={["project-stamp", `project-stamp--${project.kind}`]}>{project.kind}</span>
+        <h2><a href={project.url} target="_blank" rel="noreferrer">{project.repository}</a></h2>
+      </div>
+      <div class="project-score" aria-label={`推荐评分 ${scoreLabel}`}>
+        <strong>{project.score ?? "W"}</strong>
+        <span>{project.score ? "/ 100" : "EEKLY"}</span>
+      </div>
+    </header>
+    {project.positioning && <p class="project-positioning">{project.positioning}</p>}
+    <dl class="project-facts">
+      {project.technologies.length > 0 && (
+        <div>
+          <dt>技术栈</dt>
+          <dd>{project.technologies.map((technology) => <span>{technology}</span>)}</dd>
+        </div>
+      )}
+      {project.risk && (
+        <div>
+          <dt>观察风险</dt>
+          <dd>{project.risk}</dd>
+        </div>
+      )}
+      {project.recommendation && (
+        <div>
+          <dt>为什么推荐</dt>
+          <dd>{project.recommendation}</dd>
+        </div>
+      )}
+    </dl>
+    <details class="project-details">
+      <summary>查看完整分析</summary>
+      <div class="prose" set:html={project.html}></div>
+    </details>
+  </div>
+</article>

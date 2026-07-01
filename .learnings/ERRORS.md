@@ -1,67 +1,39 @@
 # Errors
 
-## [ERR-20260629-001] github_project_scan
+## [ERR-20260701-001] git-commit
 
-**Logged**: 2026-06-29T12:34:00+08:00
-**Priority**: medium
+**Logged**: 2026-07-01T00:00:00+08:00
+**Priority**: low
 **Status**: resolved
-**Area**: infra
+**Area**: config
 
 ### Summary
-Unauthenticated GitHub Search API exhausted its rate limit during the initial daily digest candidate scan.
+
+Git could not create `.git/index.lock` under the workspace sandbox.
 
 ### Error
-```
-GitHub API rate limit reached; reset at 2026-06-29T04:35:29+00:00.
+
+```text
+fatal: Unable to create '/Users/elvis/Desktop/schedule/.git/index.lock': Operation not permitted
 ```
 
 ### Context
-- Four enriched, cache-disabled search scans were started concurrently.
-- No candidate data was returned by those scans.
-- Final repositories were verified after the reset with cache disabled.
+
+- Operation: stage and commit a newly written design specification.
+- Environment: workspace files are writable, but `.git` is read-only without scoped escalation.
 
 ### Suggested Fix
-Use `GITHUB_TOKEN` when available and avoid parallel enriched searches against the unauthenticated limit; use GitHub pages as the fallback and reserve API calls for shortlisted repositories.
+
+Retry the same narrowly scoped Git command with explicit escalated permission.
 
 ### Metadata
+
 - Reproducible: yes
-- Related Files: data/github-project-digest/trial-status.json
+- Related Files: docs/superpowers/specs/2026-07-01-github-project-gallery-design.md
 
 ### Resolution
-- **Resolved**: 2026-06-29T12:35:40+08:00
-- **Notes**: Reran three shortlisted repository checks after reset and received live API data.
 
----
-
-## [ERR-20260629-002] github_digest_history_readback
-
-**Logged**: 2026-06-29T12:39:00+08:00
-**Priority**: medium
-**Status**: resolved
-**Area**: infra
-
-### Summary
-Concurrent automation appended three history rows between the initial read and this run's append.
-
-### Error
-```
-Expected 3 history rows after append; read back 6 valid rows.
-```
-
-### Context
-- The history file was empty at the initial read.
-- Three unrelated same-date rows appeared before this run appended its three recommendations.
-- The two sets had no repository overlap.
-
-### Suggested Fix
-Treat JSONL history as append-only shared state: re-read immediately before append, deduplicate by normalized repository and date window, preserve unrelated concurrent rows, and validate only the rows owned by the current run.
-
-### Metadata
-- Reproducible: unknown
-- Related Files: data/github-project-digest/history.jsonl, data/github-project-digest/trial-status.json
-
-### Resolution
-- **Resolved**: 2026-06-29T12:39:00+08:00
-- **Notes**: Preserved all six rows, confirmed no repository overlap, and updated trial status to record the concurrency anomaly.
+- **Resolved**: 2026-07-01T00:00:00+08:00
+- **Notes**: Use scoped escalation for Git index writes in this workspace.
 
 ---

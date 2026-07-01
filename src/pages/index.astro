@@ -1,0 +1,21 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import ReportView from "../components/ReportView.astro";
+import { createSearchIndex, loadDailyReports, loadWeeklyReports, selectDefaultReport } from "../lib/digests";
+
+const dailyReports = loadDailyReports();
+const weeklyReports = loadWeeklyReports();
+const report = selectDefaultReport(dailyReports, weeklyReports);
+const searchItems = createSearchIndex([...dailyReports, ...weeklyReports]);
+---
+
+<BaseLayout title="项目发现日志｜GitHub 优质项目" searchItems={searchItems}>
+  {report ? (
+    <ReportView report={report} dailyReports={dailyReports} weeklyReports={weeklyReports} />
+  ) : (
+    <main id="main-content" class="empty-state empty-state--page">
+      <h1>还没有项目报告</h1>
+      <p>将 Markdown 放入 <code>data/github-project-digest/daily</code> 后重新构建。</p>
+    </main>
+  )}
+</BaseLayout>
