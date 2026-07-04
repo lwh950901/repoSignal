@@ -20,6 +20,16 @@
   "history_entries_added_by_this_run": 3,
   "history_duplicates_in_90_days": [],
   "feedback_entries_read": 0,
+  "latest_daily_run": {
+    "date": "2026-07-04",
+    "status": "passed_with_api_fallback",
+    "main_recommendation_count": 3,
+    "history_duplicates_in_90_days": [],
+    "format_check": true,
+    "jsonl_check": true,
+    "scanner": "three live --no-cache searches succeeded after network escalation and produced 60 results before deduplication; three shortlist --enrich scans also succeeded, then unauthenticated REST follow-up hit the API rate limit",
+    "fallback": "GitHub repository, Release, Commit and Issue/PR pages"
+  },
   "verification": {
     "verified_at": "2026-06-29T12:35:40+08:00",
     "sources": [
@@ -33,6 +43,26 @@
       "simplex-chat/simplex-chat",
       "altic-dev/FluidVoice"
     ]
+  },
+  "weekly_run": {
+    "iso_week": "2026-W27",
+    "status": "formal_weekly_digest_generated_with_web_fallback",
+    "daily_reports_read": 6,
+    "daily_candidates_read": 18,
+    "history_read": true,
+    "feedback_read": true,
+    "feedback_entries_read": 0,
+    "shortlist_count": 5,
+    "selected_count": 5,
+    "format_check": true,
+    "candidate_source_check": true,
+    "links_and_fields_verified": true,
+    "verified_at": "2026-07-04T12:32:23+08:00",
+    "skill": "find-github-projects SKILL.md and references/scoring-rubric.md read successfully",
+    "github_auth": "failed: stored gh token is invalid",
+    "scanner": "exact repo --limit 1 --enrich --no-cache attempted; sandbox DNS retry reached unauthenticated GitHub API limit",
+    "fallback": "at most two GitHub repository/release/commit pages per shortlisted repository; no replacement candidates searched",
+    "weekly_report": "data/github-project-digest/weekly/2026-W27.md"
   },
   "anomalies": [
     {
