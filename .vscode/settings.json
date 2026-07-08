@@ -1,0 +1,25 @@
+{
+  "chat.tools.terminal.autoApprove": {
+    "openspec": true,
+    "npx vitest": true,
+    "npx astro": true,
+    "/^cd /Users/elvis/Desktop/repo-signal && node -e \"\nconst \\{ parseDailyReport \\} = require\\('\\./src/lib/digests\\.ts'\\);\n\" 2>&1 \\| head -5$/": {
+      "approve": true,
+      "matchCommandLine": true
+    },
+    "/^node -e \"\nconst md = \\\\`## 额外发现\n\n### 额外发现：asgeirtj/system_prompts_leaks — 74/100\n\n- 仓库：\\[asgeirtj/system_prompts_leaks\\]\\(https://github\\.com/asgeirtj/system_prompts_leaks\\)\n- 一句话定位：测试项目。\n\n## 今天最值得亲自试用\n\ntest\\\\`;\n\n// Test sectionText\nconst escaped = '额外发现'\\.replace\\(/\\[\\.\\*\\+\\?\\^\\\\\\$\\{\\}\\(\\)\\|\\[\\\\\\]\\\\\\\\\\\\\\\\\\]/g, '\\\\\\\\\\\\\\\\\\\\\\\\\\$&'\\);\nconst re = new RegExp\\('\\^##\\\\\\\\\\\\\\\\s\\+' \\+ escaped \\+ '\\\\\\\\\\\\\\\\s\\*\\\\\\$\\(\\[\\\\\\\\\\\\\\\\s\\\\\\\\\\\\\\\\S\\]\\*\\?\\)\\(\\?=\\^##\\\\\\\\\\\\\\\\s\\+\\|\\\\\\$\\)', 'mu'\\);\nconsole\\.log\\('Regex:', re\\);\nconst match = md\\.match\\(re\\);\nconsole\\.log\\('Match found:', !!match\\);\nif \\(match\\) console\\.log\\('Captured:', JSON\\.stringify\\(match\\[1\\]\\)\\.slice\\(0, 200\\)\\);\n\n// Test bonus pattern\nconst section = match \\? match\\[1\\]\\.trim\\(\\) : '';\nconsole\\.log\\('Section:', JSON\\.stringify\\(section\\)\\.slice\\(0, 200\\)\\);\n\nconst bonusRe = /\\^###\\\\s\\+额外发现：\\(\\.\\+\\?\\)\\\\s\\*\\[—-\\]\\\\s\\*\\(\\\\d\\+\\)\\\\/100\\\\s\\*\\$/gmu;\nconst bonusMatches = \\[\\.\\.\\.section\\.matchAll\\(bonusRe\\)\\];\nconsole\\.log\\('Bonus matches:', bonusMatches\\.length\\);\nif \\(bonusMatches\\.length > 0\\) \\{\n  console\\.log\\('Repo:', bonusMatches\\[0\\]\\[1\\]\\);\n  console\\.log\\('Score:', bonusMatches\\[0\\]\\[2\\]\\);\n\\}\n\"$/": {
+      "approve": true,
+      "matchCommandLine": true
+    },
+    "/^node -e '\nconst md = \"## 额外发现\\\\n\\\\n### 额外发现：asgeirtj/system_prompts_leaks — 74/100\\\\n\\\\n- 仓库：\\[asgeirtj/system_prompts_leaks\\]\\(https://github\\.com/asgeirtj/system_prompts_leaks\\)\\\\n- 一句话定位：测试项目。\\\\n\\\\n## 今天最值得亲自试用\\\\n\\\\ntest\";\nconst escaped = \"额外发现\"\\.replace\\(/\\[\\.\\*\\+\\?\\^\\$\\{\\}\\(\\)\\|\\[\\\\\\]\\\\\\\\\\]/g, \"\\\\\\\\\\$&\"\\);\nconst re = new RegExp\\(\"\\^##\\\\\\\\s\\+\" \\+ escaped \\+ \"\\\\\\\\s\\*\\$\\(\\[\\\\\\\\s\\\\\\\\S\\]\\*\\?\\)\\(\\?=\\^##\\\\\\\\s\\+\\|\\$\\)\", \"mu\"\\);\nconsole\\.log\\(\"Match:\", !!md\\.match\\(re\\)\\);\nconst m = md\\.match\\(re\\);\nif \\(m\\) console\\.log\\(\"Captured:\", JSON\\.stringify\\(m\\[1\\]\\)\\.slice\\(0,200\\)\\);\nconst section = m \\? m\\[1\\]\\.trim\\(\\) : \"\";\nconsole\\.log\\(\"Section length:\", section\\.length\\);\nconst bonusRe = /\\^###\\\\s\\+额外发现：\\(\\.\\+\\?\\)\\\\s\\*\\[—-\\]\\\\s\\*\\(\\\\d\\+\\)\\\\/100\\\\s\\*\\$/gmu;\nconst bm = \\[\\.\\.\\.section\\.matchAll\\(bonusRe\\)\\];\nconsole\\.log\\(\"Bonus matches:\", bm\\.length\\);\n'$/": {
+      "approve": true,
+      "matchCommandLine": true
+    },
+    "git commit": true,
+    "mkdir": true,
+    "mv": true,
+    "git add": true,
+    "git push": true,
+    "git rm": true
+  }
+}

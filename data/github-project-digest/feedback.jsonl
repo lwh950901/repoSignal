@@ -1,1 +1,3 @@
-
+{"date":"2026-07-08","signal":"scope_preference","topic":"AI Agent ecosystem content","preference":"include","detail":"AI Agent-related prompt repositories, Awesome lists, tutorials and research collections may enter the candidate pool; label content type and retain normal evidence, licensing and authenticity thresholds","source":"user"}
+{"date":"2026-07-08","signal":"slot_policy","topic":"content projects","preference":"at_most_one_primary","detail":"Content projects may occupy at most one of the three daily primary recommendation slots; additional high-quality content projects should appear after the primary three as extra discoveries","source":"user"}
+{"date":"2026-07-08","signal":"format_policy","topic":"extra discoveries","preference":"score_and_full_evidence","detail":"Every extra discovery must include a weighted score and the same ten evidence fields as primary recommendations, interpreted appropriately for its content type","source":"user"}

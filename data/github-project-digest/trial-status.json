@@ -21,14 +21,14 @@
   "history_duplicates_in_90_days": [],
   "feedback_entries_read": 0,
   "latest_daily_run": {
-    "date": "2026-07-04",
+    "date": "2026-07-08",
     "status": "passed_with_api_fallback",
     "main_recommendation_count": 3,
     "history_duplicates_in_90_days": [],
     "format_check": true,
     "jsonl_check": true,
-    "scanner": "three live --no-cache searches succeeded after network escalation and produced 60 results before deduplication; three shortlist --enrich scans also succeeded, then unauthenticated REST follow-up hit the API rate limit",
-    "fallback": "GitHub repository, Release, Commit and Issue/PR pages"
+    "scanner": "four live --no-cache searches completed after sandbox DNS failure and approved network retry; results were divided into growth, mature utility and emerging candidate layers",
+    "fallback": "shortlist --enrich hit the unauthenticated API limit resetting at 2026-07-08 09:24:44 +08:00; final facts were verified through GitHub repository, release and commit pages, while exact metrics use the preceding live Search API results"
   },
   "verification": {
     "verified_at": "2026-06-29T12:35:40+08:00",
