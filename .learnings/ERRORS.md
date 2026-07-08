@@ -264,3 +264,67 @@ Always copy the exact absolute locator from the available-skills registry.
 - **Notes**: Retried with the registry-provided absolute path.
 
 ---
+
+## [ERR-20260708-002] zsh_empty_glob
+
+**Logged**: 2026-07-08T09:05:00+08:00
+**Priority**: low
+**Status**: resolved
+**Area**: docs
+
+### Summary
+An OpenSpec capability scan used an unmatched zsh glob and failed before checking the empty specs directory.
+
+### Error
+```
+zsh: no matches found: openspec/specs/*/spec.md
+```
+
+### Context
+- The repository had no active capability specs.
+- No files were modified by the failed read.
+
+### Suggested Fix
+Use `find openspec/specs -type f -name spec.md` for optional file sets.
+
+### Metadata
+- Reproducible: yes
+- Related Files: openspec/specs
+
+### Resolution
+- **Resolved**: 2026-07-08T09:05:00+08:00
+- **Notes**: Re-ran discovery with `find`, confirmed there were no existing capability specs, and created a single new capability in the proposal.
+
+---
+
+## [ERR-20260708-003] zsh_reserved_history
+
+**Logged**: 2026-07-08T19:10:00+08:00
+**Priority**: low
+**Status**: resolved
+**Area**: tests
+
+### Summary
+A verification command used zsh's reserved read-only `history` variable and stopped before the final consistency assertions.
+
+### Error
+```
+zsh: read-only variable: history
+```
+
+### Context
+- P1 merge and metadata assertions had already passed.
+- Product files were not modified by the failed command.
+
+### Suggested Fix
+Use descriptive names such as `history_extra_count` in zsh verification scripts.
+
+### Metadata
+- Reproducible: yes
+- Related Files: none
+
+### Resolution
+- **Resolved**: 2026-07-08T19:10:00+08:00
+- **Notes**: Renamed the shell variable and reran the remaining consistency checks.
+
+---
