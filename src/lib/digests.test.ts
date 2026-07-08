@@ -37,6 +37,35 @@ const sample = `# GitHub 优质项目每日发现｜2026-07-01
 - 主要技术栈：Rust、V8、CDP。
 `;
 
+const bonusSample = `# GitHub 优质项目每日发现｜2026-07-08
+
+> 今日重点：测试。
+
+## 主推荐
+
+### 1. 爆发型：test/repo — 80/100
+
+- 仓库：[test/repo](https://github.com/test/repo)
+- 一句话定位：测试项目。
+- 主要技术栈：Go。
+- 风险：无。
+- 推荐理由：测试。
+
+## 额外发现
+
+### 额外发现：asgeirtj/system_prompts_leaks — 74/100
+
+- 仓库：[asgeirtj/system_prompts_leaks](https://github.com/asgeirtj/system_prompts_leaks)
+- 一句话定位：持续整理主流 AI 产品系统提示词及工具定义的研究型资料库。
+- 主要技术栈：Markdown 内容库；JavaScript、Python 用于仓库流量统计与展示辅助。
+- 风险：部分内容无法独立确认完整性与真实性。
+- 推荐理由：它对 Agent 指令设计研究和版本比较具有明显发现价值。
+
+## 今天最值得亲自试用
+
+test
+`;
+
 describe("parseDailyReport", () => {
   it("extracts report metadata and ordered projects", () => {
     const report = parseDailyReport(sample, "2026-07-01.md");
@@ -59,6 +88,16 @@ describe("parseDailyReport", () => {
     expect(report.date).toBe("2026-07-02");
     expect(report.projects).toEqual([]);
     expect(report.markdown).toBe("# 只有标题");
+  });
+
+  it("parses bonus findings from daily report", () => {
+    const report = parseDailyReport(bonusSample, "2026-07-08.md");
+
+    expect(report.bonusProjects.length).toBe(1);
+    expect(report.bonusProjects[0].repository).toBe("asgeirtj/system_prompts_leaks");
+    expect(report.bonusProjects[0].score).toBe(74);
+    expect(report.bonusProjects[0].kind).toBe("额外发现");
+    expect(report.bonusProjects[0].positioning).toContain("持续整理");
   });
 });
 

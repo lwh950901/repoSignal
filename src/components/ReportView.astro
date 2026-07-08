@@ -48,5 +48,16 @@ const introHtml = report.introduction ? marked.parse(report.introduction) as str
         </details>
       </div>
     )}
+
+    {report.bonusProjects.length > 0 ? (
+      <section class="bonus-findings" aria-label="额外发现">
+        <h2 class="bonus-findings__heading">额外发现</h2>
+        <div class="bonus-findings__list">
+          {report.bonusProjects.map((project, index) => (
+            <ProjectEntry project={project} index={index} />
+          ))}
+        </div>
+      </section>
+    ) : null}
   </section>
 </main>

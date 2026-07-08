@@ -1,6 +1,6 @@
 import { marked } from "marked";
 
-export type ProjectKind = "爆发型" | "实用型" | "潜力型" | "周精选";
+export type ProjectKind = "爆发型" | "实用型" | "潜力型" | "周精选" | "额外发现";
 
 export interface ProjectRecord {
   id: string;
@@ -26,6 +26,8 @@ export interface DigestReport {
   markdown: string;
   html: string;
   projects: ProjectRecord[];
+  bonusProjects: ProjectRecord[];
+  bonusHtml: string;
 }
 
 export interface DigestIndexItem {
@@ -123,8 +125,46 @@ function parseProjects(markdown: string, type: DigestReport["type"]): ProjectRec
 
 function sectionText(markdown: string, heading: string): string {
   const escaped = heading.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  const match = markdown.match(new RegExp(`^##\\s+${escaped}\\s*$([\\s\\S]*?)(?=^##\\s+|$)`, "mu"));
+  const match = markdown.match(new RegExp(`^##\\s+${escaped}\\s*$([\\s\\S]*?)(?=\\n##\\s+|$(?!\\n))`, "mu"));
   return match?.[1]?.trim() ?? "";
+}
+
+const bonusPattern = /^###\s+额外发现：(.+?)\s*[—\-]\s*(\d+)\/100\s*$/gmu;
+
+function parseBonusProjects(markdown: string): { projects: ProjectRecord[]; html: string } {
+  const section = sectionText(markdown, "额外发现");
+  if (!section) return { projects: [], html: "" };
+
+  const matches = [...section.matchAll(bonusPattern)];
+  if (matches.length === 0) {
+    return { projects: [], html: marked.parse(section) as string };
+  }
+
+  const projects: ProjectRecord[] = [];
+  for (const match of matches) {
+    const start = match.index ?? 0;
+    const endIdx = matches.indexOf(match) + 1;
+    const end = matches[endIdx]?.index ?? section.length;
+    const body = section.slice(start, end).trim().replace(/^#{3}.+\n/u, "").trim();
+    const repo = getRepository(body);
+    if (!repo.repository || !repo.url) continue;
+
+    projects.push({
+      id: projectId(repo.repository),
+      kind: "额外发现",
+      repository: repo.repository,
+      url: repo.url,
+      score: Number(match[2]),
+      positioning: getField(body, ["一句话定位"]),
+      technologies: parseTechnologies(getField(body, ["主要技术栈"])),
+      risk: getField(body, ["风险"]),
+      recommendation: getField(body, ["推荐理由"]),
+      markdown: body,
+      html: marked.parse(body) as string,
+    });
+  }
+
+  return { projects, html: "" };
 }
 
 export function parseDailyReport(markdown: string, filename: string): DigestReport {
@@ -132,6 +172,7 @@ export function parseDailyReport(markdown: string, filename: string): DigestRepo
   const title = cleanInline(markdown.match(/^#\s+(.+)$/mu)?.[1] ?? "GitHub 项目发现");
   const fullTheme = cleanInline(markdown.match(/^>\s*今日重点：(.+)$/mu)?.[1] ?? "");
   const theme = fullTheme.match(/^.+?[。！？]/u)?.[0] ?? fullTheme;
+  const bonus = parseBonusProjects(markdown);
   return {
     type: "daily",
     slug,
@@ -142,6 +183,8 @@ export function parseDailyReport(markdown: string, filename: string): DigestRepo
     markdown,
     html: marked.parse(markdown) as string,
     projects: parseProjects(markdown, "daily"),
+    bonusProjects: bonus.projects,
+    bonusHtml: bonus.html,
   };
 }
 
@@ -162,6 +205,8 @@ export function parseWeeklyReport(markdown: string, filename: string): DigestRep
     markdown,
     html: marked.parse(markdown) as string,
     projects: parseProjects(markdown, "weekly"),
+    bonusProjects: [],
+    bonusHtml: "",
   };
 }
 
@@ -190,8 +235,9 @@ export function selectDefaultReport(
 }
 
 export function createSearchIndex(reports: DigestReport[]): DigestIndexItem[] {
-  return reports.flatMap((report) =>
-    report.projects.map((project) => ({
+  return reports.flatMap((report) => {
+    const allProjects = [...report.projects, ...(report.bonusProjects ?? [])];
+    return allProjects.map((project) => ({
       id: `${report.type}-${report.slug}-${project.id}`,
       repository: project.repository,
       positioning: project.positioning,
@@ -200,6 +246,6 @@ export function createSearchIndex(reports: DigestReport[]): DigestIndexItem[] {
       score: project.score,
       reportLabel: report.type === "daily" ? report.date : report.slug,
       href: `/${report.type}/${report.slug}/#${project.id}`,
-    })),
-  );
+    }));
+  });
 }
