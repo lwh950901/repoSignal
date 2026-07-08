@@ -98,9 +98,50 @@
 
 写入前必须自检：三个主推荐标题均匹配 `### 序号. 类型：owner/repo — 分数/100`，每项均包含仓库、一句话定位、主要技术栈、风险和推荐理由。若少于 3 个高质量项目，允许减少项目数量，但已输出项目仍必须遵守同一结构。
 
+## 候选账本
+
+每次每日运行完成时，系统应将扫描器发现的全部候选仓库写入 `data/github-project-digest/candidates/YYYY-MM-DD.jsonl`，每行一个 JSON 对象、每个规范化仓库仅出现一次。
+
+### 候选记录字段
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `date` | string | 发现日期 |
+| `repo` | string | 规范化小写 `owner/repo` |
+| `url` | string | GitHub 仓库 URL |
+| `lanes` | string[] | 发现通道（如 growth、mature、emerging） |
+| `sources` | string[] | 发现来源（如 trending、search、topic） |
+| `stars` | int or null | 发现时的 Stars 数 |
+| `forks` | int or null | 发现时的 Forks 数 |
+| `license` | string or null | SPDX 许可证标识 |
+| `archived` | bool | 是否已归档 |
+| `pushed` | string or null | 最近推送时间 |
+| `status` | string | 处置状态：`discovered` / `shortlisted` / `rejected` / `primary` / `extra` |
+| `verified` | bool | GitHub 事实是否已核验 |
+| `reason` | string or null | 处置原因（rejected/primary/extra 必须非空） |
+
+### 规范化与去重
+
+- 仓库名按大小写不敏感规范化，首现保留，后现合并 `lanes` 和 `sources`。
+- 后出现的非空 GitHub 事实覆盖前值。
+- 输出按 `repo` 字段确定性排序。
+- 使用 Python 标准库，原子写入（先写 `.tmp` 再 `os.replace`）。
+
+### 处置流程
+
+1. 写入时所有记录 `status: discovered`、`verified: false`。
+2. 短列表阶段更新 `status: shortlisted`。
+3. 最终发布前更新 `primary` 和 `extra` 记录为 `verified: true` 并填写 `reason`。
+4. 被排除的候选更新为 `rejected` 并填写原因。
+
+### 关联数据
+
+- `history.jsonl` 记录主推荐和额外发现的 `role` 字段（`primary` / `extra`），不存储完整候选池。
+- 候选账本不保存在 `history.jsonl` 中，仅在日期键文件中存储。
+
 ## 每周精选
 
-周六 10:30 从当周周一至周六最多 18 个主推荐中深度精选最多 5 个，不再搜索一批新项目替代本周候选。
+周六 10:30 从当周周一至周六的全部主推荐与额外发现中深度精选最多 5 个，不再搜索一批新项目替代本周候选。周精选任务必须读取每日 Markdown 报告中的 `## 主推荐` 和 `## 额外发现` 两个部分；日报分数和位置只作为初筛信号，周末仍需统一复核后重新排序，额外发现与主推荐具有同等入选资格。
 
 精选报告补充阅读 README、Issue、Release 和近期提交，说明维护健康度、真实风险、上手建议，以及它为何值得进入本周精选。质量不足时允许少于 5 个。
 
@@ -131,7 +172,7 @@
 
 - 主推荐默认 90 天内不重复。
 - 发生重大版本发布、显著增长或项目方向转型时允许再次推荐，但必须说明新变化。
-- 每日任务记录推荐日期、类型、关键指标和推荐理由，供去重和周精选读取。
+- 每日任务在历史文件中记录主推荐的日期、类型、关键指标和推荐理由，供 90 天去重；额外发现保留在每日 Markdown 报告中，由周精选直接读取并纳入候选池。
 - 已停止维护或质量明显下降的项目不进入周精选。
 
 ## 偏好反馈
