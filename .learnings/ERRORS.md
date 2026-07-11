@@ -328,3 +328,33 @@ Use descriptive names such as `history_extra_count` in zsh verification scripts.
 - **Notes**: Renamed the shell variable and reran the remaining consistency checks.
 
 ---
+
+## [ERR-20260711-001] weekly_report_awk_validation
+
+**Logged**: 2026-07-11T11:00:00+08:00
+**Priority**: low
+**Status**: resolved
+**Area**: tests
+
+### Summary
+The weekly-report field-order check double-escaped the numbered-heading regex when passing an awk program through a JavaScript string.
+
+### Error
+The check reported every field as unexpected and found zero projects even though the report used valid `## 1. Project` headings.
+
+### Context
+- Command: ad hoc awk schema validation for `data/github-project-digest/weekly/2026-W28.md`
+- Root cause: `\\.` reached awk as an unintended double escape.
+
+### Suggested Fix
+Use `[.]` for literal dots in awk regexes embedded in JavaScript strings.
+
+### Metadata
+- Reproducible: yes
+- Related Files: data/github-project-digest/weekly/2026-W28.md
+
+### Resolution
+- **Resolved**: 2026-07-11T11:00:00+08:00
+- **Notes**: Verified that `/^## [1-5][.] /` matches all five weekly project headings before rerunning the full check.
+
+---
