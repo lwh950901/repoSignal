@@ -21,28 +21,29 @@
   "history_duplicates_in_90_days": [],
   "feedback_entries_read": 0,
   "latest_daily_run": {
-    "date": "2026-07-08",
+    "date": "2026-07-11",
     "status": "passed_with_api_fallback",
     "main_recommendation_count": 3,
-    "extra_discovery_count": 2,
+    "extra_discovery_count": 0,
     "history_duplicates_in_90_days": [],
     "format_check": true,
     "jsonl_check": true,
-    "scanner": "four live --no-cache searches completed after sandbox DNS failure and approved network retry; results were divided into growth, mature utility and emerging candidate layers",
-    "fallback": "shortlist --enrich hit the unauthenticated API limit resetting at 2026-07-08 09:24:44 +08:00; final facts were verified through GitHub repository, release and commit pages, while exact metrics use the preceding live Search API results",
     "candidate_ledger": {
-      "status": "established",
-      "candidate_count": 0,
-      "candidates_by_lane": {},
+      "status": "written",
+      "candidate_count": 46,
       "final_dispositions": {
-        "discovered": 0,
-        "shortlisted": 0,
         "primary": 3,
-        "extra": 2,
-        "rejected": 0
+        "extra": 0,
+        "shortlisted": 18,
+        "rejected": 25,
+        "discovered": 0
       },
-      "notes": "Candidate ledger tool added; prospective from next run; today's extra discoveries (asgeirtj/system_prompts_leaks, HKUDS/DeepTutor) recorded in history.jsonl with role: extra; counts verified against daily report"
-    }
+      "path": "data/github-project-digest/candidates/2026-07-11.jsonl"
+    },
+    "skill": "find-github-projects SKILL.md and references/scoring-rubric.md read successfully before search",
+    "scanner": "four live --no-cache scanner searches attempted in sandbox, failed DNS, then completed with approved network access; shortlist --enrich attempted and hit unauthenticated GitHub API limit reset around 2026-07-11 08:45:51 +08:00",
+    "fallback": "final verification used GitHub repository pages, Release pages, Commit Atom feeds and same-run Search API values before limit; GitHub REST API and enriched scanner were not used after limit",
+    "report": "data/github-project-digest/daily/2026-07-11.md"
   },
   "verification": {
     "verified_at": "2026-06-29T12:35:40+08:00",
