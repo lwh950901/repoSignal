@@ -1,96 +1,98 @@
 {
-  "date": "2026-06-29",
-  "timezone": "Asia/Shanghai",
-  "status": "passed_with_recovered_anomaly",
+  "anomalies": [
+    {
+      "error": "Unauthenticated GitHub Search API rate limit reached; reset at 2026-06-29T04:35:29Z.",
+      "impact": "No failed or cached scanner output was used as a live fact.",
+      "recovery": "After reset, reran final repository checks with --no-cache and obtained live GitHub API data.",
+      "stage": "initial_candidate_scan"
+    },
+    {
+      "error": "Three same-date history rows from another concurrent process appeared after the initial empty-file read.",
+      "impact": "The history file contains six valid rows for 2026-06-29, three from this report and three from the concurrent process.",
+      "recovery": "Preserved all existing rows, verified no repository overlap, and validated this run's three appended rows independently.",
+      "stage": "history_readback"
+    }
+  ],
   "checks": {
-    "three_slots_distinct": true,
-    "links_and_metrics_verified_live": true,
-    "required_fields_complete": true,
+    "feedback_read": true,
     "history_90_day_read": true,
-    "history_append_written": true,
     "history_append_readback_pending": false,
     "history_append_readback_verified": true,
-    "feedback_read": true,
+    "history_append_written": true,
+    "links_and_metrics_verified_live": true,
+    "required_fields_complete": true,
+    "three_slots_distinct": true,
     "weekly_digest_can_read_daily_results": true
   },
-  "main_recommendation_count": 3,
+  "date": "2026-06-29",
+  "feedback_entries_read": 0,
+  "history_duplicates_in_90_days": [],
+  "history_entries_added_by_this_run": 3,
+  "history_entries_after_append": 6,
   "history_entries_before_run": 0,
   "history_entries_detected_before_append": 3,
-  "history_entries_after_append": 6,
-  "history_entries_added_by_this_run": 3,
-  "history_duplicates_in_90_days": [],
-  "feedback_entries_read": 0,
   "latest_daily_run": {
-    "date": "2026-07-11",
-    "status": "passed_with_api_fallback",
-    "main_recommendation_count": 3,
-    "extra_discovery_count": 0,
-    "history_duplicates_in_90_days": [],
-    "format_check": true,
-    "jsonl_check": true,
-    "candidate_ledger": {
-      "status": "written",
-      "candidate_count": 46,
-      "final_dispositions": {
-        "primary": 3,
-        "extra": 0,
-        "shortlisted": 18,
-        "rejected": 25,
-        "discovered": 0
-      },
-      "path": "data/github-project-digest/candidates/2026-07-11.jsonl"
+    "candidates": "data/github-project-digest/candidates/2026-07-15.jsonl",
+    "checked_at": "2026-07-15T05:44:00+08:00",
+    "date": "2026-07-15",
+    "extra_discovery_update": {
+      "checked_at": "2026-07-15T06:05:00+08:00",
+      "fallback": "scanner DNS failed in sandbox; approved network scanner hit unauthenticated GitHub API limit; verified via GitHub repository page, raw README, Release page and Commit Atom feed",
+      "repo": "JOYCEQL/magic-resume",
+      "scanner_ran": true,
+      "score": 83,
+      "status": "added_extra"
     },
-    "skill": "find-github-projects SKILL.md and references/scoring-rubric.md read successfully before search",
-    "scanner": "four live --no-cache scanner searches attempted in sandbox, failed DNS, then completed with approved network access; shortlist --enrich attempted and hit unauthenticated GitHub API limit reset around 2026-07-11 08:45:51 +08:00",
-    "fallback": "final verification used GitHub repository pages, Release pages, Commit Atom feeds and same-run Search API values before limit; GitHub REST API and enriched scanner were not used after limit",
-    "report": "data/github-project-digest/daily/2026-07-11.md"
+    "fallback": "sandbox DNS failure recovered with approved network scanner; shortlist enrich hit unauthenticated GitHub API limit, then verified via GitHub repository pages, release blocks and commit Atom feeds",
+    "primary_count": 5,
+    "report": "data/github-project-digest/daily/2026-07-15.md",
+    "scanner_ran": true,
+    "skill_called": true,
+    "status": "passed_with_api_fallback",
+    "user_specified_candidates": [
+      "pydantic/pydantic-ai",
+      "earendil-works/pi"
+    ],
+    "user_specified_disposition": {
+      "earendil-works/pi": "primary",
+      "pydantic/pydantic-ai": "primary"
+    }
   },
+  "main_recommendation_count": 3,
+  "status": "passed_with_recovered_anomaly",
+  "timezone": "Asia/Shanghai",
   "verification": {
-    "verified_at": "2026-06-29T12:35:40+08:00",
+    "repos": [
+      "DeusData/codebase-memory-mcp",
+      "simplex-chat/simplex-chat",
+      "altic-dev/FluidVoice"
+    ],
     "sources": [
       "GitHub repository pages",
       "GitHub commit pages",
       "GitHub release pages",
       "GitHub API with cache disabled"
     ],
-    "repos": [
-      "DeusData/codebase-memory-mcp",
-      "simplex-chat/simplex-chat",
-      "altic-dev/FluidVoice"
-    ]
+    "verified_at": "2026-06-29T12:35:40+08:00"
   },
   "weekly_run": {
-    "iso_week": "2026-W27",
-    "status": "formal_weekly_digest_generated_with_web_fallback",
-    "daily_reports_read": 6,
-    "daily_candidates_read": 18,
-    "history_read": true,
-    "feedback_read": true,
-    "feedback_entries_read": 0,
-    "shortlist_count": 5,
-    "selected_count": 5,
-    "format_check": true,
     "candidate_source_check": true,
-    "links_and_fields_verified": true,
-    "verified_at": "2026-07-04T12:32:23+08:00",
-    "skill": "find-github-projects SKILL.md and references/scoring-rubric.md read successfully",
-    "github_auth": "failed: stored gh token is invalid",
-    "scanner": "exact repo --limit 1 --enrich --no-cache attempted; sandbox DNS retry reached unauthenticated GitHub API limit",
+    "daily_candidates_read": 18,
+    "daily_reports_read": 6,
     "fallback": "at most two GitHub repository/release/commit pages per shortlisted repository; no replacement candidates searched",
+    "feedback_entries_read": 0,
+    "feedback_read": true,
+    "format_check": true,
+    "github_auth": "failed: stored gh token is invalid",
+    "history_read": true,
+    "iso_week": "2026-W27",
+    "links_and_fields_verified": true,
+    "scanner": "exact repo --limit 1 --enrich --no-cache attempted; sandbox DNS retry reached unauthenticated GitHub API limit",
+    "selected_count": 5,
+    "shortlist_count": 5,
+    "skill": "find-github-projects SKILL.md and references/scoring-rubric.md read successfully",
+    "status": "formal_weekly_digest_generated_with_web_fallback",
+    "verified_at": "2026-07-04T12:32:23+08:00",
     "weekly_report": "data/github-project-digest/weekly/2026-W27.md"
-  },
-  "anomalies": [
-    {
-      "stage": "initial_candidate_scan",
-      "error": "Unauthenticated GitHub Search API rate limit reached; reset at 2026-06-29T04:35:29Z.",
-      "impact": "No failed or cached scanner output was used as a live fact.",
-      "recovery": "After reset, reran final repository checks with --no-cache and obtained live GitHub API data."
-    },
-    {
-      "stage": "history_readback",
-      "error": "Three same-date history rows from another concurrent process appeared after the initial empty-file read.",
-      "impact": "The history file contains six valid rows for 2026-06-29, three from this report and three from the concurrent process.",
-      "recovery": "Preserved all existing rows, verified no repository overlap, and validated this run's three appended rows independently."
-    }
-  ]
+  }
 }
