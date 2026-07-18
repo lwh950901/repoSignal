@@ -32,31 +32,20 @@
   "history_entries_before_run": 0,
   "history_entries_detected_before_append": 3,
   "latest_daily_run": {
-    "candidates": "data/github-project-digest/candidates/2026-07-15.jsonl",
-    "checked_at": "2026-07-15T05:44:00+08:00",
-    "date": "2026-07-15",
-    "extra_discovery_update": {
-      "checked_at": "2026-07-15T06:05:00+08:00",
-      "fallback": "scanner DNS failed in sandbox; approved network scanner hit unauthenticated GitHub API limit; verified via GitHub repository page, raw README, Release page and Commit Atom feed",
-      "repo": "JOYCEQL/magic-resume",
-      "scanner_ran": true,
-      "score": 83,
-      "status": "added_extra"
-    },
-    "fallback": "sandbox DNS failure recovered with approved network scanner; shortlist enrich hit unauthenticated GitHub API limit, then verified via GitHub repository pages, release blocks and commit Atom feeds",
+    "candidates": "data/github-project-digest/candidates/2026-07-18.jsonl",
+    "checked_at": "2026-07-18 05:56:59 +0800",
+    "date": "2026-07-18",
+    "extra_count": 0,
     "primary_count": 5,
-    "report": "data/github-project-digest/daily/2026-07-15.md",
+    "report": "data/github-project-digest/daily/2026-07-18.md",
+    "scanner_path": "scripts/github_project_scan.py live search succeeded for candidate discovery; shortlist --enrich hit unauthenticated GitHub API rate limit and fell back to GitHub repo pages, Commit Atom feeds, Release pages and README/file structure.",
     "scanner_ran": true,
     "skill_called": true,
     "status": "passed_with_api_fallback",
     "user_specified_candidates": [
-      "pydantic/pydantic-ai",
-      "earendil-works/pi"
+      "anysearch-ai/anysearch-skill"
     ],
-    "user_specified_disposition": {
-      "earendil-works/pi": "primary",
-      "pydantic/pydantic-ai": "primary"
-    }
+    "user_specified_disposition": "reverified via GitHub page/Commit Atom/README evidence and promoted to primary 潜力型"
   },
   "main_recommendation_count": 3,
   "status": "passed_with_recovered_anomaly",
