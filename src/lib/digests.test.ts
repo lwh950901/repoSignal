@@ -3,6 +3,7 @@ import {
   loadDailyReports,
   loadWeeklyReports,
   parseDailyReport,
+  parseWeeklyReport,
   selectDefaultReport,
 } from "./digests";
 
@@ -66,6 +67,33 @@ const bonusSample = `# GitHub 优质项目每日发现｜2026-07-08
 test
 `;
 
+const weeklySample = `# GitHub 优质项目每周精选｜2026-W29
+
+本周摘要。
+
+## 1. test/repo
+
+- 仓库：[test/repo](https://github.com/test/repo)
+- 项目简介：面向测试用户的项目简介。
+- 入选理由：这是周精选定位。
+- 质量与维护：维护正常。
+- 主要技术栈：Go、TypeScript。
+- 实时指标：10 Stars / 1 Fork；MIT license。
+- 真实风险：样例风险。
+- 上手建议：先运行样例。
+- 本周精选价值：适合测试。
+`;
+
+function weeklyFieldOrderIsValid(markdown: string): boolean {
+  const blocks = markdown.split(/^##\s+\d+\.\s+.+$/mu).slice(1);
+  return blocks.every((block) => {
+    const repository = block.indexOf("- 仓库：");
+    const introduction = block.indexOf("- 项目简介：");
+    const reason = block.indexOf("- 入选理由：");
+    return repository >= 0 && introduction > repository && reason > introduction;
+  });
+}
+
 describe("parseDailyReport", () => {
   it("extracts report metadata and ordered projects", () => {
     const report = parseDailyReport(sample, "2026-07-01.md");
@@ -101,6 +129,18 @@ describe("parseDailyReport", () => {
   });
 });
 
+describe("parseWeeklyReport", () => {
+  it("keeps project introduction separate from positioning", () => {
+    const report = parseWeeklyReport(weeklySample, "2026-W29.md");
+
+    expect(report.projects[0].positioning).toBe("这是周精选定位。");
+    expect(report.projects[0].introduction).toBe("面向测试用户的项目简介。");
+    expect(report.projects[0].markdown).toContain("- 项目简介：面向测试用户的项目简介。");
+    expect(report.projects[0].html).not.toContain("项目简介");
+    expect(report.projects[0].html).toContain("仓库");
+  });
+});
+
 describe("digest discovery", () => {
   it("loads real reports newest first with route-safe slugs", () => {
     const daily = loadDailyReports();
@@ -114,7 +154,8 @@ describe("digest discovery", () => {
       [...daily.map((report) => report.slug)].sort().reverse(),
     );
     for (const report of daily) {
-      expect(report.projects, `${report.slug} projects`).toHaveLength(3);
+      expect(report.projects.length, `${report.slug} projects`).toBeGreaterThanOrEqual(3);
+      expect(report.projects.length, `${report.slug} projects`).toBeLessThanOrEqual(5);
       for (const project of report.projects) {
         expect(project.url, `${report.slug} ${project.repository} url`).toMatch(/^https:\/\/github\.com\//);
         expect(project.score, `${report.slug} ${project.repository} score`).toBeGreaterThan(0);
@@ -126,9 +167,13 @@ describe("digest discovery", () => {
     }
     for (const report of weekly) {
       expect(report.projects.length, `${report.slug} projects`).toBeGreaterThan(0);
+      expect(weeklyFieldOrderIsValid(report.markdown), `${report.slug} weekly field order`).toBe(true);
       for (const project of report.projects) {
         expect(project.url, `${report.slug} ${project.repository} url`).toMatch(/^https:\/\/github\.com\//);
         expect(project.positioning, `${report.slug} ${project.repository} positioning`).not.toBe("");
+        expect(project.introduction, `${report.slug} ${project.repository} introduction`).not.toBe("");
+        expect(project.markdown, `${report.slug} ${project.repository} markdown`).toContain("- 项目简介：");
+        expect(project.html, `${report.slug} ${project.repository} html`).not.toContain("项目简介");
         expect(project.technologies, `${report.slug} ${project.repository} technologies`).not.toEqual([]);
         expect(project.risk, `${report.slug} ${project.repository} risk`).not.toBe("");
         expect(project.recommendation, `${report.slug} ${project.repository} recommendation`).not.toBe("");

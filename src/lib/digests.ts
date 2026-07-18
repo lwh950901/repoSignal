@@ -9,6 +9,7 @@ export interface ProjectRecord {
   url: string;
   score: number | null;
   positioning: string;
+  introduction: string;
   technologies: string[];
   risk: string;
   recommendation: string;
@@ -89,6 +90,14 @@ function parseTechnologies(value: string): string[] {
     .filter(Boolean);
 }
 
+function stripField(body: string, label: string): string {
+  return body
+    .split("\n")
+    .filter((line) => !new RegExp(`^-\\s+${label}：`).test(line))
+    .join("\n")
+    .trim();
+}
+
 function parseProjects(markdown: string, type: DigestReport["type"]): ProjectRecord[] {
   const headingPattern = type === "daily"
     ? /^###\s+\d+\.\s+(爆发型|实用型|潜力型)：(.+?)(?:\s+[—-]\s+(\d+)\/100)?\s*$/gmu
@@ -104,6 +113,8 @@ function parseProjects(markdown: string, type: DigestReport["type"]): ProjectRec
     if (!repo.repository || !repo.url) return [];
 
     const technologies = getField(body, ["主要技术栈"]);
+    const introduction = getField(body, ["项目简介"]);
+    const detailBody = introduction ? stripField(body, "项目简介") : body;
     const kind = type === "daily" ? (match[1] as ProjectKind) : "周精选";
     const score = type === "daily" && match[3] ? Number(match[3]) : null;
 
@@ -114,11 +125,12 @@ function parseProjects(markdown: string, type: DigestReport["type"]): ProjectRec
       url: repo.url,
       score,
       positioning: getField(body, ["一句话定位", "入选理由"]),
+      introduction,
       technologies: parseTechnologies(technologies),
       risk: getField(body, ["风险", "真实风险"]),
       recommendation: getField(body, ["推荐理由", "本周精选价值", "上手建议"]),
       markdown: body,
-      html: marked.parse(body) as string,
+      html: marked.parse(detailBody) as string,
     }];
   });
 }
@@ -149,6 +161,9 @@ function parseBonusProjects(markdown: string): { projects: ProjectRecord[]; html
     const repo = getRepository(body);
     if (!repo.repository || !repo.url) continue;
 
+    const introduction = getField(body, ["项目简介"]);
+    const detailBody = introduction ? stripField(body, "项目简介") : body;
+
     projects.push({
       id: projectId(repo.repository),
       kind: "额外发现",
@@ -156,11 +171,12 @@ function parseBonusProjects(markdown: string): { projects: ProjectRecord[]; html
       url: repo.url,
       score: Number(match[2]),
       positioning: getField(body, ["一句话定位"]),
+      introduction,
       technologies: parseTechnologies(getField(body, ["主要技术栈"])),
       risk: getField(body, ["风险"]),
       recommendation: getField(body, ["推荐理由"]),
       markdown: body,
-      html: marked.parse(body) as string,
+      html: marked.parse(detailBody) as string,
     });
   }
 

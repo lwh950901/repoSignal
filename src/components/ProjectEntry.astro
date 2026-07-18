@@ -24,6 +24,7 @@ const scoreLabel = project.score ? `${project.score}/100` : "精选";
       </div>
     </header>
     {project.positioning && <p class="project-positioning">{project.positioning}</p>}
+    {project.introduction && <p class="project-introduction">{project.introduction}</p>}
     <dl class="project-facts">
       {project.technologies.length > 0 && (
         <div>
