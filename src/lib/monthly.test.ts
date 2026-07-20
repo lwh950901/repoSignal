@@ -156,6 +156,7 @@ describe("parseMonthlyReport", () => {
     expect(report.opportunities[0].demandStatus).toBe("已确认需求");
     expect(report.opportunities[0].repositories[0].repository).toBe("Acme/Alpha");
     expect(report.opportunities[0].bodyHtml).toContain("真实问题");
+    expect(report.opportunities[0].bodyHtml).not.toContain("仓库组合");
   });
 
   it("accepts zero opportunities only with the explicit empty state", () => {

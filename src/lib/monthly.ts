@@ -349,6 +349,8 @@ function parseOpportunities(filename: string, markdown: string): MonthlyOpportun
     const declaredRepositoryCount = requiredInteger(filename, title, body, "组合仓库数量", 2, 5);
     if (declaredRepositoryCount !== repositories.length) validation(filename, `${title} 的组合仓库数量与实际条目不一致`);
     const sourcesBody = requiredSection(filename, body, "来源", 4, title);
+    const analysisMarkdown = body.slice(body.indexOf("#### 真实问题"), body.indexOf("#### 仓库组合"))
+      + body.slice(body.indexOf("#### 组合链路"), body.indexOf("#### 来源"));
     return {
       id: encodedId("monthly-opportunity", title),
       title,
@@ -361,7 +363,7 @@ function parseOpportunities(filename: string, markdown: string): MonthlyOpportun
       businessVerdict: requiredEnum(filename, title, requiredField(filename, title, body, "商业判断"), "商业判断", businessVerdicts),
       verifiedAt: parseDate(filename, title, requiredField(filename, title, body, "核实日期"), "核实日期"),
       repositories,
-      bodyHtml: marked.parse(body.slice(body.indexOf("#### 真实问题"), body.indexOf("#### 来源"))) as string,
+      bodyHtml: marked.parse(analysisMarkdown) as string,
       sources: evidenceLinks(filename, title, sourcesBody),
     };
   });

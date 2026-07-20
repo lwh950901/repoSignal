@@ -34,17 +34,17 @@
 
 ## 5. Revised monthly page
 
-- [ ] 5.1 Replace the current hero ledger with research scope and verification metadata
-- [ ] 5.2 Render independent Top 5 entries with score breakdown, monthly evidence, objections and source links
-- [ ] 5.3 Render 0–3 business opportunities with decision summary, alternatives, repository combination, gaps, MVP and evidence boundaries
-- [ ] 5.4 Remove persona selection, fixed signals and audience actions while preserving archive, adjacent-month and period navigation
-- [ ] 5.5 Add responsive styles for scorecards, evidence links, comparison tables and combination flow without adding client dependencies
+- [x] 5.1 Replace the current hero ledger with research scope and verification metadata
+- [x] 5.2 Render independent Top 5 entries with score breakdown, monthly evidence, objections and source links
+- [x] 5.3 Render 0–3 business opportunities with decision summary, alternatives, repository combination, gaps, MVP and evidence boundaries
+- [x] 5.4 Remove persona selection, fixed signals and audience actions while preserving archive, adjacent-month and period navigation
+- [x] 5.5 Add responsive styles for scorecards, evidence links, comparison tables and combination flow without adding client dependencies
 
 ## 6. Publication documentation and isolation
 
-- [ ] 6.1 Update README to distinguish candidate aggregation, external research, internal evidence and published frozen content
-- [ ] 6.2 Add a real-content discovery regression for the researched July report
-- [ ] 6.3 Confirm internal research files are absent from search items and production output
+- [x] 6.1 Update README to distinguish candidate aggregation, external research, internal evidence and published frozen content
+- [x] 6.2 Add a real-content discovery regression for the researched July report
+- [x] 6.3 Confirm internal research files are absent from search items and production output
 
 ## 7. Verification and review
 
