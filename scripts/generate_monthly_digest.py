@@ -19,10 +19,18 @@ MONTH_RE = re.compile(r"^(\d{4})-(0[1-9]|1[0-2])$")
 WEEK_RE = re.compile(r"^(\d{4})-W(\d{2})$")
 GITHUB_RE = re.compile(r"https?://github\.com/([^/\s)\]#]+)/([^/\s)\]#]+)", re.IGNORECASE)
 REPO_RE = re.compile(r"^[^/\s]+/[^/\s]+$")
-INLINE_REPO_RE = re.compile(r"(?<![\w.-])([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+)(?![\w.-])")
-HEADING_REPO_RE = re.compile(
-    r"^#{1,6}\s+(?:\d+[.)]\s+)?([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+)(?:\s|—|–|-|$)"
+DAILY_REPO_LINE_RE = re.compile(
+    r"^-\s*仓库[：:]\s*\[[^\]]+\]\(https?://github\.com/([^/\s)]+/[^/\s)]+)\)\s*$",
+    re.IGNORECASE,
 )
+DAILY_TITLE_RE = re.compile(
+    r"^###\s+\d+\.\s+(?:爆发型|实用型|潜力型)[：:]\s*([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+)(?:\s|—|–|-|$)"
+)
+WEEKLY_TITLE_RE = re.compile(
+    r"^##\s+\d+\.\s+(?:\[([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+)\]\(https?://github\.com/[^)]+\)|([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+))(?:\s|—|–|-|$)",
+    re.IGNORECASE,
+)
+WEEKLY_ENTRY_RE = re.compile(r"^##\s+\d+\.\s+.+")
 
 
 def validate_month(value):
@@ -104,13 +112,9 @@ def candidate_evidence(candidates_dir, month):
 
 
 def repository_names_from_markdown(text, source_path, main_only=False):
-    """Extract repositories from standard 仓库 lines and GitHub-bearing headings.
-
-    Daily reports contribute only their 主推荐 section; weekly reports contribute all
-    selected entries.  Both common report forms use either a `- 仓库:` line or a
-    heading containing a GitHub repository link.
-    """
+    """Extract only exact report fields or approved selection headings, never prose."""
     in_main_recommendations = not main_only
+    weekly_entry = False
     found = []
     for line in text.splitlines():
         heading = re.match(r"^##\s+(.+)$", line)
@@ -123,21 +127,23 @@ def repository_names_from_markdown(text, source_path, main_only=False):
                 break
         if not in_main_recommendations:
             continue
-        is_repo_line = "仓库" in line
-        is_heading = line.lstrip().startswith("#")
-        if not (is_repo_line or is_heading):
-            continue
-        urls = GITHUB_RE.findall(line)
-        for owner, repo in urls:
-            found.append(normalize_repo(f"{owner}/{repo}"))
-        if not urls:
-            if is_repo_line:
-                for repo in INLINE_REPO_RE.findall(line):
-                    found.append(normalize_repo(repo))
-            elif is_heading:
-                heading_repo = HEADING_REPO_RE.match(line)
-                if heading_repo:
-                    found.append(normalize_repo(heading_repo.group(1)))
+        if main_only:
+            repo_line = DAILY_REPO_LINE_RE.match(line)
+            title = DAILY_TITLE_RE.match(line)
+            if repo_line:
+                found.append(normalize_repo(repo_line.group(1)))
+            elif title:
+                found.append(normalize_repo(title.group(1)))
+        else:
+            if WEEKLY_ENTRY_RE.match(line):
+                weekly_entry = True
+            title = WEEKLY_TITLE_RE.match(line)
+            if title:
+                found.append(normalize_repo(title.group(1) or title.group(2)))
+            elif weekly_entry:
+                repo_line = DAILY_REPO_LINE_RE.match(line)
+                if repo_line:
+                    found.append(normalize_repo(repo_line.group(1)))
     return found
 
 
@@ -255,12 +261,12 @@ def self_check():
             encoding="utf-8",
         )
         (root / "daily" / "2026-07-04.md").write_text(
-            "# 日报\n\n## 主推荐\n\n### 1. owner/REPO — 示例\n\n## 额外发现\n- 仓库：[skip/me](https://github.com/skip/me)\n",
+            "# 日报\n\n## 主推荐\n\n### 1. 实用型：owner/REPO — 示例\n\n- 仓库：[owner/REPO](https://github.com/owner/REPO)\n- 仓库相关的 docs/superpowers、cli/tui 和 .github/workflows 需要审查。\n\n## 额外发现\n- 仓库：[skip/me](https://github.com/skip/me)\n",
             encoding="utf-8",
         )
         # 2026-W27 ends on July 5, so it proves ISO weeks spanning June/July count.
         (root / "weekly" / "2026-W27.md").write_text(
-            "# 周报\n\n## 1. [OWNER/repo](https://github.com/OWNER/repo)\n",
+            "# 周报\n\n## 1. OWNER/repo\n\n仓库内 docs/superpowers、cli/tui 和 .github/workflows 不是项目条目。\n",
             encoding="utf-8",
         )
         candidates = collect_candidates(root, "2026-07")
