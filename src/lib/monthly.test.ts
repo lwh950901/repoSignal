@@ -2,8 +2,8 @@ import { describe, expect, it } from "vitest";
 import {
   createMonthlySearchIndex,
   loadMonthlyReports,
+  loadMonthlyReportsFromFiles,
   parseMonthlyReport,
-  sortMonthlyReports,
 } from "./monthly";
 
 const monthlySample = `# GitHub 项目月度精选｜2026-07
@@ -88,6 +88,14 @@ const monthlySample = `# GitHub 项目月度精选｜2026-07
 - 推荐理由：帮助团队建立可审计的发布流程。
 - 主要风险：需要接入现有 CI。
 
+### AI 产品创业者
+
+#### Product Loop
+
+- 仓库：[Acme/ProductLoop](https://github.com/Acme/ProductLoop)
+- 推荐理由：让早期团队快速连接真实用户反馈。
+- 主要风险：需要持续投入用户研究。
+
 ## 本月观察信号
 
 ### 快速上升：可组合代理正在成为默认形态
@@ -131,13 +139,13 @@ describe("parseMonthlyReport", () => {
     expect(report.theses).toHaveLength(3);
     expect(report.topProjects).toHaveLength(5);
     expect(report.topProjects[0]).toMatchObject({
-      id: "monthly-project-acme-alpha",
+      id: "monthly-project-61636d652f616c706861",
       repository: "Acme/Alpha",
       primaryAudience: "独立开发者",
       secondaryAudiences: ["技术负责人", "AI 产品创业者"],
     });
     expect(report.topProjects[0].html).toContain("入选依据");
-    expect(report.recommendations).toHaveLength(2);
+    expect(report.recommendations).toHaveLength(3);
     expect(report.signals[0].direction).toBe("快速上升");
     expect(report.actions[2].items[0]).toContain("真实用户任务");
   });
@@ -179,6 +187,28 @@ describe("parseMonthlyReport", () => {
     )).toThrow(/2026-07\.md.*duplicate.*acme\/alpha/iu);
   });
 
+  it("uses collision-free IDs for punctuation-distinct repositories", () => {
+    const report = parseMonthlyReport(
+      monthlySample
+        .replaceAll("Acme/Alpha", "Foo/foo.bar")
+        .replaceAll("Acme/Beta", "Foo/foo-bar")
+        .replaceAll("Acme/Gamma", "Foo/foo_bar"),
+      "2026-07.md",
+    );
+    const projectIds = report.topProjects.slice(0, 3).map((project) => project.id);
+    const searchIds = createMonthlySearchIndex([report]).slice(0, 3).map((item) => item.id);
+
+    expect(new Set(projectIds)).toHaveLength(3);
+    expect(new Set(searchIds)).toHaveLength(3);
+  });
+
+  it("rejects repository link text that does not match its GitHub URL", () => {
+    expect(() => parseMonthlyReport(
+      monthlySample.replace("[Acme/Alpha](https://github.com/Acme/Alpha)", "[Acme/Other](https://github.com/Acme/Alpha)"),
+      "2026-07.md",
+    )).toThrow(/2026-07\.md.*Acme\/Other.*GitHub URL/u);
+  });
+
   it("downgrades signals without three supporting repositories", () => {
     const report = parseMonthlyReport(
       monthlySample.replace("Acme/Alpha、Acme/Beta、Acme/Gamma", "Acme/Alpha、Acme/Beta"),
@@ -203,6 +233,43 @@ describe("parseMonthlyReport", () => {
       supportingRepositories: ["Acme/Alpha"],
     });
   });
+
+  it("rejects malformed signal repository identities", () => {
+    expect(() => parseMonthlyReport(
+      monthlySample.replace("Acme/Alpha、Acme/Beta、Acme/Gamma", "Acme/Alpha、not a repository、Acme/Gamma"),
+      "2026-07.md",
+    )).toThrow(/2026-07\.md.*支撑项目.*not a repository/u);
+  });
+
+  it("requires every audience exactly once in recommendations", () => {
+    expect(() => parseMonthlyReport(
+      monthlySample.replace(/^### AI 产品创业者[\s\S]*?(?=\n## 本月观察信号)/mu, ""),
+      "2026-07.md",
+    )).toThrow(/2026-07\.md.*分类推荐.*AI 产品创业者/u);
+  });
+
+  it("rejects duplicate audience groups in actions", () => {
+    expect(() => parseMonthlyReport(
+      monthlySample.replace(
+        "### AI 产品创业者\n\n- 用真实用户任务检验产品差异，而非仅比较模型能力。",
+        "### 技术负责人\n\n- 重复的角色分组。\n\n### AI 产品创业者\n\n- 用真实用户任务检验产品差异，而非仅比较模型能力。",
+      ),
+      "2026-07.md",
+    )).toThrow(/2026-07\.md.*行动建议.*技术负责人/u);
+  });
+
+  it("rejects duplicate metadata and metadata outside the header block", () => {
+    expect(() => parseMonthlyReport(
+      monthlySample.replace("> 数据截止：2026-07-20", "> 月度主题：重复主题。\n> 数据截止：2026-07-20"),
+      "2026-07.md",
+    )).toThrow(/2026-07\.md.*月度主题/u);
+    expect(() => parseMonthlyReport(
+      monthlySample
+        .replace("> 候选数量：18\n", "")
+        .replace("\n## 三句话读懂这个月", "\n> 候选数量：18\n\n## 三句话读懂这个月"),
+      "2026-07.md",
+    )).toThrow(/2026-07\.md.*候选数量.*header/u);
+  });
 });
 
 describe("monthly discovery and search conversion", () => {
@@ -215,29 +282,32 @@ describe("monthly discovery and search conversion", () => {
     expect(reports.every((report) => /^\d{4}-\d{2}$/u.test(report.slug))).toBe(true);
   });
 
-  it("sorts non-empty monthly fixtures newest first", () => {
-    const older = parseMonthlyReport(monthlySample, "2026-05.md");
-    const newer = parseMonthlyReport(monthlySample, "2026-07.md");
-    const middle = parseMonthlyReport(monthlySample, "2026-06.md");
+  it("loads and sorts non-empty monthly file maps by basename", () => {
+    const reports = loadMonthlyReportsFromFiles({
+      "../../data/github-project-digest/monthly/2026-05.md": monthlySample,
+      "nested/monthly/2026-07.md": monthlySample,
+      "2026-06.md": monthlySample,
+    });
 
-    expect(sortMonthlyReports([middle, older, newer]).map((report) => report.slug)).toEqual([
+    expect(reports.map((report) => report.slug)).toEqual([
       "2026-07",
       "2026-06",
       "2026-05",
     ]);
+    expect(loadMonthlyReportsFromFiles({})).toEqual([]);
   });
 
   it("converts Top 5 and recommendations to monthly search entries", () => {
     const report = parseMonthlyReport(monthlySample, "2026-07.md");
     const items = createMonthlySearchIndex([report]);
 
-    expect(items).toHaveLength(7);
+    expect(items).toHaveLength(8);
     expect(items[0]).toMatchObject({
       repository: "Acme/Alpha",
       reportType: "monthly",
       reportLabel: "2026-07",
-      href: "/monthly/2026-07/#monthly-project-acme-alpha",
+      href: "/monthly/2026-07/#monthly-project-61636d652f616c706861",
     });
-    expect(items.at(-1)?.href).toBe("/monthly/2026-07/#monthly-project-acme-teamguard");
+    expect(items.at(-1)?.href).toBe("/monthly/2026-07/#monthly-project-61636d652f70726f647563746c6f6f70");
   });
 });

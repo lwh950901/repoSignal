@@ -98,11 +98,6 @@ function validation(filename: string, problem: string): never {
   throw new MonthlyValidationError(filename, problem);
 }
 
-function requireMatch(filename: string, markdown: string, pattern: RegExp, label: string): string {
-  const value = cleanInline(markdown.match(pattern)?.[1] ?? "");
-  return value || validation(filename, `缺少必填字段 ${label}`);
-}
-
 function section(markdown: string, heading: string): string {
   const escaped = heading.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&");
   const match = markdown.match(new RegExp(`^##\\s+${escaped}\\s*$`, "mu"));
@@ -127,12 +122,30 @@ function requiredField(filename: string, repository: string, body: string, label
   return value || validation(filename, `${repository || "Top 5 项目"} 缺少必填字段 ${label}`);
 }
 
-function normalizedRepository(repository: string): string {
-  return repository
-    .normalize("NFKC")
-    .toLocaleLowerCase("en-US")
-    .replace(/[^a-z0-9]+/gu, "-")
-    .replace(/^-+|-+$/gu, "");
+function canonicalRepositoryIdentity(repository: string): string | undefined {
+  const match = repository.normalize("NFKC").trim().match(
+    /^([A-Za-z0-9][A-Za-z0-9-]{0,38})\/([A-Za-z0-9][A-Za-z0-9_.-]{0,99})$/u,
+  );
+  if (!match) return undefined;
+  return `${match[1].toLocaleLowerCase("en-US")}/${match[2].toLocaleLowerCase("en-US")}`;
+}
+
+function requireCanonicalRepository(
+  filename: string,
+  repository: string,
+  subject: string,
+  fieldName: string,
+): string {
+  const canonical = canonicalRepositoryIdentity(repository);
+  if (!canonical) validation(filename, `${subject} 的${fieldName} ${repository} 必须是 owner/repo 格式`);
+  return canonical;
+}
+
+function repositoryId(canonicalRepository: string): string {
+  const hex = Array.from(canonicalRepository)
+    .map((character) => character.charCodeAt(0).toString(16).padStart(2, "0"))
+    .join("");
+  return `monthly-project-${hex}`;
 }
 
 function isAudience(value: string): value is MonthlyAudience {
@@ -153,16 +166,26 @@ function parseStrength(filename: string, subject: string, value: string): Eviden
   return value;
 }
 
-function parseRepository(filename: string, body: string, subject: string): { repository: string; url: string } {
+function parseRepository(
+  filename: string,
+  body: string,
+  subject: string,
+): { repository: string; url: string; canonical: string } {
   const raw = field(body, "仓库");
   if (!raw) validation(filename, `${subject} 缺少必填字段 仓库`);
   const markdownLink = body.match(/^-\s+仓库[：:]\s*\[([^\]]+)\]\(([^)]+)\)\s*$/mu);
   const repository = cleanInline(markdownLink?.[1] ?? raw);
   const url = markdownLink?.[2]?.trim() ?? "";
-  if (!/^https:\/\/github\.com\/[^/\s)]+\/[^/\s)]+\/?$/u.test(url)) {
+  const urlMatch = url.match(
+    /^https:\/\/github\.com\/([A-Za-z0-9][A-Za-z0-9-]{0,38})\/([A-Za-z0-9][A-Za-z0-9_.-]{0,99})\/?$/u,
+  );
+  if (!urlMatch) {
     validation(filename, `${repository || subject} 的 GitHub URL 无效`);
   }
-  return { repository, url };
+  const canonical = requireCanonicalRepository(filename, repository, repository || subject, "仓库");
+  const urlCanonical = `${urlMatch[1].toLocaleLowerCase("en-US")}/${urlMatch[2].toLocaleLowerCase("en-US")}`;
+  if (canonical !== urlCanonical) validation(filename, `${repository} 的 GitHub URL 与仓库名不匹配`);
+  return { repository, url, canonical };
 }
 
 function parseSecondaryAudiences(filename: string, repository: string, body: string): MonthlyAudience[] {
@@ -189,7 +212,7 @@ function parseTopProjects(filename: string, markdown: string): MonthlyProject[] 
 
   return blocks.map(({ match, body }, index) => {
     if (Number(match[1]) !== index + 1) validation(filename, "Top 5 项目必须按 1 到 5 编号");
-    const repo = parseRepository(filename, body, cleanInline(match[2]));
+    const { canonical, ...repo } = parseRepository(filename, body, cleanInline(match[2]));
     const primaryAudience = parseAudience(
       filename,
       repo.repository,
@@ -198,7 +221,7 @@ function parseTopProjects(filename: string, markdown: string): MonthlyProject[] 
     );
     const evidenceStrength = field(body, "证据强度");
     return {
-      id: `monthly-project-${normalizedRepository(repo.repository)}`,
+      id: repositoryId(canonical),
       ...repo,
       primaryAudience,
       secondaryAudiences: parseSecondaryAudiences(filename, repo.repository, body),
@@ -219,17 +242,22 @@ function parseRecommendations(filename: string, markdown: string): MonthlyRecomm
   const audienceMatches = [...recommendationSection.matchAll(/^###\s+(.+?)\s*$/gmu)];
   if (audienceMatches.length === 0) validation(filename, "分类推荐必须包含至少一个角色");
 
-  return audienceMatches.flatMap((match, index) => {
-    const audience = parseAudience(filename, "分类推荐", cleanInline(match[1]), "角色");
+  const groups = audienceMatches.map((match) => ({
+    match,
+    audience: parseAudience(filename, "分类推荐", cleanInline(match[1]), "角色"),
+  }));
+  validateAudienceGroups(filename, "分类推荐", groups.map((group) => group.audience));
+
+  return groups.flatMap(({ match, audience }, index) => {
     const start = match.index ?? 0;
     const end = audienceMatches[index + 1]?.index ?? recommendationSection.length;
     const audienceSection = recommendationSection.slice(start, end);
     const projects = numberedBlocks(audienceSection, /^####\s+(.+?)\s*$/gmu);
     if (projects.length === 0) validation(filename, `${audience} 分类推荐缺少项目`);
     return projects.map(({ match: projectMatch, body }) => {
-      const repo = parseRepository(filename, body, cleanInline(projectMatch[1]));
+      const { canonical, ...repo } = parseRepository(filename, body, cleanInline(projectMatch[1]));
       return {
-        id: `monthly-project-${normalizedRepository(repo.repository)}`,
+        id: repositoryId(canonical),
         audience,
         ...repo,
         reason: requiredField(filename, repo.repository, body, "推荐理由"),
@@ -239,14 +267,29 @@ function parseRecommendations(filename: string, markdown: string): MonthlyRecomm
   });
 }
 
-function uniqueRepositories(repositories: string[]): string[] {
+function parseSupportingRepositories(filename: string, title: string, value: string): string[] {
   const seen = new Set<string>();
-  return repositories.filter((repository) => {
-    const normalized = repository.normalize("NFKC").toLocaleLowerCase("en-US");
-    if (seen.has(normalized)) return false;
-    seen.add(normalized);
-    return true;
-  });
+  return value
+    .split(/[、,，]/u)
+    .map((item) => cleanInline(item))
+    .filter(Boolean)
+    .filter((repository) => {
+      const canonical = requireCanonicalRepository(filename, repository, title, "支撑项目");
+      if (seen.has(canonical)) return false;
+      seen.add(canonical);
+      return true;
+    });
+}
+
+function validateAudienceGroups(
+  filename: string,
+  sectionName: "分类推荐" | "行动建议",
+  groups: MonthlyAudience[],
+): void {
+  for (const audience of audiences) {
+    const count = groups.filter((group) => group === audience).length;
+    if (count !== 1) validation(filename, `${sectionName} 必须恰好包含一次 ${audience} 角色分组`);
+  }
 }
 
 function parseSignals(filename: string, markdown: string): MonthlySignal[] {
@@ -261,11 +304,10 @@ function parseSignals(filename: string, markdown: string): MonthlySignal[] {
     }
     const title = cleanInline(match[2]);
     if (!title) validation(filename, "信号缺少标题");
-    const supportingRepositories = uniqueRepositories(
-      requiredField(filename, title, body, "支撑项目")
-        .split(/[、,，]/u)
-        .map((item) => cleanInline(item))
-        .filter(Boolean),
+    const supportingRepositories = parseSupportingRepositories(
+      filename,
+      title,
+      requiredField(filename, title, body, "支撑项目"),
     );
     const observation = requiredField(filename, title, body, "观察");
     const evidenceStrength = parseStrength(filename, title, requiredField(filename, title, body, "证据强度"));
@@ -286,8 +328,12 @@ function parseActions(filename: string, markdown: string): MonthlyActionGroup[] 
   const actionSection = requiredSection(filename, markdown, "行动建议");
   const audienceMatches = [...actionSection.matchAll(/^###\s+(.+?)\s*$/gmu)];
   if (audienceMatches.length === 0) validation(filename, "行动建议必须包含至少一个角色");
-  return audienceMatches.map((match, index) => {
-    const audience = parseAudience(filename, "行动建议", cleanInline(match[1]), "角色");
+  const groups = audienceMatches.map((match) => ({
+    match,
+    audience: parseAudience(filename, "行动建议", cleanInline(match[1]), "角色"),
+  }));
+  validateAudienceGroups(filename, "行动建议", groups.map((group) => group.audience));
+  return groups.map(({ match, audience }, index) => {
     const start = (match.index ?? 0) + match[0].length;
     const end = audienceMatches[index + 1]?.index ?? actionSection.length;
     const items = actionSection.slice(start, end)
@@ -306,9 +352,9 @@ function validateUniqueRepositories(
 ): void {
   const seen = new Set<string>();
   for (const item of [...topProjects, ...recommendations]) {
-    const normalized = item.repository.normalize("NFKC").toLocaleLowerCase("en-US");
-    if (seen.has(normalized)) validation(filename, `duplicate repository ${item.repository}`);
-    seen.add(normalized);
+    const canonical = requireCanonicalRepository(filename, item.repository, item.repository, "仓库");
+    if (seen.has(canonical)) validation(filename, `duplicate repository ${item.repository}`);
+    seen.add(canonical);
   }
 }
 
@@ -318,17 +364,40 @@ function isValidDate(value: string): boolean {
   return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value;
 }
 
+function headerBlock(markdown: string): string {
+  const firstSection = markdown.search(/^##\s+/mu);
+  return firstSection === -1 ? markdown : markdown.slice(0, firstSection);
+}
+
+function singleHeaderField(filename: string, markdown: string, label: string): string {
+  const escaped = label.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&");
+  const pattern = new RegExp(`^>\\s*${escaped}[：:]\\s*(.*)$`, "gmu");
+  const allMatches = [...markdown.matchAll(pattern)];
+  const headerMatches = [...headerBlock(markdown).matchAll(pattern)];
+  if (allMatches.length !== 1 || headerMatches.length !== 1) {
+    validation(filename, `${label} 必须在 header 区块内恰好出现一次`);
+  }
+  const value = cleanInline(headerMatches[0][1]);
+  return value || validation(filename, `header 区块中的${label}不能为空`);
+}
+
+function singleHeaderTitle(filename: string, markdown: string): string {
+  const matches = [...headerBlock(markdown).matchAll(/^#\s+(.+)$/gmu)];
+  if (matches.length !== 1) validation(filename, "标题必须在 header 区块内恰好出现一次");
+  return cleanInline(matches[0][1]) || validation(filename, "header 区块中的标题不能为空");
+}
+
 export function parseMonthlyReport(markdown: string, filename: string): MonthlyReport {
   const filenameMatch = filename.match(/^(\d{4}-\d{2})\.md$/u);
   if (!filenameMatch || !/^\d{4}-(0[1-9]|1[0-2])$/u.test(filenameMatch[1])) {
     validation(filename, "文件名必须为 YYYY-MM.md");
   }
   const slug = filenameMatch[1];
-  const title = requireMatch(filename, markdown, /^#\s+(.+)$/mu, "标题");
-  const theme = requireMatch(filename, markdown, /^>\s*月度主题[：:]\s*(.+)$/mu, "月度主题");
-  const cutoffDate = requireMatch(filename, markdown, /^>\s*数据截止[：:]\s*(.+)$/mu, "数据截止");
+  const title = singleHeaderTitle(filename, markdown);
+  const theme = singleHeaderField(filename, markdown, "月度主题");
+  const cutoffDate = singleHeaderField(filename, markdown, "数据截止");
   if (!isValidDate(cutoffDate)) validation(filename, `数据截止必须是有效 YYYY-MM-DD 日期，当前为 ${cutoffDate}`);
-  const candidateText = requireMatch(filename, markdown, /^>\s*候选数量[：:]\s*(.+)$/mu, "候选数量");
+  const candidateText = singleHeaderField(filename, markdown, "候选数量");
   if (!/^\d+$/u.test(candidateText)) validation(filename, `候选数量必须是非负整数，当前为 ${candidateText}`);
 
   const conclusion = requiredSection(filename, markdown, "本月结论");
@@ -361,8 +430,12 @@ export function parseMonthlyReport(markdown: string, filename: string): MonthlyR
 }
 
 export function loadMonthlyReports(): MonthlyReport[] {
+  return loadMonthlyReportsFromFiles(monthlyMarkdownFiles);
+}
+
+export function loadMonthlyReportsFromFiles(files: Record<string, string>): MonthlyReport[] {
   return sortMonthlyReports(
-    Object.entries(monthlyMarkdownFiles)
+    Object.entries(files)
       .map(([path, markdown]) => parseMonthlyReport(markdown, path.split("/").at(-1) ?? path)),
   );
 }
