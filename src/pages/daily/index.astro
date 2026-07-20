@@ -1,0 +1,5 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro"; import { createSearchIndex, loadDailyReports, loadWeeklyReports } from "../../lib/digests"; import { createMonthlySearchIndex, loadMonthlyReports } from "../../lib/monthly";
+const daily = loadDailyReports(); const weekly = loadWeeklyReports(); const monthly = loadMonthlyReports(); const items = [...createMonthlySearchIndex(monthly), ...createSearchIndex([...weekly, ...daily])]; const links = { monthly: monthly[0] ? `/monthly/${monthly[0].slug}/` : "/monthly/", weekly: weekly[0] ? `/weekly/${weekly[0].slug}/` : "/weekly/", daily: daily[0] ? `/daily/${daily[0].slug}/` : "/daily/" };
+---
+<BaseLayout title="日报归档｜RepoSignal" searchItems={items} activePeriod="daily" periodLinks={links}><main id="main-content" class="empty-state empty-state--page"><h1>日报归档</h1>{daily.length ? <a href={`/daily/${daily[0].slug}/`}>打开最新日报 {daily[0].slug}</a> : <p>暂时没有日报。</p>}</main></BaseLayout>

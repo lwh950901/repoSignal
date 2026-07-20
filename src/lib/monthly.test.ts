@@ -311,6 +311,7 @@ describe("monthly discovery and search conversion", () => {
       [...reports.map((report) => report.slug)].sort().reverse(),
     );
     expect(reports.every((report) => /^\d{4}-\d{2}$/u.test(report.slug))).toBe(true);
+    expect(reports.some((report) => report.slug === "2026-07")).toBe(true);
   });
 
   it("loads and sorts non-empty monthly file maps by basename", () => {

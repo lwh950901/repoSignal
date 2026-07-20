@@ -1,4 +1,5 @@
 import { marked } from "marked";
+import type { SearchItem } from "./search";
 
 export type MonthlyAudience = "独立开发者" | "技术负责人" | "AI 产品创业者";
 export type EvidenceStrength = "高" | "中" | "观察";
@@ -57,18 +58,7 @@ export interface MonthlyReport {
   markdown: string;
 }
 
-/** Temporary search shape; Task 4 will replace this with the shared search contract. */
-export interface MonthlySearchIndexItem {
-  id: string;
-  repository: string;
-  positioning: string;
-  technologies: string[];
-  kind: "Top 5" | "分类推荐";
-  score: null;
-  reportType: "monthly";
-  reportLabel: string;
-  href: string;
-}
+export type MonthlySearchIndexItem = SearchItem;
 
 export class MonthlyValidationError extends Error {
   constructor(filename: string, problem: string) {

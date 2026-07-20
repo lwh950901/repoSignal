@@ -2,14 +2,18 @@
 import BaseLayout from "../layouts/BaseLayout.astro";
 import ReportView from "../components/ReportView.astro";
 import { createSearchIndex, loadDailyReports, loadWeeklyReports, selectDefaultReport } from "../lib/digests";
+import { createMonthlySearchIndex, loadMonthlyReports } from "../lib/monthly";
+import { resolvePeriodLinks } from "../lib/periods";
 
 const dailyReports = loadDailyReports();
 const weeklyReports = loadWeeklyReports();
+const monthlyReports = loadMonthlyReports();
 const report = selectDefaultReport(dailyReports, weeklyReports);
-const searchItems = createSearchIndex([...dailyReports, ...weeklyReports]);
+const searchItems = [...createMonthlySearchIndex(monthlyReports), ...createSearchIndex([...weeklyReports, ...dailyReports])];
+const periodLinks = report ? resolvePeriodLinks(report.type, report.slug, monthlyReports.map((item) => item.slug), weeklyReports.map((item) => item.slug), dailyReports.map((item) => item.slug)) : { monthly: "/monthly/", weekly: "/weekly/", daily: "/daily/" };
 ---
 
-<BaseLayout title="RepoSignal｜GitHub 优质项目" searchItems={searchItems}>
+<BaseLayout title="RepoSignal｜GitHub 优质项目" searchItems={searchItems} activePeriod={report?.type ?? "weekly"} periodLinks={periodLinks}>
   {report ? (
     <ReportView report={report} dailyReports={dailyReports} weeklyReports={weeklyReports} />
   ) : (

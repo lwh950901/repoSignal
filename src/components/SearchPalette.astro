@@ -1,7 +1,7 @@
 ---
-import type { DigestIndexItem } from "../lib/digests";
+import type { SearchItem } from "../lib/search";
 
-interface Props { items: DigestIndexItem[] }
+interface Props { items: SearchItem[] }
 const { items } = Astro.props;
 ---
 
@@ -17,13 +17,13 @@ const { items } = Astro.props;
 
 <script>
   import { searchProjects } from "../lib/search";
-  import type { DigestIndexItem } from "../lib/digests";
+  import type { SearchItem } from "../lib/search";
 
   const dialog = document.querySelector<HTMLDialogElement>("[data-search-dialog]");
   const input = dialog?.querySelector<HTMLInputElement>("[data-search-input]");
   const results = dialog?.querySelector<HTMLElement>("[data-search-results]");
   const meta = dialog?.querySelector<HTMLElement>("[data-search-meta]");
-  const items = JSON.parse(dialog?.dataset.items ?? "[]") as DigestIndexItem[];
+  const items = JSON.parse(dialog?.dataset.items ?? "[]") as SearchItem[];
   let activeIndex = 0;
   let opener: HTMLElement | null = null;
 
@@ -57,7 +57,7 @@ const { items } = Astro.props;
       return;
     }
 
-    matches.forEach((item, index) => {
+    matches.forEach((item: SearchItem, index) => {
       const link = document.createElement("a");
       const main = document.createElement("span");
       const repository = document.createElement("strong");
@@ -70,7 +70,8 @@ const { items } = Astro.props;
       repository.textContent = item.repository;
       positioning.textContent = item.positioning || item.technologies.join(" · ");
       badge.className = "search-result__badge";
-      badge.textContent = item.score ? `${item.score}` : item.kind;
+      badge.textContent = ({ monthly: "月", weekly: "周", daily: "日" } as const)[item.reportType];
+      badge.setAttribute("aria-label", `${badge.textContent}报：${item.kind}`);
       main.append(repository, positioning);
       link.append(main, badge);
       results.append(link);

@@ -1,18 +1,26 @@
 ---
 import "../styles/global.css";
 import SearchPalette from "../components/SearchPalette.astro";
-import type { DigestIndexItem } from "../lib/digests";
+import PeriodSwitcher from "../components/PeriodSwitcher.astro";
+import type { SearchItem } from "../lib/search";
+import type { ReportPeriod } from "../lib/periods";
 
 interface Props {
   title: string;
   description?: string;
-  searchItems: DigestIndexItem[];
+  searchItems: SearchItem[];
+  activePeriod: ReportPeriod;
+  periodLinks: Record<ReportPeriod, string>;
+  canonical?: string;
 }
 
 const {
   title,
   description = "持续发现值得使用、学习和二次开发的 GitHub 项目。",
   searchItems,
+  activePeriod,
+  periodLinks,
+  canonical = Astro.url.pathname,
 } = Astro.props;
 ---
 
@@ -22,6 +30,9 @@ const {
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width" />
     <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
     <meta name="theme-color" content="#f3f5f2" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -40,7 +51,7 @@ const {
         <span>RepoSignal</span>
       </a>
       <nav class="site-actions" aria-label="主要导航">
-        <a href="/weekly/2026-W27/">周精选</a>
+        <PeriodSwitcher active={activePeriod} links={periodLinks} />
         <button class="search-trigger" type="button" data-search-open aria-label="打开项目搜索">
           <span>搜索</span><kbd>⌘ K</kbd>
         </button>
