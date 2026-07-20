@@ -1,3 +1,5 @@
+> Source of truth: `docs/superpowers/specs/2026-07-20-monthly-selection-design.md`
+
 ## 1. Monthly content model
 
 - [x] 1.1 Add failing Vitest fixtures for valid monthly parsing, required fields, duplicate repositories, invalid GitHub URLs and weak-signal downgrade
@@ -6,9 +8,9 @@
 
 ## 2. Editorial draft generator
 
-- [x] 2.1 Add a failing offline self-check for candidate normalization, source/date merging and deterministic rendering
-- [x] 2.2 Implement the Python standard-library generator for monthly candidate, daily and overlapping ISO-week inputs
-- [x] 2.3 Add the npm self-check command and keep `.superpowers`, `.worktrees` and `monthly-drafts` ignored
+- [ ] 2.1 Add a failing offline self-check for candidate normalization, source/date merging and deterministic rendering
+- [ ] 2.2 Implement the Python standard-library generator for monthly candidate, daily and overlapping ISO-week inputs
+- [ ] 2.3 Add the npm self-check command and keep `.superpowers`, `.worktrees` and `monthly-drafts` ignored
 
 ## 3. Period navigation logic
 

@@ -2,6 +2,8 @@
 
 RepoSignal 是 Astro 静态站点，在构建阶段读取 `data/github-project-digest/daily/*.md` 与 `weekly/*.md`，将解析后的项目传给报告组件和浏览器本地搜索。现有 `DigestReport` 与 `ReportView` 围绕日报和周报的字段设计；月报需要 Top 5、角色推荐、观察信号和行动建议，继续向现有类型添加可选字段会显著增加分支和解析脆弱性。
 
+本技术设计从 `docs/superpowers/specs/2026-07-20-monthly-selection-design.md` 转换而来；当 OpenSpec 工件之间出现歧义时，以该文件的产品目标、内容规则、页面结构和验收标准为范围基线。
+
 开发必须保持静态发布、构建期无外部 API、禁用 JavaScript 后正文和主要导航可访问，并保护 main 工作区已有的日报与候选账本改动。实现位于隔离 worktree 的 `codex/monthly-selection` 分支。
 
 ## Goals / Non-Goals
@@ -31,6 +33,8 @@ RepoSignal 是 Astro 静态站点，在构建阶段读取 `data/github-project-d
 ### 固定 Markdown 字段而不是数据库或 JSON 内容文件
 
 已发布内容位于 `data/github-project-digest/monthly/YYYY-MM.md`，解析器读取固定标题和中文字段。Markdown 保留编辑体验、版本历史和静态构建优势；严格校验弥补正则解析较脆弱的问题。JSON sidecar 会造成正文与结构化元数据双写，因此不采用。
+
+Top 5 恰好五项；分类推荐以 8–12 项为编辑目标但不足时不补占位；观察信号以 2–4 条为目标；三类读者各提供 2–3 条行动建议。除 Top 5 和发布必填字段外，这些数量是内容验收目标，不用虚假数据换取固定数量。
 
 ### 初稿目录与发布目录隔离
 

@@ -7,6 +7,10 @@
 - **WHEN** 同一仓库以不同大小写出现在候选账本、日报和周报
 - **THEN** 初稿只包含一个小写仓库条目，并列出三个来源与全部发现日期
 
+#### Scenario: Candidate belongs to a natural month
+- **WHEN** 候选出现在 Asia/Shanghai 口径的 `2026-07-31` 日报中且没有八月记录
+- **THEN** 生成 2026-07 初稿时包含该候选，生成 2026-08 初稿时不包含该候选
+
 ### Requirement: Generator output is deterministic and non-published
 生成器 MUST 对相同输入产生稳定排序和相同 Markdown，默认只写入被忽略的 `monthly-drafts/YYYY-MM.md`，网站构建 MUST NOT 读取该目录。
 

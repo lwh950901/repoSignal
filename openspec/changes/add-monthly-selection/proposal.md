@@ -2,6 +2,8 @@
 
 RepoSignal 的日报负责持续发现、周报负责阶段筛选，但读者仍缺少跨项目比较、按角色选型和判断月度技术信号的入口。新增月度精选可以把现有候选账本、日报和周报转化为更有决策价值的长期静态档案，同时保持当前无数据库、构建期不访问外部 API 的发布方式。
 
+本 change 的需求来源与范围基线为 `docs/superpowers/specs/2026-07-20-monthly-selection-design.md`。
+
 ## What Changes
 
 - 新增结构化月报 Markdown、严格发布校验和 `/monthly/` 静态归档页面。
