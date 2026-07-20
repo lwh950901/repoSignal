@@ -26,6 +26,9 @@ DAILY_REPO_LINE_RE = re.compile(
 DAILY_TITLE_RE = re.compile(
     r"^###\s+\d+\.\s+(?:爆发型|实用型|潜力型)[：:]\s*([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+)(?:\s|—|–|-|$)"
 )
+DAILY_EXTRA_TITLE_RE = re.compile(
+    r"^###\s+额外发现[：:]\s*([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+)(?:\s|—|–|-|$)"
+)
 WEEKLY_TITLE_RE = re.compile(
     r"^##\s+\d+\.\s+(?:\[([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+)\]\(https?://github\.com/[^)]+\)|([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+))(?:\s|—|–|-|$)",
     re.IGNORECASE,
@@ -108,32 +111,34 @@ def candidate_evidence(candidates_dir, month):
                     raise ValueError(f"{context}: 缺少字符串 url 字段")
                 if "date" not in record:
                     raise ValueError(f"{context}: 缺少 date 字段")
+                if (
+                    record.get("status") in {"rejected", "unverified"}
+                    or record.get("verified") is not True
+                    or not record.get("license")
+                    or record.get("license") == "NOASSERTION"
+                    or record.get("archived") is not False
+                ):
+                    continue
                 yield normalize_candidate(record["repo"], record["date"], "候选账本")
 
 
 def repository_names_from_markdown(text, source_path, main_only=False):
     """Extract only exact report fields or approved selection headings, never prose."""
-    in_main_recommendations = not main_only
+    in_main_recommendations = True
     weekly_entry = False
+    daily_entry = False
     found = []
     for line in text.splitlines():
-        heading = re.match(r"^##\s+(.+)$", line)
-        if main_only and heading:
-            title = heading.group(1).strip()
-            if title == "主推荐":
-                in_main_recommendations = True
-                continue
-            if in_main_recommendations:
-                break
-        if not in_main_recommendations:
-            continue
         if main_only:
+            if re.match(r"^##\s+", line):
+                daily_entry = False
             repo_line = DAILY_REPO_LINE_RE.match(line)
-            title = DAILY_TITLE_RE.match(line)
-            if repo_line:
-                found.append(normalize_repo(repo_line.group(1)))
-            elif title:
+            title = DAILY_TITLE_RE.match(line) or DAILY_EXTRA_TITLE_RE.match(line)
+            if title:
                 found.append(normalize_repo(title.group(1)))
+                daily_entry = True
+            elif repo_line and daily_entry:
+                found.append(normalize_repo(repo_line.group(1)))
         else:
             if WEEKLY_ENTRY_RE.match(line):
                 weekly_entry = True
@@ -257,7 +262,13 @@ def self_check():
         for directory in ("candidates", "daily", "weekly"):
             (root / directory).mkdir(parents=True)
         (root / "candidates" / "2026-07-03.jsonl").write_text(
-            json.dumps({"repo": "Owner/Repo", "url": "https://github.com/Owner/Repo", "date": "2026-07-03"}) + "\n",
+            "\n".join(json.dumps(record) for record in (
+                {"repo": "Owner/Repo", "url": "https://github.com/Owner/Repo", "date": "2026-07-03", "status": "primary", "verified": True, "license": "MIT", "archived": False, "reason": "已核验"},
+                {"repo": "Skip/Rejected", "url": "https://github.com/Skip/Rejected", "date": "2026-07-03", "status": "rejected", "verified": True, "license": "MIT", "archived": False, "reason": "拒绝"},
+                {"repo": "Skip/Unverified", "url": "https://github.com/Skip/Unverified", "date": "2026-07-03", "status": "shortlisted", "verified": False, "license": "MIT", "archived": False, "reason": "待核验"},
+                {"repo": "Skip/License", "url": "https://github.com/Skip/License", "date": "2026-07-03", "status": "primary", "verified": True, "license": "NOASSERTION", "archived": False, "reason": "许可证不明"},
+                {"repo": "Skip/Archived", "url": "https://github.com/Skip/Archived", "date": "2026-07-03", "status": "primary", "verified": True, "license": "MIT", "archived": True, "reason": "已归档"},
+            )) + "\n",
             encoding="utf-8",
         )
         (root / "daily" / "2026-07-04.md").write_text(
@@ -282,6 +293,30 @@ def self_check():
         assert "- 候选数量：1" in first
         assert "审核状态：待编辑确认" in first
         assert "Top 5" in first and "未发布" in first
+        historical = """# GitHub 优质项目日报｜2026-07-09
+
+### 1. 爆发型：owner/REPO — 90/100
+- 仓库：[owner/REPO](https://github.com/owner/REPO)
+
+## 额外发现
+
+### 额外发现：Extra/Found — 82/100
+- 仓库：[Extra/Found](https://github.com/Extra/Found)
+
+仓库 docs/superpowers、cli/tui 和 .github/workflows 只是正文。
+"""
+        assert set(repository_names_from_markdown(historical, "2026-07-09.md", main_only=True)) == {"owner/repo", "extra/found"}
+        project_root = Path(__file__).resolve().parents[1]
+        june_names = repository_names_from_markdown(
+            (project_root / "data/github-project-digest/daily/2026-06-29.md").read_text(encoding="utf-8"),
+            "2026-06-29.md", main_only=True,
+        )
+        july_names = repository_names_from_markdown(
+            (project_root / "data/github-project-digest/daily/2026-07-09.md").read_text(encoding="utf-8"),
+            "2026-07-09.md", main_only=True,
+        )
+        assert "deusdata/codebase-memory-mcp" in june_names, june_names
+        assert {"nexu-io/open-design", "gentleman-programming/engram"}.issubset(july_names), july_names
         assert_raises(lambda: validate_month("2026-13"), "YYYY-MM")
         malformed = root / "candidates" / "2026-07-bad.jsonl"
         malformed.write_text("{not json}\n", encoding="utf-8")

@@ -55,6 +55,7 @@ export interface MonthlyReport {
   recommendations: MonthlyRecommendation[];
   signals: MonthlySignal[];
   actions: MonthlyActionGroup[];
+  methodology: string;
   markdown: string;
 }
 
@@ -253,15 +254,32 @@ function parseRecommendations(filename: string, markdown: string): MonthlyRecomm
     const end = audienceMatches[index + 1]?.index ?? recommendationSection.length;
     const audienceSection = recommendationSection.slice(start, end);
     const projects = numberedBlocks(audienceSection, /^####\s+(.+?)\s*$/gmu);
-    if (projects.length === 0) validation(filename, `${audience} 分类推荐缺少项目`);
+    if (projects.length === 0) {
+      const concise = [...audienceSection.matchAll(/^[*-]\s+`?([A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+)`?(?:[：:]\s*(.+))?$/gmu)];
+      if (concise.length === 0) validation(filename, `${audience} 分类推荐缺少项目`);
+      return concise.map((item) => {
+        const repository = item[1];
+        return {
+          id: repositoryId(requireCanonicalRepository(filename, repository, repository, "仓库")),
+          audience,
+          repository,
+          url: "",
+          reason: cleanInline(item[2] ?? ""),
+          risk: "",
+        };
+      });
+    }
     return projects.map(({ match: projectMatch, body }) => {
-      const { canonical, ...repo } = parseRepository(filename, body, cleanInline(projectMatch[1]));
+      const repository = field(body, "仓库") || cleanInline(projectMatch[1]);
+      const canonical = requireCanonicalRepository(filename, repository, repository || cleanInline(projectMatch[1]), "仓库");
+      const url = body.match(/^-\s+仓库[：:]\s*\[[^\]]+\]\((https:\/\/github\.com\/[^)]+)\)\s*$/mu)?.[1] ?? "";
       return {
         id: repositoryId(canonical),
         audience,
-        ...repo,
-        reason: requiredField(filename, repo.repository, body, "推荐理由"),
-        risk: requiredField(filename, repo.repository, body, "主要风险"),
+        repository,
+        url,
+        reason: field(body, "推荐理由"),
+        risk: field(body, "主要风险"),
       };
     });
   });
@@ -429,6 +447,7 @@ export function parseMonthlyReport(markdown: string, filename: string): MonthlyR
     recommendations,
     signals: parseSignals(filename, markdown),
     actions: parseActions(filename, markdown),
+    methodology: requiredSection(filename, markdown, "方法说明"),
     markdown,
   };
 }

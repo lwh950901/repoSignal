@@ -110,6 +110,10 @@ const monthlySample = `# GitHub 项目月度精选｜2026-07
 - 观察：可观测性与权限能力正进入主流工具链。
 - 证据强度：中
 
+## 方法说明
+
+候选账本先做硬门槛初筛，编辑人工定稿；发布后冻结为当时判断。
+
 ## 行动建议
 
 ### 独立开发者
@@ -148,6 +152,15 @@ describe("parseMonthlyReport", () => {
     expect(report.recommendations).toHaveLength(3);
     expect(report.signals[0].direction).toBe("快速上升");
     expect(report.actions[2].items[0]).toContain("真实用户任务");
+    expect(report.methodology).toContain("人工定稿");
+  });
+
+  it("accepts concise recommendation lists without optional repository links or fields", () => {
+    const report = parseMonthlyReport(monthlySample.replace(
+      "#### Swift Start\n\n- 仓库：[Acme/SwiftStart](https://github.com/Acme/SwiftStart)\n- 推荐理由：适合在周末完成一个可演示原型。\n- 主要风险：功能边界较窄。",
+      "- `Acme/SwiftStart`：适合在周末完成一个可演示原型。",
+    ), "2026-07.md");
+    expect(report.recommendations[0]).toMatchObject({ repository: "Acme/SwiftStart", url: "", risk: "" });
   });
 
   it("rejects a missing required Top 5 field", () => {
