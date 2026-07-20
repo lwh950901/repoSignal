@@ -123,11 +123,12 @@ function requiredField(filename: string, repository: string, body: string, label
 }
 
 function canonicalRepositoryIdentity(repository: string): string | undefined {
-  const match = repository.normalize("NFKC").trim().match(
-    /^([A-Za-z0-9][A-Za-z0-9-]{0,38})\/([A-Za-z0-9][A-Za-z0-9_.-]{0,99})$/u,
-  );
-  if (!match) return undefined;
-  return `${match[1].toLocaleLowerCase("en-US")}/${match[2].toLocaleLowerCase("en-US")}`;
+  const components = repository.normalize("NFKC").trim().split("/");
+  if (
+    components.length !== 2
+    || components.some((component) => !/^[A-Za-z0-9._-]{1,100}$/u.test(component))
+  ) return undefined;
+  return components.map((component) => component.toLocaleLowerCase("en-US")).join("/");
 }
 
 function requireCanonicalRepository(
@@ -176,14 +177,14 @@ function parseRepository(
   const markdownLink = body.match(/^-\s+仓库[：:]\s*\[([^\]]+)\]\(([^)]+)\)\s*$/mu);
   const repository = cleanInline(markdownLink?.[1] ?? raw);
   const url = markdownLink?.[2]?.trim() ?? "";
-  const urlMatch = url.match(
-    /^https:\/\/github\.com\/([A-Za-z0-9][A-Za-z0-9-]{0,38})\/([A-Za-z0-9][A-Za-z0-9_.-]{0,99})\/?$/u,
-  );
-  if (!urlMatch) {
+  const urlMatch = url.match(/^https:\/\/github\.com\/([^/?#]+)\/([^/?#]+)\/?$/u);
+  const urlCanonical = urlMatch
+    ? canonicalRepositoryIdentity(`${urlMatch[1]}/${urlMatch[2]}`)
+    : undefined;
+  if (!urlCanonical) {
     validation(filename, `${repository || subject} 的 GitHub URL 无效`);
   }
   const canonical = requireCanonicalRepository(filename, repository, repository || subject, "仓库");
-  const urlCanonical = `${urlMatch[1].toLocaleLowerCase("en-US")}/${urlMatch[2].toLocaleLowerCase("en-US")}`;
   if (canonical !== urlCanonical) validation(filename, `${repository} 的 GitHub URL 与仓库名不匹配`);
   return { repository, url, canonical };
 }
@@ -382,9 +383,13 @@ function singleHeaderField(filename: string, markdown: string, label: string): s
 }
 
 function singleHeaderTitle(filename: string, markdown: string): string {
-  const matches = [...headerBlock(markdown).matchAll(/^#\s+(.+)$/gmu)];
-  if (matches.length !== 1) validation(filename, "标题必须在 header 区块内恰好出现一次");
-  return cleanInline(matches[0][1]) || validation(filename, "header 区块中的标题不能为空");
+  const pattern = /^#(?:\s+(.*))?$/gmu;
+  const allMatches = [...markdown.matchAll(pattern)];
+  const headerMatches = [...headerBlock(markdown).matchAll(pattern)];
+  if (allMatches.length !== 1 || headerMatches.length !== 1) {
+    validation(filename, "标题必须在 header 区块内恰好出现一次");
+  }
+  return cleanInline(headerMatches[0][1] ?? "") || validation(filename, "header 区块中的标题不能为空");
 }
 
 export function parseMonthlyReport(markdown: string, filename: string): MonthlyReport {

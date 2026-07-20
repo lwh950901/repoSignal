@@ -202,6 +202,21 @@ describe("parseMonthlyReport", () => {
     expect(new Set(searchIds)).toHaveLength(3);
   });
 
+  it("accepts canonical .github repository names in projects and signals", () => {
+    const topProjectReport = parseMonthlyReport(
+      monthlySample.replaceAll("Acme/Alpha", "github/.github"),
+      "2026-07.md",
+    );
+    const recommendationReport = parseMonthlyReport(
+      monthlySample.replaceAll("Acme/SwiftStart", "github/.github"),
+      "2026-07.md",
+    );
+
+    expect(topProjectReport.topProjects[0].repository).toBe("github/.github");
+    expect(topProjectReport.signals[0].supportingRepositories).toContain("github/.github");
+    expect(recommendationReport.recommendations[0].repository).toBe("github/.github");
+  });
+
   it("rejects repository link text that does not match its GitHub URL", () => {
     expect(() => parseMonthlyReport(
       monthlySample.replace("[Acme/Alpha](https://github.com/Acme/Alpha)", "[Acme/Other](https://github.com/Acme/Alpha)"),
@@ -269,6 +284,13 @@ describe("parseMonthlyReport", () => {
         .replace("\n## 三句话读懂这个月", "\n> 候选数量：18\n\n## 三句话读懂这个月"),
       "2026-07.md",
     )).toThrow(/2026-07\.md.*候选数量.*header/u);
+  });
+
+  it("rejects a second H1 outside the header block", () => {
+    expect(() => parseMonthlyReport(
+      monthlySample.replace("本月值得优先关注可被团队实际采用的 AI 工具链。", "本月值得优先关注可被团队实际采用的 AI 工具链。\n\n# 第二个标题"),
+      "2026-07.md",
+    )).toThrow(/2026-07\.md.*标题.*header/u);
   });
 });
 
