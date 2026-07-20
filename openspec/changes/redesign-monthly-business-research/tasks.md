@@ -4,7 +4,7 @@
 
 - [x] 1.1 Define the public monthly Markdown contract for scored Top 5 projects, 0–3 business opportunities and research methodology
 - [x] 1.2 Add internal July research templates for the Top 5 scorecard, business investigations and repository verification
-- [ ] 1.3 Add failing parser fixtures for valid revised content, score bounds, enums, missing sources, duplicate repositories and zero opportunities
+- [x] 1.3 Add failing parser fixtures for valid revised content, score bounds, enums, missing sources, duplicate repositories and zero opportunities
 
 ## 2. July Top 5 research
 
@@ -21,16 +21,16 @@
 - [x] 3.3 Identify 2–5 non-overlapping repositories per surviving opportunity, including clearly marked supporting components outside July when required
 - [x] 3.4 Verify repository interfaces, inputs, outputs, licenses and deployment constraints; complete at least one L2 per published opportunity
 - [x] 3.5 Attempt one safe L3 combination experiment, recording success, blockers and required custom development without forcing publication
-- [ ] 3.6 Publish only the 0–3 opportunities that satisfy demand, alternative, feasibility, MVP and evidence gates
+- [x] 3.6 Publish only the 0–3 opportunities that satisfy demand, alternative, feasibility, MVP and evidence gates
 
 ## 4. Revised publication contract and parser
 
-- [ ] 4.1 Freeze a revised `2026-07.md` derived only from completed research before changing the parser
-- [ ] 4.2 Replace audience, recommendation, signal and action types with score, metric, source, verification and business-opportunity types
-- [ ] 4.3 Parse and strictly validate the revised Top 5 fields, six scores, 100-point total, dates, GitHub links and sources
-- [ ] 4.4 Parse 0–3 business opportunities, repository roles, validation enums and fixed analysis subsections
-- [ ] 4.5 Preserve report discovery, canonical repository identity and monthly search conversion with revised summaries
-- [ ] 4.6 Make all focused monthly parser tests pass before changing the page component
+- [x] 4.1 Freeze a revised `2026-07.md` derived only from completed research before changing the parser
+- [x] 4.2 Replace audience, recommendation, signal and action types with score, metric, source, verification and business-opportunity types
+- [x] 4.3 Parse and strictly validate the revised Top 5 fields, six scores, 100-point total, dates, GitHub links and sources
+- [x] 4.4 Parse 0–3 business opportunities, repository roles, validation enums and fixed analysis subsections
+- [x] 4.5 Preserve report discovery, canonical repository identity and monthly search conversion with revised summaries
+- [x] 4.6 Make all focused monthly parser tests pass before changing the page component
 
 ## 5. Revised monthly page
 
