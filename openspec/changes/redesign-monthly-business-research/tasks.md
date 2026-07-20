@@ -2,25 +2,25 @@
 
 ## 1. Research contracts and fixtures
 
-- [ ] 1.1 Define the public monthly Markdown contract for scored Top 5 projects, 0–3 business opportunities and research methodology
-- [ ] 1.2 Add internal July research templates for the Top 5 scorecard, business investigations and repository verification
+- [x] 1.1 Define the public monthly Markdown contract for scored Top 5 projects, 0–3 business opportunities and research methodology
+- [x] 1.2 Add internal July research templates for the Top 5 scorecard, business investigations and repository verification
 - [ ] 1.3 Add failing parser fixtures for valid revised content, score bounds, enums, missing sources, duplicate repositories and zero opportunities
 
 ## 2. July Top 5 research
 
-- [ ] 2.1 Regenerate the qualified July candidate pool and record its deterministic count and cutoff
-- [ ] 2.2 Select about 15 deep candidates using only documented monthly signals, without final ranking
-- [ ] 2.3 Re-verify each deep candidate against GitHub and official documentation, including license, releases, meaningful activity, install path and adoption evidence
-- [ ] 2.4 Run the minimum safe verification for leading candidates and assign L0–L4 without overstating blocked checks
-- [ ] 2.5 Score all deep candidates with the six-dimension rubric, calibrate the weights once and freeze the independent Top 5 with objections and sources
+- [x] 2.1 Regenerate the qualified July candidate pool and record its deterministic count and cutoff
+- [x] 2.2 Select about 15 deep candidates using only documented monthly signals, without final ranking
+- [x] 2.3 Re-verify each deep candidate against GitHub and official documentation, including license, releases, meaningful activity, install path and adoption evidence
+- [x] 2.4 Run the minimum safe verification for leading candidates and assign L0–L4 without overstating blocked checks
+- [x] 2.5 Score all deep candidates with the six-dimension rubric, calibrate the weights once and freeze the independent Top 5 with objections and sources
 
 ## 3. July business research
 
-- [ ] 3.1 Derive 5–10 internal hypotheses from July repository capabilities, upstream/downstream gaps, commercial gaps and costly manual workflows
-- [ ] 3.2 Verify demand and investigate commercial, open-source and real-process alternatives for at most three leading hypotheses
-- [ ] 3.3 Identify 2–5 non-overlapping repositories per surviving opportunity, including clearly marked supporting components outside July when required
-- [ ] 3.4 Verify repository interfaces, inputs, outputs, licenses and deployment constraints; complete at least one L2 per published opportunity
-- [ ] 3.5 Attempt one safe L3 combination experiment, recording success, blockers and required custom development without forcing publication
+- [x] 3.1 Derive 5–10 internal hypotheses from July repository capabilities, upstream/downstream gaps, commercial gaps and costly manual workflows
+- [x] 3.2 Verify demand and investigate commercial, open-source and real-process alternatives for at most three leading hypotheses
+- [x] 3.3 Identify 2–5 non-overlapping repositories per surviving opportunity, including clearly marked supporting components outside July when required
+- [x] 3.4 Verify repository interfaces, inputs, outputs, licenses and deployment constraints; complete at least one L2 per published opportunity
+- [x] 3.5 Attempt one safe L3 combination experiment, recording success, blockers and required custom development without forcing publication
 - [ ] 3.6 Publish only the 0–3 opportunities that satisfy demand, alternative, feasibility, MVP and evidence gates
 
 ## 4. Revised publication contract and parser
