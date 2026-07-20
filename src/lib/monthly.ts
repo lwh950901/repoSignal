@@ -196,6 +196,7 @@ function parseTopProjects(filename: string, markdown: string): MonthlyProject[] 
       requiredField(filename, repo.repository, body, "主要角色"),
       "主要角色",
     );
+    const evidenceStrength = field(body, "证据强度");
     return {
       id: `monthly-project-${normalizedRepository(repo.repository)}`,
       ...repo,
@@ -204,7 +205,9 @@ function parseTopProjects(filename: string, markdown: string): MonthlyProject[] 
       selectionReason: requiredField(filename, repo.repository, body, "入选依据"),
       bestUseCase: requiredField(filename, repo.repository, body, "最佳使用场景"),
       risk: requiredField(filename, repo.repository, body, "主要风险"),
-      evidenceStrength: parseStrength(filename, repo.repository, requiredField(filename, repo.repository, body, "证据强度")),
+      evidenceStrength: evidenceStrength
+        ? parseStrength(filename, repo.repository, evidenceStrength)
+        : "观察",
       markdown: body,
       html: marked.parse(body) as string,
     };
@@ -236,6 +239,16 @@ function parseRecommendations(filename: string, markdown: string): MonthlyRecomm
   });
 }
 
+function uniqueRepositories(repositories: string[]): string[] {
+  const seen = new Set<string>();
+  return repositories.filter((repository) => {
+    const normalized = repository.normalize("NFKC").toLocaleLowerCase("en-US");
+    if (seen.has(normalized)) return false;
+    seen.add(normalized);
+    return true;
+  });
+}
+
 function parseSignals(filename: string, markdown: string): MonthlySignal[] {
   const signalSection = requiredSection(filename, markdown, "本月观察信号");
   const blocks = numberedBlocks(signalSection, /^###\s+([^：:]+)[：:]\s*(.+?)\s*$/gmu);
@@ -248,10 +261,12 @@ function parseSignals(filename: string, markdown: string): MonthlySignal[] {
     }
     const title = cleanInline(match[2]);
     if (!title) validation(filename, "信号缺少标题");
-    const supportingRepositories = requiredField(filename, title, body, "支撑项目")
-      .split(/[、,，]/u)
-      .map((item) => cleanInline(item))
-      .filter(Boolean);
+    const supportingRepositories = uniqueRepositories(
+      requiredField(filename, title, body, "支撑项目")
+        .split(/[、,，]/u)
+        .map((item) => cleanInline(item))
+        .filter(Boolean),
+    );
     const observation = requiredField(filename, title, body, "观察");
     const evidenceStrength = parseStrength(filename, title, requiredField(filename, title, body, "证据强度"));
     if (supportingRepositories.length < 3) {
@@ -346,9 +361,14 @@ export function parseMonthlyReport(markdown: string, filename: string): MonthlyR
 }
 
 export function loadMonthlyReports(): MonthlyReport[] {
-  return Object.entries(monthlyMarkdownFiles)
-    .map(([path, markdown]) => parseMonthlyReport(markdown, path.split("/").at(-1) ?? path))
-    .sort((a, b) => b.slug.localeCompare(a.slug));
+  return sortMonthlyReports(
+    Object.entries(monthlyMarkdownFiles)
+      .map(([path, markdown]) => parseMonthlyReport(markdown, path.split("/").at(-1) ?? path)),
+  );
+}
+
+export function sortMonthlyReports(reports: MonthlyReport[]): MonthlyReport[] {
+  return [...reports].sort((a, b) => b.slug.localeCompare(a.slug));
 }
 
 export function createMonthlySearchIndex(reports: MonthlyReport[]): MonthlySearchIndexItem[] {

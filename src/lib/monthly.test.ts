@@ -3,6 +3,7 @@ import {
   createMonthlySearchIndex,
   loadMonthlyReports,
   parseMonthlyReport,
+  sortMonthlyReports,
 } from "./monthly";
 
 const monthlySample = `# GitHub 项目月度精选｜2026-07
@@ -148,6 +149,15 @@ describe("parseMonthlyReport", () => {
     )).toThrow(/2026-07\.md.*Acme\/Alpha.*主要风险/u);
   });
 
+  it("defaults omitted Top 5 evidence strength to observation", () => {
+    const report = parseMonthlyReport(
+      monthlySample.replace("- 证据强度：高\n\n### 2. Beta", "\n### 2. Beta"),
+      "2026-07.md",
+    );
+
+    expect(report.topProjects[0].evidenceStrength).toBe("观察");
+  });
+
   it("requires exactly five Top 5 projects", () => {
     expect(() => parseMonthlyReport(
       monthlySample.replace(/^### 5\. Epsilon[\s\S]*?(?=\n## 分类推荐)/mu, ""),
@@ -180,6 +190,19 @@ describe("parseMonthlyReport", () => {
       evidenceStrength: "观察",
     });
   });
+
+  it("downgrades signals when three citations name only one repository", () => {
+    const report = parseMonthlyReport(
+      monthlySample.replace("Acme/Alpha、Acme/Beta、Acme/Gamma", "Acme/Alpha、acme/alpha、ACME/ALPHA"),
+      "2026-07.md",
+    );
+
+    expect(report.signals[0]).toMatchObject({
+      direction: "编辑观察",
+      evidenceStrength: "观察",
+      supportingRepositories: ["Acme/Alpha"],
+    });
+  });
 });
 
 describe("monthly discovery and search conversion", () => {
@@ -190,6 +213,18 @@ describe("monthly discovery and search conversion", () => {
       [...reports.map((report) => report.slug)].sort().reverse(),
     );
     expect(reports.every((report) => /^\d{4}-\d{2}$/u.test(report.slug))).toBe(true);
+  });
+
+  it("sorts non-empty monthly fixtures newest first", () => {
+    const older = parseMonthlyReport(monthlySample, "2026-05.md");
+    const newer = parseMonthlyReport(monthlySample, "2026-07.md");
+    const middle = parseMonthlyReport(monthlySample, "2026-06.md");
+
+    expect(sortMonthlyReports([middle, older, newer]).map((report) => report.slug)).toEqual([
+      "2026-07",
+      "2026-06",
+      "2026-05",
+    ]);
   });
 
   it("converts Top 5 and recommendations to monthly search entries", () => {
