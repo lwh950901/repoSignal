@@ -1,8 +1,8 @@
 ## 1. Monthly content model
 
-- [ ] 1.1 Add failing Vitest fixtures for valid monthly parsing, required fields, duplicate repositories, invalid GitHub URLs and weak-signal downgrade
-- [ ] 1.2 Implement `MonthlyReport`, project, recommendation, signal and action types with strict Markdown parsing and validation
-- [ ] 1.3 Add monthly report discovery and monthly search-index conversion tests
+- [x] 1.1 Add failing Vitest fixtures for valid monthly parsing, required fields, duplicate repositories, invalid GitHub URLs and weak-signal downgrade
+- [x] 1.2 Implement `MonthlyReport`, project, recommendation, signal and action types with strict Markdown parsing and validation
+- [x] 1.3 Add monthly report discovery and monthly search-index conversion tests
 
 ## 2. Editorial draft generator
 
