@@ -1,5 +1,3 @@
-node_modules/
-dist/
-.astro/
-.DS_Store
-scripts/__pycache__/
+.worktrees/
+.superpowers/
+data/github-project-digest/monthly-drafts/
