@@ -122,11 +122,20 @@ function requiredField(filename: string, repository: string, body: string, label
   return value || validation(filename, `${repository || "Top 5 项目"} 缺少必填字段 ${label}`);
 }
 
+function isGitHubOwner(value: string): boolean {
+  return /^[A-Za-z0-9](?:[A-Za-z0-9-]{0,37}[A-Za-z0-9])?$/u.test(value);
+}
+
+function isGitHubRepositoryName(value: string): boolean {
+  return /^[A-Za-z0-9._-]{1,100}$/u.test(value);
+}
+
 function canonicalRepositoryIdentity(repository: string): string | undefined {
   const components = repository.normalize("NFKC").trim().split("/");
   if (
     components.length !== 2
-    || components.some((component) => !/^[A-Za-z0-9._-]{1,100}$/u.test(component))
+    || !isGitHubOwner(components[0])
+    || !isGitHubRepositoryName(components[1])
   ) return undefined;
   return components.map((component) => component.toLocaleLowerCase("en-US")).join("/");
 }

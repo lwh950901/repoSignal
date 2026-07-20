@@ -217,6 +217,15 @@ describe("parseMonthlyReport", () => {
     expect(recommendationReport.recommendations[0].repository).toBe("github/.github");
   });
 
+  it("rejects invalid GitHub owner components", () => {
+    for (const owner of ["owner.name", "_owner", "-owner", "owner-", "a".repeat(40)]) {
+      expect(() => parseMonthlyReport(
+        monthlySample.replaceAll("Acme/Alpha", `${owner}/repo`),
+        "2026-07.md",
+      )).toThrow(/2026-07\.md/u);
+    }
+  });
+
   it("rejects repository link text that does not match its GitHub URL", () => {
     expect(() => parseMonthlyReport(
       monthlySample.replace("[Acme/Alpha](https://github.com/Acme/Alpha)", "[Acme/Other](https://github.com/Acme/Alpha)"),
