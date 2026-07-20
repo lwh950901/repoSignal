@@ -48,7 +48,7 @@
 
 ## 7. Verification and review
 
-- [ ] 7.1 Run monthly generator self-check and focused Vitest tests
-- [ ] 7.2 Run the full Vitest suite, Astro check, production build and OpenSpec strict validation
-- [ ] 7.3 Inspect `/monthly/2026-07/` at desktop and 360px, including source links, tables, keyboard focus and no-JavaScript navigation
-- [ ] 7.4 Review the complete change for factual overstatement, spec compliance, security of repository experiments and unnecessary implementation complexity
+- [x] 7.1 Run monthly generator self-check and focused Vitest tests
+- [x] 7.2 Run the full Vitest suite, Astro check, production build and OpenSpec strict validation
+- [x] 7.3 Inspect `/monthly/2026-07/` at desktop and 360px, including source links, tables, keyboard focus and no-JavaScript navigation
+- [x] 7.4 Review the complete change for factual overstatement, spec compliance, security of repository experiments and unnecessary implementation complexity

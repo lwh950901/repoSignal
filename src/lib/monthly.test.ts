@@ -214,6 +214,16 @@ describe("parseMonthlyReport", () => {
     )).toThrow(/跨工具用量台账.*自行开发部分/u);
   });
 
+  it("rejects reordered business subsections", () => {
+    expect(() => parseMonthlyReport(
+      monthlyDocument().replace(
+        "#### 真实问题\n\n管理员需要统一比较不同工具的聚合用量，两家厂商已经分别提供组织指标。\n\n#### 市场与现有方案\n\n商业产品、开源方案和人工导出流程都存在，但口径分散。\n\n#### 产品定义",
+        "#### 市场与现有方案\n\n商业产品、开源方案和人工导出流程都存在，但口径分散。\n\n#### 真实问题\n\n管理员需要统一比较不同工具的聚合用量，两家厂商已经分别提供组织指标。\n\n#### 产品定义",
+      ),
+      "2026-07.md",
+    )).toThrow(/跨工具用量台账.*章节顺序/u);
+  });
+
   it("rejects duplicate repositories within one combination", () => {
     expect(() => parseMonthlyReport(
       monthlyDocument().replaceAll("Data/Duck", "acme/alpha"),
@@ -239,6 +249,21 @@ describe("parseMonthlyReport", () => {
       monthlyDocument().replaceAll("- 验证等级：L2", "- 验证等级：L0"),
       "2026-07.md",
     )).toThrow(/跨工具用量台账.*L2/u);
+  });
+
+  it("rejects inconsistent verification and non-publishable business verdicts", () => {
+    expect(() => parseMonthlyReport(
+      monthlyDocument().replace("- 最高验证等级：L2", "- 最高验证等级：L4"),
+      "2026-07.md",
+    )).toThrow(/跨工具用量台账.*最高验证等级.*仓库/u);
+    expect(() => parseMonthlyReport(
+      monthlyDocument().replace("- 组合结论：部分可行", "- 组合结论：已验证可行"),
+      "2026-07.md",
+    )).toThrow(/跨工具用量台账.*已验证可行.*L3/u);
+    expect(() => parseMonthlyReport(
+      monthlyDocument().replace("- 商业判断：值得做技术实验", "- 商业判断：继续观察"),
+      "2026-07.md",
+    )).toThrow(/跨工具用量台账.*继续观察.*公开/u);
   });
 
   it("requires exactly five unique Top 5 repositories with canonical GitHub links", () => {

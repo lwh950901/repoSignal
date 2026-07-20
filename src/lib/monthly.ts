@@ -345,12 +345,29 @@ function parseOpportunities(filename: string, markdown: string): MonthlyOpportun
     if (Number(match[1]) !== index + 1) validation(filename, "业务机会必须从 1 连续编号");
     const title = cleanInline(match[2]);
     for (const heading of opportunitySections) requiredSection(filename, body, heading, 4, title);
+    const headingPositions = opportunitySections.map((heading) => body.indexOf(`#### ${heading}`));
+    if (headingPositions.some((position, headingIndex) => headingIndex > 0 && position < headingPositions[headingIndex - 1])) {
+      validation(filename, `${title} 的固定章节顺序无效`);
+    }
     const repositories = parseOpportunityRepositories(filename, title, body);
     const declaredRepositoryCount = requiredInteger(filename, title, body, "组合仓库数量", 2, 5);
     if (declaredRepositoryCount !== repositories.length) validation(filename, `${title} 的组合仓库数量与实际条目不一致`);
     const sourcesBody = requiredSection(filename, body, "来源", 4, title);
     const analysisMarkdown = body.slice(body.indexOf("#### 真实问题"), body.indexOf("#### 仓库组合"))
       + body.slice(body.indexOf("#### 组合链路"), body.indexOf("#### 来源"));
+    const verificationLevel = requiredEnum(filename, title, requiredField(filename, title, body, "最高验证等级"), "最高验证等级", verificationLevels);
+    const repositoryLevel = Math.max(...repositories.map((repository) => Number(repository.verificationLevel.slice(1))));
+    if (Number(verificationLevel.slice(1)) !== repositoryLevel) {
+      validation(filename, `${title} 的最高验证等级必须与仓库验证等级一致`);
+    }
+    const combinationVerdict = requiredEnum(filename, title, requiredField(filename, title, body, "组合结论"), "组合结论", combinationVerdicts);
+    if (combinationVerdict === "已验证可行" && repositoryLevel < 3) {
+      validation(filename, `${title} 标记已验证可行时必须达到 L3`);
+    }
+    const businessVerdict = requiredEnum(filename, title, requiredField(filename, title, body, "商业判断"), "商业判断", businessVerdicts);
+    if (businessVerdict !== "值得进入用户验证" && businessVerdict !== "值得做技术实验") {
+      validation(filename, `${title} 的${businessVerdict}不得进入公开月报`);
+    }
     return {
       id: encodedId("monthly-opportunity", title),
       title,
@@ -358,9 +375,9 @@ function parseOpportunities(filename: string, markdown: string): MonthlyOpportun
       targetUser: requiredField(filename, title, body, "目标用户"),
       demandStatus: requiredEnum(filename, title, requiredField(filename, title, body, "需求状态"), "需求状态", demandStatuses),
       competitorCount: requiredInteger(filename, title, body, "竞品数量", 3, Number.MAX_SAFE_INTEGER),
-      verificationLevel: requiredEnum(filename, title, requiredField(filename, title, body, "最高验证等级"), "最高验证等级", verificationLevels),
-      combinationVerdict: requiredEnum(filename, title, requiredField(filename, title, body, "组合结论"), "组合结论", combinationVerdicts),
-      businessVerdict: requiredEnum(filename, title, requiredField(filename, title, body, "商业判断"), "商业判断", businessVerdicts),
+      verificationLevel,
+      combinationVerdict,
+      businessVerdict,
       verifiedAt: parseDate(filename, title, requiredField(filename, title, body, "核实日期"), "核实日期"),
       repositories,
       bodyHtml: marked.parse(analysisMarkdown) as string,
