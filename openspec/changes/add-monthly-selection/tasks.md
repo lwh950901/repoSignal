@@ -6,9 +6,9 @@
 
 ## 2. Editorial draft generator
 
-- [ ] 2.1 Add a failing offline self-check for candidate normalization, source/date merging and deterministic rendering
-- [ ] 2.2 Implement the Python standard-library generator for monthly candidate, daily and overlapping ISO-week inputs
-- [ ] 2.3 Add the npm self-check command and keep `.superpowers`, `.worktrees` and `monthly-drafts` ignored
+- [x] 2.1 Add a failing offline self-check for candidate normalization, source/date merging and deterministic rendering
+- [x] 2.2 Implement the Python standard-library generator for monthly candidate, daily and overlapping ISO-week inputs
+- [x] 2.3 Add the npm self-check command and keep `.superpowers`, `.worktrees` and `monthly-drafts` ignored
 
 ## 3. Period navigation logic
 
