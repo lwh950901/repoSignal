@@ -59,3 +59,10 @@
 - [x] 8.2 Move the period switcher into a symmetric header center column
 - [x] 8.3 Add a desktop-only monthly archive toggle that contracts to a discoverable narrow rail
 - [x] 8.4 Run focused and full tests, Astro check/build, strict OpenSpec validation and responsive visual inspection
+
+## 9. Period-specific weekly and daily archives
+
+- [x] 9.1 Add a failing contract test for isolated weekly/daily archive data and shared collapse behavior
+- [x] 9.2 Pass only weekly reports to weekly pages and only daily reports to daily pages
+- [x] 9.3 Reuse one progressively enhanced archive collapse and select-navigation script across month, week and day
+- [x] 9.4 Run focused/full tests, Astro check/build, strict OpenSpec validation and responsive browser inspection

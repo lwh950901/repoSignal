@@ -53,3 +53,10 @@
 #### Scenario: Reader opens a report on mobile
 - **WHEN** 视口宽度不超过 768px
 - **THEN** 归档折叠按钮不显示，月份选择器继续可用，月/周/日切换器保持居中
+
+### Requirement: Report archives are period-specific and collapsible
+周报页面 MUST 只展示周报归档，日报页面 MUST 只展示日报归档。桌面归档 MUST 可收起为保留展开按钮的窄栏；移动端 MUST 保留只含当前周期报告的选择器。
+
+#### Scenario: Reader opens a weekly or daily report
+- **WHEN** 读者打开周报或日报详情页
+- **THEN** 归档链接与选择器只包含当前周期，且桌面折叠按钮通过 `aria-expanded` 暴露状态

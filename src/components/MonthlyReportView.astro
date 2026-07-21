@@ -13,18 +13,17 @@ const scoreDimensions = [
 ] as const;
 ---
 
-<main id="main-content" class="archive-shell monthly-shell">
+<main id="main-content" class="archive-shell monthly-shell" data-archive-shell>
   <aside class="date-rail monthly-rail" aria-label="月度归档">
-    <div class="monthly-rail__header">
+    <div class="archive-rail__header">
       <p>月度归档</p>
-      <button class="monthly-rail-toggle" type="button" data-monthly-rail-toggle aria-expanded="true" aria-label="收起月度归档">
-        <span class="monthly-rail-toggle__icon" aria-hidden="true">←</span>
-        <span class="visually-hidden" data-monthly-rail-toggle-label>收起月度归档</span>
+      <button class="archive-rail-toggle" type="button" data-archive-rail-toggle data-archive-label="月度" aria-expanded="true" aria-label="收起月度归档">
+        <span data-archive-rail-icon aria-hidden="true">←</span>
       </button>
     </div>
     <label class="report-select"><span>选择月份</span><select data-report-select>{months.map((item) => <option value={`/monthly/${item.slug}/`} selected={item.slug === report.slug}>{item.slug}</option>)}</select></label>
     <div class="weekly-links">{months.map((item) => <a class:list={{ active: item.slug === report.slug }} href={`/monthly/${item.slug}/`}>{item.slug}</a>)}</div>
-    <noscript><div class="monthly-links">{months.map((item) => <a href={`/monthly/${item.slug}/`}>{item.slug}</a>)}</div></noscript>
+    <noscript><div class="archive-links">{months.map((item) => <a href={`/monthly/${item.slug}/`}>{item.slug}</a>)}</div></noscript>
   </aside>
 
   <article class="report monthly-report">
@@ -136,26 +135,3 @@ const scoreDimensions = [
     <nav class="adjacent-links" aria-label="相邻月份">{adjacent.map((item) => <a href={`/monthly/${item.slug}/`}>{item.slug}</a>)}</nav>
   </article>
 </main>
-
-<script>
-  const shell = document.querySelector<HTMLElement>(".monthly-shell");
-  const toggle = shell?.querySelector<HTMLButtonElement>("[data-monthly-rail-toggle]");
-  const label = toggle?.querySelector<HTMLElement>("[data-monthly-rail-toggle-label]");
-  const icon = toggle?.querySelector<HTMLElement>(".monthly-rail-toggle__icon");
-  const reportSelect = shell?.querySelector<HTMLSelectElement>("[data-report-select]");
-
-  shell?.classList.add("is-enhanced");
-
-  toggle?.addEventListener("click", () => {
-    const collapsed = shell?.toggleAttribute("data-rail-collapsed") ?? false;
-    const action = collapsed ? "展开月度归档" : "收起月度归档";
-    toggle.setAttribute("aria-expanded", String(!collapsed));
-    toggle.setAttribute("aria-label", action);
-    if (label) label.textContent = action;
-    if (icon) icon.textContent = collapsed ? "→" : "←";
-  });
-
-  reportSelect?.addEventListener("change", () => {
-    window.location.assign(reportSelect.value);
-  });
-</script>

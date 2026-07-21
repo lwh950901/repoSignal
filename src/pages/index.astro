@@ -15,7 +15,7 @@ const periodLinks = report ? resolvePeriodLinks(report.type, report.slug, monthl
 
 <BaseLayout title="RepoSignal｜GitHub 优质项目" searchItems={searchItems} activePeriod={report?.type ?? "weekly"} periodLinks={periodLinks}>
   {report ? (
-    <ReportView report={report} dailyReports={dailyReports} weeklyReports={weeklyReports} />
+    <ReportView report={report} reports={report.type === "daily" ? dailyReports : weeklyReports} />
   ) : (
     <main id="main-content" class="empty-state empty-state--page">
       <h1>还没有项目报告</h1>

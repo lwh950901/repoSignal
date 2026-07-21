@@ -2,55 +2,55 @@
 import type { DigestReport } from "../lib/digests";
 
 interface Props {
-  dailyReports: DigestReport[];
-  weeklyReports: DigestReport[];
+  reports: DigestReport[];
+  period: "weekly" | "daily";
   currentSlug: string;
 }
 
-const { dailyReports, weeklyReports, currentSlug } = Astro.props;
-const options = [
-  ...weeklyReports.map((report) => ({ label: `${report.slug} 周精选`, href: `/weekly/${report.slug}/`, slug: report.slug })),
-  ...dailyReports.map((report) => ({ label: report.date, href: `/daily/${report.slug}/`, slug: report.slug })),
-];
+const { reports, period, currentSlug } = Astro.props;
+const weekly = period === "weekly";
+const archiveLabel = weekly ? "周报" : "日报";
+const href = (slug: string) => `/${period}/${slug}/`;
 ---
 
-<aside class="date-rail" aria-label="报告归档">
-  <div class="date-rail__heading">
-    <span>ARCHIVE</span>
-    <span>{dailyReports.length + weeklyReports.length} 期</span>
+<aside class="date-rail" aria-label={`${archiveLabel}归档`}>
+  <div class="archive-rail__header">
+    <div class="date-rail__heading">
+      <span>{weekly ? "WEEKLY" : "DAILY"}</span>
+      <span>{reports.length} 期</span>
+    </div>
+    <button class="archive-rail-toggle" type="button" data-archive-rail-toggle data-archive-label={archiveLabel} aria-expanded="true" aria-label={`收起${archiveLabel}归档`}>
+      <span data-archive-rail-icon aria-hidden="true">←</span>
+    </button>
   </div>
   <label class="report-select">
     <span>选择报告</span>
     <select data-report-select>
-      {options.map((option) => (
-        <option value={option.href} selected={option.slug === currentSlug}>{option.label}</option>
+      {reports.map((report) => (
+        <option value={href(report.slug)} selected={report.slug === currentSlug}>{weekly ? `${report.slug} 周精选` : report.date}</option>
       ))}
     </select>
   </label>
-  <div class="weekly-links">
-    <span>WEEKLY</span>
-    {weeklyReports.map((report) => (
-      <a class:list={{ active: report.slug === currentSlug }} href={`/weekly/${report.slug}/`}>
-        {report.slug}
-      </a>
-    ))}
-  </div>
-  <ol class="date-list">
-    {dailyReports.map((report, index) => (
-      <li class:list={{ active: report.slug === currentSlug }}>
-        <a href={`/daily/${report.slug}/`} aria-current={report.slug === currentSlug ? "page" : undefined}>
-          <span class="date-dot" aria-hidden="true"></span>
-          <span>{report.date}</span>
-          {index === 0 && <small>最新</small>}
+  {weekly ? (
+    <div class="weekly-links">
+      {reports.map((report) => (
+        <a class:list={{ active: report.slug === currentSlug }} href={href(report.slug)} aria-current={report.slug === currentSlug ? "page" : undefined}>
+          {report.slug}
         </a>
-      </li>
-    ))}
-  </ol>
+      ))}
+    </div>
+  ) : (
+    <ol class="date-list">
+      {reports.map((report, index) => (
+        <li class:list={{ active: report.slug === currentSlug }}>
+          <a href={href(report.slug)} aria-current={report.slug === currentSlug ? "page" : undefined}>
+            <span class="date-dot" aria-hidden="true"></span>
+            <span>{report.date}</span>
+            {index === 0 && <small>最新</small>}
+          </a>
+        </li>
+      ))}
+    </ol>
+  )}
+  <noscript><div class="archive-links">{reports.map((report) => <a href={href(report.slug)}>{weekly ? report.slug : report.date}</a>)}</div></noscript>
 </aside>
-
-<script>
-  document.querySelector<HTMLSelectElement>("[data-report-select]")?.addEventListener("change", (event) => {
-    const select = event.currentTarget as HTMLSelectElement;
-    window.location.href = select.value;
-  });
-</script>

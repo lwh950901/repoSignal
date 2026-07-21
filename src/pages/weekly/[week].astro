@@ -19,5 +19,5 @@ const periodLinks = resolvePeriodLinks("weekly", report.slug, monthlyReports.map
 ---
 
 <BaseLayout title={`${report.slug}｜每周精选`} description={report.introduction} searchItems={searchItems} activePeriod="weekly" periodLinks={periodLinks}>
-  <ReportView report={report} dailyReports={dailyReports} weeklyReports={weeklyReports} />
+  <ReportView report={report} reports={weeklyReports} />
 </BaseLayout>

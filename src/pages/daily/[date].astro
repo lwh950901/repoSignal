@@ -19,5 +19,5 @@ const periodLinks = resolvePeriodLinks("daily", report.slug, monthlyReports.map(
 ---
 
 <BaseLayout title={`${report.date}｜RepoSignal`} description={report.theme} searchItems={searchItems} activePeriod="daily" periodLinks={periodLinks}>
-  <ReportView report={report} dailyReports={dailyReports} weeklyReports={weeklyReports} />
+  <ReportView report={report} reports={dailyReports} />
 </BaseLayout>
