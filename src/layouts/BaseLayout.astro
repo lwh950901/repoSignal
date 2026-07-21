@@ -50,8 +50,10 @@ const {
         <span class="brand-mark" aria-hidden="true">⌁</span>
         <span>RepoSignal</span>
       </a>
-      <nav class="site-actions" aria-label="主要导航">
+      <div class="site-period-navigation">
         <PeriodSwitcher active={activePeriod} links={periodLinks} />
+      </div>
+      <nav class="site-actions" aria-label="主要导航">
         <button class="search-trigger" type="button" data-search-open aria-label="打开项目搜索">
           <span>搜索</span><kbd>⌘ K</kbd>
         </button>

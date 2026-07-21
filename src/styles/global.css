@@ -45,14 +45,15 @@ button, a, select, summary { -webkit-tap-highlight-color: transparent; }
   max-width: var(--content);
   margin: 0 auto;
   padding: 0 var(--space-6);
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   align-items: center;
-  justify-content: space-between;
   border-bottom: 1px solid var(--rule);
 }
-.brand { display: inline-flex; align-items: center; gap: .75rem; font-weight: 700; text-decoration: none; letter-spacing: -.02em; }
+.brand { grid-column: 1; justify-self: start; display: inline-flex; align-items: center; gap: .75rem; font-weight: 700; text-decoration: none; letter-spacing: -.02em; }
 .brand-mark { display: grid; place-items: center; width: 2rem; height: 2rem; border: 1px solid var(--ink); font-family: var(--font-mono); }
-.site-actions { display: flex; align-items: center; gap: var(--space-5); font-size: .875rem; }
+.site-period-navigation { grid-column: 2; justify-self: center; }
+.site-actions { grid-column: 3; justify-self: end; display: flex; align-items: center; gap: var(--space-5); font-size: .875rem; }
 .period-switcher { display: flex; align-items: center; gap: 1rem; font: .75rem var(--font-mono); }
 .period-switcher a { padding: .8rem 0 .55rem; text-decoration: none; }
 .period-switcher a[aria-current="page"] { border-bottom: 2px solid var(--moss); color: var(--moss); font-weight: 600; }
@@ -61,7 +62,19 @@ button, a, select, summary { -webkit-tap-highlight-color: transparent; }
 kbd { padding: .15rem .45rem; border: 1px solid var(--rule); background: var(--paper-deep); font: .7rem var(--font-mono); }
 
 .archive-shell { max-width: var(--content); margin: 0 auto; padding: 0 var(--space-6) var(--space-8); display: grid; grid-template-columns: 15rem minmax(0, 1fr); gap: clamp(1.5rem, 3vw, 3rem); }
+.monthly-shell { transition: grid-template-columns .2s ease; }
+.monthly-shell[data-rail-collapsed] { grid-template-columns: 3.25rem minmax(0, 1fr); }
 .date-rail { position: sticky; top: 0; align-self: start; max-height: 100vh; padding: var(--space-7) 0; overflow: auto; font-family: var(--font-mono); }
+.monthly-rail__header { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); margin-bottom: var(--space-5); }
+.monthly-rail__header p { margin: 0; color: var(--ink-soft); font-size: .68rem; letter-spacing: .13em; white-space: nowrap; }
+.monthly-rail-toggle { flex: 0 0 auto; display: none; place-items: center; width: 2.25rem; height: 2.25rem; padding: 0; border: 1px solid var(--rule); background: var(--white); color: var(--ink); cursor: pointer; font: .8rem var(--font-mono); }
+.monthly-shell.is-enhanced .monthly-rail-toggle { display: grid; }
+.monthly-rail-toggle:hover { border-color: var(--moss); color: var(--moss); }
+.monthly-shell[data-rail-collapsed] .monthly-rail { overflow: hidden; }
+.monthly-shell[data-rail-collapsed] .monthly-rail__header { justify-content: center; }
+.monthly-shell[data-rail-collapsed] .monthly-rail__header p,
+.monthly-shell[data-rail-collapsed] .monthly-rail > .weekly-links,
+.monthly-shell[data-rail-collapsed] .monthly-rail > noscript { display: none; }
 .date-rail__heading { display: flex; justify-content: space-between; margin-bottom: var(--space-5); color: var(--ink-soft); font-size: .68rem; letter-spacing: .13em; }
 .date-list { position: relative; margin: 0; padding: 0; list-style: none; }
 .date-list::before { content: ""; position: absolute; top: .85rem; bottom: .85rem; left: .28rem; width: 1px; background: var(--rule); }
@@ -219,6 +232,7 @@ kbd { padding: .15rem .45rem; border: 1px solid var(--rule); background: var(--p
   .search-trigger > span { display: none; }
   .archive-shell { display: block; padding: 0 var(--space-4) var(--space-7); }
   .date-rail { position: static; max-height: none; padding: var(--space-5) 0 0; overflow: visible; }
+  .monthly-rail__header { display: none; }
   .date-rail__heading, .date-list, .weekly-links { display: none; }
   .report-select { display: grid; gap: .35rem; color: var(--ink-soft); font-size: .66rem; letter-spacing: .1em; }
   .report-select select { min-height: 2.75rem; padding: .4rem .7rem; border: 1px solid var(--rule); border-radius: 0; background: var(--white); color: var(--ink); }

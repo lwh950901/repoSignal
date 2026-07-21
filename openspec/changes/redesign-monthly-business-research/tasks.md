@@ -52,3 +52,10 @@
 - [x] 7.2 Run the full Vitest suite, Astro check, production build and OpenSpec strict validation
 - [x] 7.3 Inspect `/monthly/2026-07/` at desktop and 360px, including source links, tables, keyboard focus and no-JavaScript navigation
 - [x] 7.4 Review the complete change for factual overstatement, spec compliance, security of repository experiments and unnecessary implementation complexity
+
+## 8. Header alignment and monthly archive collapse
+
+- [x] 8.1 Add a failing layout contract test for the centered period switcher and accessible monthly rail toggle
+- [x] 8.2 Move the period switcher into a symmetric header center column
+- [x] 8.3 Add a desktop-only monthly archive toggle that contracts to a discoverable narrow rail
+- [x] 8.4 Run focused and full tests, Astro check/build, strict OpenSpec validation and responsive visual inspection

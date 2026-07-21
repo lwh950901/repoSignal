@@ -42,3 +42,14 @@
 #### Scenario: Site rebuilds after external facts change
 - **WHEN** GitHub 或商业产品信息在发布后变化
 - **THEN** Astro 构建仍只读取冻结的本地 Markdown，不访问外部 API 改写历史内容
+
+### Requirement: Period navigation is centered and the desktop monthly archive is collapsible
+共享页头 MUST 将月、周、日切换器相对页面内容区域居中，且不得因品牌或搜索控件宽度不同而偏移。桌面月报 MUST 允许读者将月份归档收起为保留展开按钮的窄栏；移动端 MUST 隐藏折叠按钮并继续显示月份选择器。
+
+#### Scenario: Reader collapses the monthly archive on desktop
+- **WHEN** 读者激活月度归档的收起按钮
+- **THEN** 归档链接隐藏、主内容区域扩展、窄栏中仍保留可聚焦的展开按钮，且按钮通过 `aria-expanded` 暴露当前状态
+
+#### Scenario: Reader opens a report on mobile
+- **WHEN** 视口宽度不超过 768px
+- **THEN** 归档折叠按钮不显示，月份选择器继续可用，月/周/日切换器保持居中
