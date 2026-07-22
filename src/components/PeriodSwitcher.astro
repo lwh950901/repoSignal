@@ -1,0 +1,12 @@
+---
+import type { ReportPeriod } from "../lib/periods";
+interface Props { active: ReportPeriod; links: Record<ReportPeriod, string> }
+const { active, links } = Astro.props;
+const labels: Record<ReportPeriod, string> = { monthly: "月", weekly: "周", daily: "日" };
+---
+
+<nav class="period-switcher" aria-label="报告周期">
+  {(["monthly", "weekly", "daily"] as const).map((period) => (
+    <a href={links[period]} aria-current={active === period ? "page" : undefined}>{labels[period]}</a>
+  ))}
+</nav>

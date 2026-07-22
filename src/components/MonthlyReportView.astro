@@ -1,0 +1,137 @@
+---
+import type { MonthlyReport } from "../lib/monthly";
+const { report, months } = Astro.props as { report: MonthlyReport; months: MonthlyReport[] };
+const currentIndex = months.findIndex((item) => item.slug === report.slug);
+const adjacent = [months[currentIndex + 1], months[currentIndex - 1]].filter(Boolean);
+const scoreDimensions = [
+  ["本月重要性", "monthlySignificance", 20],
+  ["实际价值", "practicalValue", 25],
+  ["工程质量", "engineeringQuality", 20],
+  ["差异化", "differentiation", 15],
+  ["维护", "maintenance", 10],
+  ["采用证据", "adoption", 10],
+] as const;
+---
+
+<main id="main-content" class="archive-shell monthly-shell" data-archive-shell>
+  <aside class="date-rail monthly-rail" aria-label="月度归档">
+    <div class="archive-rail__header">
+      <p>月度归档</p>
+      <button class="archive-rail-toggle" type="button" data-archive-rail-toggle data-archive-label="月度" aria-expanded="true" aria-label="收起月度归档">
+        <span data-archive-rail-icon aria-hidden="true">←</span>
+      </button>
+    </div>
+    <label class="report-select"><span>选择月份</span><select data-report-select>{months.map((item) => <option value={`/monthly/${item.slug}/`} selected={item.slug === report.slug}>{item.slug}</option>)}</select></label>
+    <div class="weekly-links">{months.map((item) => <a class:list={{ active: item.slug === report.slug }} href={`/monthly/${item.slug}/`}>{item.slug}</a>)}</div>
+    <noscript><div class="archive-links">{months.map((item) => <a href={`/monthly/${item.slug}/`}>{item.slug}</a>)}</div></noscript>
+  </aside>
+
+  <article class="report monthly-report">
+    <header class="report-hero monthly-hero">
+      <p class="eyebrow">MONTHLY RESEARCH / {report.slug}</p>
+      <h1>{report.theme}</h1>
+      <div class="report-summary" set:html={report.conclusionHtml} />
+      <div class="report-ledger" aria-label="研究范围">
+        <span><strong>{report.candidateCount}</strong> 合格候选</span>
+        <span><strong>{report.deepCandidateCount}</strong> 深度核实</span>
+        <span><strong>{report.topProjects.length}</strong> Top 5</span>
+        <span><strong>{report.opportunities.length}</strong> 业务机会</span>
+      </div>
+      <p class="monthly-verification"><strong>数据截止 {report.cutoffDate}</strong> · {report.verificationNote}</p>
+    </header>
+
+    <section class="monthly-section" aria-labelledby="monthly-top5">
+      <div class="monthly-section__heading">
+        <div><p class="eyebrow">INDEPENDENT RANKING</p><h2 id="monthly-top5">Top 5 仓库</h2></div>
+        <p>按统一 100 分量表独立排名，不因是否进入业务组合而调整。</p>
+      </div>
+      <div class="monthly-projects">
+        {report.topProjects.map((project, index) => (
+          <article class="monthly-project" id={project.id}>
+            <header class="monthly-project__header">
+              <span class="monthly-rank" aria-label={`第 ${index + 1} 名`}>{String(index + 1).padStart(2, "0")}</span>
+              <div><h3><a href={project.url}>{project.repository}</a></h3><p>{project.positioning}</p></div>
+              <strong class="monthly-total"><span>{project.scores.total}</span>/100</strong>
+            </header>
+
+            <p class="monthly-change"><strong>本月变化</strong>{project.monthlyChange}</p>
+            <dl class="monthly-fact-grid">
+              <div><dt>Stars / Forks</dt><dd>{project.stars.toLocaleString("en-US")} / {project.forks.toLocaleString("en-US")}</dd></div>
+              <div><dt>Release</dt><dd>{project.release}</dd></div>
+              <div><dt>最近活动</dt><dd>{project.recentActivity}</dd></div>
+              <div><dt>许可证</dt><dd>{project.license}</dd></div>
+              <div><dt>核实日期</dt><dd>{project.verifiedAt}</dd></div>
+              <div><dt>运行验证</dt><dd><span class="verification-badge">{project.verificationLevel}</span></dd></div>
+            </dl>
+
+            <div class="monthly-score-grid" aria-label={`${project.repository} 六维评分`}>
+              {scoreDimensions.map(([label, key, max]) => (
+                <div class="monthly-score">
+                  <div><span>{label}</span><strong>{project.scores[key]}/{max}</strong></div>
+                  <meter min="0" max={max} value={project.scores[key]} aria-label={`${label} ${project.scores[key]} 分，满分 ${max} 分`}>{project.scores[key]}/{max}</meter>
+                </div>
+              ))}
+            </div>
+
+            <dl class="monthly-analysis">
+              <div><dt>核心能力</dt><dd>{project.capability}</dd></div>
+              <div><dt>工程成熟度</dt><dd>{project.engineeringMaturity}</dd></div>
+              <div><dt>明确限制</dt><dd>{project.limitation}</dd></div>
+              <div class="monthly-analysis__objection"><dt>为什么它可能不应入选</dt><dd>{project.objection}</dd></div>
+              <div><dt>最终判断</dt><dd>{project.judgment}</dd></div>
+            </dl>
+            <ul class="monthly-sources" aria-label={`${project.repository} 来源`}>
+              {project.sources.map((source) => <li><a href={source.url}>{source.label}</a></li>)}
+            </ul>
+          </article>
+        ))}
+      </div>
+    </section>
+
+    <section class="monthly-section" aria-labelledby="monthly-opportunities">
+      <div class="monthly-section__heading">
+        <div><p class="eyebrow">BUSINESS RESEARCH</p><h2 id="monthly-opportunities">真实业务与项目机会</h2></div>
+        <p>只发布通过需求、替代方案、组合和 MVP 门槛的方案；与 Top 5 排名无关。</p>
+      </div>
+      {report.opportunities.length === 0
+        ? <p class="monthly-empty">本月未发现通过完整验证的新机会。</p>
+        : report.opportunities.map((opportunity, index) => (
+          <article class="monthly-opportunity" id={opportunity.id}>
+            <header><p class="eyebrow">OPPORTUNITY {String(index + 1).padStart(2, "0")}</p><h3>{opportunity.title}</h3></header>
+            <dl class="opportunity-ledger">
+              <div><dt>形态</dt><dd>{opportunity.kind}</dd></div>
+              <div><dt>目标用户</dt><dd>{opportunity.targetUser}</dd></div>
+              <div><dt>需求状态</dt><dd>{opportunity.demandStatus}</dd></div>
+              <div><dt>竞品调查</dt><dd>{opportunity.competitorCount} 个</dd></div>
+              <div><dt>最高验证</dt><dd>{opportunity.verificationLevel}</dd></div>
+              <div><dt>组合结论</dt><dd>{opportunity.combinationVerdict}</dd></div>
+              <div><dt>业务判断</dt><dd>{opportunity.businessVerdict}</dd></div>
+              <div><dt>核实日期</dt><dd>{opportunity.verifiedAt}</dd></div>
+            </dl>
+
+            <div class="monthly-repositories">
+              <h4>仓库组合</h4>
+              <table>
+                <thead><tr><th>仓库</th><th>身份</th><th>职责</th><th>接入方式</th><th>验证</th></tr></thead>
+                <tbody>{opportunity.repositories.map((repository) => (
+                  <tr>
+                    <td data-label="仓库"><a href={repository.url}>{repository.repository}</a></td>
+                    <td data-label="身份"><span class:list={["origin-badge", { "origin-badge--core": repository.origin === "本月核心" }]}>{repository.origin}</span></td>
+                    <td data-label="职责">{repository.role}</td>
+                    <td data-label="接入方式">{repository.integration}</td>
+                    <td data-label="验证"><span class="verification-badge">{repository.verificationLevel}</span></td>
+                  </tr>
+                ))}</tbody>
+              </table>
+            </div>
+
+            <div class="opportunity-body" set:html={opportunity.bodyHtml} />
+            <div class="opportunity-sources"><h4>来源</h4><ul class="monthly-sources">{opportunity.sources.map((source) => <li><a href={source.url}>{source.label}</a></li>)}</ul></div>
+          </article>
+        ))}
+    </section>
+
+    <section class="monthly-section monthly-methodology"><p class="eyebrow">METHODOLOGY</p><h2>研究说明</h2><div set:html={report.methodologyHtml} /></section>
+    <nav class="adjacent-links" aria-label="相邻月份">{adjacent.map((item) => <a href={`/monthly/${item.slug}/`}>{item.slug}</a>)}</nav>
+  </article>
+</main>

@@ -1,4 +1,5 @@
 import { marked } from "marked";
+import type { SearchItem } from "./search";
 
 export type ProjectKind = "爆发型" | "实用型" | "潜力型" | "周精选" | "额外发现";
 
@@ -31,16 +32,7 @@ export interface DigestReport {
   bonusHtml: string;
 }
 
-export interface DigestIndexItem {
-  id: string;
-  repository: string;
-  positioning: string;
-  technologies: string[];
-  kind: ProjectKind;
-  score: number | null;
-  reportLabel: string;
-  href: string;
-}
+export type DigestIndexItem = SearchItem;
 
 const dailyMarkdownFiles = import.meta.glob(
   "../../data/github-project-digest/daily/*.md",
@@ -260,6 +252,7 @@ export function createSearchIndex(reports: DigestReport[]): DigestIndexItem[] {
       technologies: project.technologies,
       kind: project.kind,
       score: project.score,
+      reportType: report.type,
       reportLabel: report.type === "daily" ? report.date : report.slug,
       href: `/${report.type}/${report.slug}/#${project.id}`,
     }));

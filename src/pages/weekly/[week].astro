@@ -2,6 +2,8 @@
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import ReportView from "../../components/ReportView.astro";
 import { createSearchIndex, loadDailyReports, loadWeeklyReports, type DigestReport } from "../../lib/digests";
+import { createMonthlySearchIndex, loadMonthlyReports } from "../../lib/monthly";
+import { resolvePeriodLinks } from "../../lib/periods";
 
 export function getStaticPaths() {
   return loadWeeklyReports().map((report) => ({ params: { week: report.slug }, props: { report } }));
@@ -11,9 +13,11 @@ interface Props { report: DigestReport }
 const { report } = Astro.props;
 const dailyReports = loadDailyReports();
 const weeklyReports = loadWeeklyReports();
-const searchItems = createSearchIndex([...dailyReports, ...weeklyReports]);
+const monthlyReports = loadMonthlyReports();
+const searchItems = [...createMonthlySearchIndex(monthlyReports), ...createSearchIndex([...weeklyReports, ...dailyReports])];
+const periodLinks = resolvePeriodLinks("weekly", report.slug, monthlyReports.map((item) => item.slug), weeklyReports.map((item) => item.slug), dailyReports.map((item) => item.slug));
 ---
 
-<BaseLayout title={`${report.slug}｜每周精选`} description={report.introduction} searchItems={searchItems}>
-  <ReportView report={report} dailyReports={dailyReports} weeklyReports={weeklyReports} />
+<BaseLayout title={`${report.slug}｜每周精选`} description={report.introduction} searchItems={searchItems} activePeriod="weekly" periodLinks={periodLinks}>
+  <ReportView report={report} reports={weeklyReports} />
 </BaseLayout>

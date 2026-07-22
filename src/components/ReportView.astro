@@ -6,16 +6,15 @@ import ProjectEntry from "./ProjectEntry.astro";
 
 interface Props {
   report: DigestReport;
-  dailyReports: DigestReport[];
-  weeklyReports: DigestReport[];
+  reports: DigestReport[];
 }
 
-const { report, dailyReports, weeklyReports } = Astro.props;
+const { report, reports } = Astro.props;
 const introHtml = report.introduction ? marked.parse(report.introduction) as string : "";
 ---
 
-<main id="main-content" class="archive-shell">
-  <DateRail dailyReports={dailyReports} weeklyReports={weeklyReports} currentSlug={report.slug} />
+<main id="main-content" class="archive-shell" data-archive-shell>
+  <DateRail reports={reports} period={report.type} currentSlug={report.slug} />
   <section class:list={["report", { "report--daily": report.type === "daily" }] }>
     {report.type === "daily" ? (
       <h1 class="visually-hidden">{report.title}</h1>
