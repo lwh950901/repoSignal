@@ -32,25 +32,71 @@
   "history_entries_before_run": 0,
   "history_entries_detected_before_append": 3,
   "latest_daily_run": {
-    "date": "2026-07-22",
-    "run_time": "2026-07-22 06:27:00 +0800",
-    "checked_at": "2026-07-22 06:27:00 +0800",
-    "status": "passed_with_api_fallback",
-    "skill_called": true,
-    "skill_invoked": true,
+    "candidates": "/Users/elvis/Desktop/repo-signal/data/github-project-digest/candidates/2026-07-27.jsonl",
+    "checked_at": "2026-07-27T05:51:00+08:00",
+    "date": "2026-07-27",
+    "fallback": "短名单 enrichment 后段触发 GitHub 未认证 API 限流；降级为 GitHub Release/Commit Atom 与仓库事实核验。",
+    "report": "/Users/elvis/Desktop/repo-signal/data/github-project-digest/daily/2026-07-27.md",
     "scanner_ran": true,
-    "scanner_summary": "5 groups of --no-cache live search ran for candidate discovery; one shortlist --enrich request hit unauthenticated GitHub API rate limit.",
-    "scanner_path": "/Users/elvis/.codex/skills/find-github-projects/scripts/github_project_scan.py ran successfully for discovery; --enrich fell back after API rate limit.",
-    "fallback": "GitHub repository pages, raw README files and Commit Atom feeds were used for shortlist verification after API rate limit; no cached scanner facts were promoted as live facts.",
-    "report": "data/github-project-digest/daily/2026-07-22.md",
-    "candidates": "data/github-project-digest/candidates/2026-07-22.jsonl",
-    "formal_count": 5,
-    "primary_count": 5,
-    "extra_count": 1,
-    "user_specified_candidates": [],
-    "user_specified_disposition": "no user-specified candidates file for 2026-07-22 was present"
+    "skill_called": true,
+    "status": "passed_with_api_fallback"
   },
   "main_recommendation_count": 3,
+  "runs": [
+    {
+      "checks": [
+        "fixed_format",
+        "primary_count_5",
+        "required_fields",
+        "history_jsonl",
+        "candidate_jsonl",
+        "dedupe_90d",
+        "feedback_read"
+      ],
+      "date": "2026-07-23",
+      "fallback": "none; scanner live search, enrichment and GitHub Commit API verification succeeded",
+      "run_time": "2026-07-23 05:30:50 +0800",
+      "scanner_ran": true,
+      "skill_invoked": true,
+      "status": "passed_live_api"
+    },
+    {
+      "checks": [
+        "fixed_format",
+        "primary_count_5",
+        "extra_count_1",
+        "required_fields",
+        "history_jsonl",
+        "candidate_jsonl",
+        "dedupe_90d",
+        "feedback_read"
+      ],
+      "date": "2026-07-24",
+      "fallback": "scanner live search and five shortlist enrichments succeeded; later shortlist enrichments hit unauthenticated GitHub API rate limit, then GitHub repository pages, release sections and Commit Atom feeds were used for verification",
+      "run_time": "2026-07-24 05:34:00 +0800",
+      "scanner_ran": true,
+      "skill_invoked": true,
+      "status": "passed_with_api_fallback"
+    },
+    {
+      "checks": [
+        "fixed_format",
+        "primary_count_5",
+        "extra_count_1",
+        "required_fields",
+        "history_jsonl",
+        "candidate_jsonl",
+        "dedupe_90d",
+        "feedback_read"
+      ],
+      "date": "2026-07-25",
+      "fallback": "initial scanner live searches succeeded; shortlist --enrich hit unauthenticated GitHub API rate limit, then same-run Search API metrics plus GitHub repository pages, release pages and Commit Atom feeds were used for verification",
+      "run_time": "2026-07-25 05:42:00 +0800",
+      "scanner_ran": true,
+      "skill_invoked": true,
+      "status": "passed_with_api_fallback"
+    }
+  ],
   "status": "passed_with_recovered_anomaly",
   "timezone": "Asia/Shanghai",
   "verification": {
