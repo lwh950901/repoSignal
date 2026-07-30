@@ -1,0 +1,25 @@
+---
+export interface ArchiveTimelineItem {
+  label: string;
+  href: string;
+  current: boolean;
+}
+
+interface Props {
+  items: ArchiveTimelineItem[];
+}
+
+const { items } = Astro.props;
+---
+
+<ol class="date-list">
+  {items.map((item, index) => (
+    <li class:list={{ active: item.current }}>
+      <a href={item.href} aria-current={item.current ? "page" : undefined}>
+        <span class="date-dot" aria-hidden="true"></span>
+        <span>{item.label}</span>
+        {index === 0 && <small>最新</small>}
+      </a>
+    </li>
+  ))}
+</ol>

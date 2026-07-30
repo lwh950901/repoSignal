@@ -4,12 +4,15 @@ import { describe, expect, test } from "vitest";
 describe("navigation layout contract", () => {
   test("places the period switcher in the header center column", async () => {
     const layout = await readFile(new URL("../layouts/BaseLayout.astro", import.meta.url), "utf8");
+    const switcher = await readFile(new URL("./PeriodSwitcher.astro", import.meta.url), "utf8");
     const styles = await readFile(new URL("../styles/global.css", import.meta.url), "utf8");
 
     expect(layout).toContain('<div class="site-period-navigation">');
     expect(layout.indexOf("site-period-navigation")).toBeLessThan(layout.indexOf("site-actions"));
+    expect(switcher).toContain('aria-current={active === period ? "true" : undefined}');
     expect(styles).toMatch(/\.site-header\s*\{[^}]*grid-template-columns:\s*minmax\(0, 1fr\) auto minmax\(0, 1fr\)/s);
     expect(styles).toMatch(/\.site-period-navigation\s*\{[^}]*grid-column:\s*2[^}]*justify-self:\s*center/s);
+    expect(styles).toMatch(/\.period-switcher a\[aria-current\]\s*\{/s);
   });
 
   test("provides one progressively enhanced archive behavior", async () => {
@@ -56,5 +59,80 @@ describe("navigation layout contract", () => {
     expect(dailyPage).toContain("reports={dailyReports}");
     expect(dailyPage).not.toContain("weeklyReports={weeklyReports}");
     expect(homePage).toContain('reports={report.type === "daily" ? dailyReports : weeklyReports}');
+  });
+
+  test("uses one daily-style timeline for monthly, weekly, and daily archives", async () => {
+    const timeline = await readFile(new URL("./ArchiveTimeline.astro", import.meta.url), "utf8");
+    const rail = await readFile(new URL("./DateRail.astro", import.meta.url), "utf8");
+    const monthly = await readFile(new URL("./MonthlyReportView.astro", import.meta.url), "utf8");
+    const styles = await readFile(new URL("../styles/global.css", import.meta.url), "utf8");
+
+    expect(timeline).toContain('<ol class="date-list">');
+    expect(timeline).toContain('class="date-dot"');
+    expect(timeline).toContain("index === 0");
+    expect(timeline).toContain("<small>最新</small>");
+    expect(timeline).toContain('aria-current={item.current ? "page" : undefined}');
+    expect(rail).toContain('import ArchiveTimeline from "./ArchiveTimeline.astro"');
+    expect(rail).toContain("<ArchiveTimeline items={archiveItems} />");
+    expect(monthly).toContain('import ArchiveTimeline from "./ArchiveTimeline.astro"');
+    expect(monthly).toContain("<ArchiveTimeline items={archiveItems} />");
+    expect(rail).not.toContain('class="weekly-links"');
+    expect(monthly).not.toContain('class="weekly-links"');
+    expect(styles).not.toMatch(/\.weekly-links\s*\{/);
+  });
+
+  test("separates numeric scores from the weekly selection state", async () => {
+    const entry = await readFile(new URL("./ProjectEntry.astro", import.meta.url), "utf8");
+    const styles = await readFile(new URL("../styles/global.css", import.meta.url), "utf8");
+
+    expect(entry).toContain('aria-label="周选项目"');
+    expect(entry).toContain('<span class="project-selection">周选</span>');
+    expect(entry).not.toContain('project.score ?? "W"');
+    expect(entry).not.toContain('"EEKLY"');
+    expect(styles).toMatch(/\.project-selection\s*\{/s);
+  });
+
+  test("keeps the search action recognizable at mobile widths", async () => {
+    const layout = await readFile(new URL("../layouts/BaseLayout.astro", import.meta.url), "utf8");
+    const styles = await readFile(new URL("../styles/global.css", import.meta.url), "utf8");
+
+    expect(layout).toContain('class="search-trigger__icon"');
+    expect(layout).toContain('aria-hidden="true"');
+    expect(layout).toContain('<span class="search-trigger__label">搜索</span>');
+    expect(styles).toMatch(/\.search-trigger__icon\s*\{/s);
+    expect(styles).toMatch(/@media \(max-width: 768px\)[\s\S]*\.search-trigger\s*\{[^}]*min-width:\s*2\.75rem[^}]*min-height:\s*2\.75rem/s);
+    expect(styles).toMatch(/@media \(max-width: 768px\)[\s\S]*\.search-trigger__label,\s*\.search-trigger kbd\s*\{[^}]*display:\s*none/s);
+  });
+
+  test("adds monthly section navigation and native evidence disclosure", async () => {
+    const view = await readFile(new URL("./MonthlyReportView.astro", import.meta.url), "utf8");
+    const styles = await readFile(new URL("../styles/global.css", import.meta.url), "utf8");
+
+    expect(view).toContain('class="monthly-section-nav"');
+    expect(view).toContain('href="#monthly-top5"');
+    expect(view).toContain('href="#monthly-opportunities"');
+    expect(view).toContain('href="#monthly-methodology"');
+    expect(view).toContain('<details class="monthly-evidence">');
+    expect(view).toContain("<summary>查看评分与核实证据</summary>");
+    expect(view).toContain('id="monthly-methodology"');
+    expect(styles).toMatch(/\.monthly-section-nav\s*\{/s);
+    expect(styles).toMatch(/\.monthly-evidence\s*>\s*summary\s*\{/s);
+  });
+
+  test("uses a strictly increasing spacing scale for component and section rhythm", async () => {
+    const styles = await readFile(new URL("../styles/global.css", import.meta.url), "utf8");
+
+    expect(styles).toMatch(/--space-5:\s*1\.25rem/);
+    expect(styles).toMatch(/--space-6:\s*1\.5rem/);
+    expect(styles).toMatch(/--space-7:\s*2rem/);
+    expect(styles).toMatch(/--space-8:\s*3rem/);
+  });
+
+  test("gives desktop report headings and summaries a wider reading measure", async () => {
+    const styles = await readFile(new URL("../styles/global.css", import.meta.url), "utf8");
+
+    expect(styles).toMatch(/\.report-hero h1\s*\{[^}]*max-width:\s*32ch[^}]*text-wrap:\s*pretty/s);
+    expect(styles).toMatch(/\.project-positioning\s*\{[^}]*max-width:\s*min\(62rem,\s*100%\)/s);
+    expect(styles).toMatch(/\.project-introduction\s*\{[^}]*max-width:\s*min\(62rem,\s*100%\)/s);
   });
 });

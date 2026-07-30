@@ -7,6 +7,6 @@ const labels: Record<ReportPeriod, string> = { monthly: "月", weekly: "周", da
 
 <nav class="period-switcher" aria-label="报告周期">
   {(["monthly", "weekly", "daily"] as const).map((period) => (
-    <a href={links[period]} aria-current={active === period ? "page" : undefined}>{labels[period]}</a>
+    <a href={links[period]} aria-current={active === period ? "true" : undefined}>{labels[period]}</a>
   ))}
 </nav>

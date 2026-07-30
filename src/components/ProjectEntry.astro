@@ -7,7 +7,6 @@ interface Props {
 }
 
 const { project, index } = Astro.props;
-const scoreLabel = project.score ? `${project.score}/100` : "精选";
 ---
 
 <article class="project-entry" id={project.id}>
@@ -18,10 +17,16 @@ const scoreLabel = project.score ? `${project.score}/100` : "精选";
         <span class:list={["project-stamp", `project-stamp--${project.kind}`]}>{project.kind}</span>
         <h2><a href={project.url} target="_blank" rel="noreferrer">{project.repository}</a></h2>
       </div>
-      <div class="project-score" aria-label={`推荐评分 ${scoreLabel}`}>
-        <strong>{project.score ?? "W"}</strong>
-        <span>{project.score ? "/ 100" : "EEKLY"}</span>
-      </div>
+      {project.score ? (
+        <div class="project-score" aria-label={`推荐评分 ${project.score}/100`}>
+          <strong>{project.score}</strong>
+          <span>/ 100</span>
+        </div>
+      ) : (
+        <div class="project-score project-score--selection" aria-label="周选项目">
+          <span class="project-selection">周选</span>
+        </div>
+      )}
     </header>
     {project.positioning && <p class="project-positioning">{project.positioning}</p>}
     {project.introduction && <p class="project-introduction">{project.introduction}</p>}

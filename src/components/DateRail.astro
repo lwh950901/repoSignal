@@ -1,5 +1,6 @@
 ---
 import type { DigestReport } from "../lib/digests";
+import ArchiveTimeline from "./ArchiveTimeline.astro";
 
 interface Props {
   reports: DigestReport[];
@@ -11,6 +12,11 @@ const { reports, period, currentSlug } = Astro.props;
 const weekly = period === "weekly";
 const archiveLabel = weekly ? "周报" : "日报";
 const href = (slug: string) => `/${period}/${slug}/`;
+const archiveItems = reports.map((report) => ({
+  label: weekly ? report.slug : report.date,
+  href: href(report.slug),
+  current: report.slug === currentSlug,
+}));
 ---
 
 <aside class="date-rail" aria-label={`${archiveLabel}归档`}>
@@ -31,26 +37,6 @@ const href = (slug: string) => `/${period}/${slug}/`;
       ))}
     </select>
   </label>
-  {weekly ? (
-    <div class="weekly-links">
-      {reports.map((report) => (
-        <a class:list={{ active: report.slug === currentSlug }} href={href(report.slug)} aria-current={report.slug === currentSlug ? "page" : undefined}>
-          {report.slug}
-        </a>
-      ))}
-    </div>
-  ) : (
-    <ol class="date-list">
-      {reports.map((report, index) => (
-        <li class:list={{ active: report.slug === currentSlug }}>
-          <a href={href(report.slug)} aria-current={report.slug === currentSlug ? "page" : undefined}>
-            <span class="date-dot" aria-hidden="true"></span>
-            <span>{report.date}</span>
-            {index === 0 && <small>最新</small>}
-          </a>
-        </li>
-      ))}
-    </ol>
-  )}
+  <ArchiveTimeline items={archiveItems} />
   <noscript><div class="archive-links">{reports.map((report) => <a href={href(report.slug)}>{weekly ? report.slug : report.date}</a>)}</div></noscript>
 </aside>

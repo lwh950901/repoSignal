@@ -1,8 +1,14 @@
 ---
 import type { MonthlyReport } from "../lib/monthly";
+import ArchiveTimeline from "./ArchiveTimeline.astro";
 const { report, months } = Astro.props as { report: MonthlyReport; months: MonthlyReport[] };
 const currentIndex = months.findIndex((item) => item.slug === report.slug);
 const adjacent = [months[currentIndex + 1], months[currentIndex - 1]].filter(Boolean);
+const archiveItems = months.map((item) => ({
+  label: item.slug,
+  href: `/monthly/${item.slug}/`,
+  current: item.slug === report.slug,
+}));
 const scoreDimensions = [
   ["本月重要性", "monthlySignificance", 20],
   ["实际价值", "practicalValue", 25],
@@ -22,7 +28,7 @@ const scoreDimensions = [
       </button>
     </div>
     <label class="report-select"><span>选择月份</span><select data-report-select>{months.map((item) => <option value={`/monthly/${item.slug}/`} selected={item.slug === report.slug}>{item.slug}</option>)}</select></label>
-    <div class="weekly-links">{months.map((item) => <a class:list={{ active: item.slug === report.slug }} href={`/monthly/${item.slug}/`}>{item.slug}</a>)}</div>
+    <ArchiveTimeline items={archiveItems} />
     <noscript><div class="archive-links">{months.map((item) => <a href={`/monthly/${item.slug}/`}>{item.slug}</a>)}</div></noscript>
   </aside>
 
@@ -38,6 +44,11 @@ const scoreDimensions = [
         <span><strong>{report.opportunities.length}</strong> 业务机会</span>
       </div>
       <p class="monthly-verification"><strong>数据截止 {report.cutoffDate}</strong> · {report.verificationNote}</p>
+      <nav class="monthly-section-nav" aria-label="月报章节">
+        <a href="#monthly-top5"><span>01</span>Top 5</a>
+        <a href="#monthly-opportunities"><span>02</span>业务机会</a>
+        <a href="#monthly-methodology"><span>03</span>研究说明</a>
+      </nav>
     </header>
 
     <section class="monthly-section" aria-labelledby="monthly-top5">
@@ -55,34 +66,39 @@ const scoreDimensions = [
             </header>
 
             <p class="monthly-change"><strong>本月变化</strong>{project.monthlyChange}</p>
-            <dl class="monthly-fact-grid">
-              <div><dt>Stars / Forks</dt><dd>{project.stars.toLocaleString("en-US")} / {project.forks.toLocaleString("en-US")}</dd></div>
-              <div><dt>Release</dt><dd>{project.release}</dd></div>
-              <div><dt>最近活动</dt><dd>{project.recentActivity}</dd></div>
-              <div><dt>许可证</dt><dd>{project.license}</dd></div>
-              <div><dt>核实日期</dt><dd>{project.verifiedAt}</dd></div>
-              <div><dt>运行验证</dt><dd><span class="verification-badge">{project.verificationLevel}</span></dd></div>
-            </dl>
+            <details class="monthly-evidence">
+              <summary>查看评分与核实证据</summary>
+              <div class="monthly-evidence__body">
+                <dl class="monthly-fact-grid">
+                  <div><dt>Stars / Forks</dt><dd>{project.stars.toLocaleString("en-US")} / {project.forks.toLocaleString("en-US")}</dd></div>
+                  <div><dt>Release</dt><dd>{project.release}</dd></div>
+                  <div><dt>最近活动</dt><dd>{project.recentActivity}</dd></div>
+                  <div><dt>许可证</dt><dd>{project.license}</dd></div>
+                  <div><dt>核实日期</dt><dd>{project.verifiedAt}</dd></div>
+                  <div><dt>运行验证</dt><dd><span class="verification-badge">{project.verificationLevel}</span></dd></div>
+                </dl>
 
-            <div class="monthly-score-grid" aria-label={`${project.repository} 六维评分`}>
-              {scoreDimensions.map(([label, key, max]) => (
-                <div class="monthly-score">
-                  <div><span>{label}</span><strong>{project.scores[key]}/{max}</strong></div>
-                  <meter min="0" max={max} value={project.scores[key]} aria-label={`${label} ${project.scores[key]} 分，满分 ${max} 分`}>{project.scores[key]}/{max}</meter>
+                <div class="monthly-score-grid" aria-label={`${project.repository} 六维评分`}>
+                  {scoreDimensions.map(([label, key, max]) => (
+                    <div class="monthly-score">
+                      <div><span>{label}</span><strong>{project.scores[key]}/{max}</strong></div>
+                      <meter min="0" max={max} value={project.scores[key]} aria-label={`${label} ${project.scores[key]} 分，满分 ${max} 分`}>{project.scores[key]}/{max}</meter>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
 
-            <dl class="monthly-analysis">
-              <div><dt>核心能力</dt><dd>{project.capability}</dd></div>
-              <div><dt>工程成熟度</dt><dd>{project.engineeringMaturity}</dd></div>
-              <div><dt>明确限制</dt><dd>{project.limitation}</dd></div>
-              <div class="monthly-analysis__objection"><dt>为什么它可能不应入选</dt><dd>{project.objection}</dd></div>
-              <div><dt>最终判断</dt><dd>{project.judgment}</dd></div>
-            </dl>
-            <ul class="monthly-sources" aria-label={`${project.repository} 来源`}>
-              {project.sources.map((source) => <li><a href={source.url}>{source.label}</a></li>)}
-            </ul>
+                <dl class="monthly-analysis">
+                  <div><dt>核心能力</dt><dd>{project.capability}</dd></div>
+                  <div><dt>工程成熟度</dt><dd>{project.engineeringMaturity}</dd></div>
+                  <div><dt>明确限制</dt><dd>{project.limitation}</dd></div>
+                  <div class="monthly-analysis__objection"><dt>为什么它可能不应入选</dt><dd>{project.objection}</dd></div>
+                  <div><dt>最终判断</dt><dd>{project.judgment}</dd></div>
+                </dl>
+                <ul class="monthly-sources" aria-label={`${project.repository} 来源`}>
+                  {project.sources.map((source) => <li><a href={source.url}>{source.label}</a></li>)}
+                </ul>
+              </div>
+            </details>
           </article>
         ))}
       </div>
@@ -131,7 +147,7 @@ const scoreDimensions = [
         ))}
     </section>
 
-    <section class="monthly-section monthly-methodology"><p class="eyebrow">METHODOLOGY</p><h2>研究说明</h2><div set:html={report.methodologyHtml} /></section>
+    <section id="monthly-methodology" class="monthly-section monthly-methodology"><p class="eyebrow">METHODOLOGY</p><h2>研究说明</h2><div set:html={report.methodologyHtml} /></section>
     <nav class="adjacent-links" aria-label="相邻月份">{adjacent.map((item) => <a href={`/monthly/${item.slug}/`}>{item.slug}</a>)}</nav>
   </article>
 </main>

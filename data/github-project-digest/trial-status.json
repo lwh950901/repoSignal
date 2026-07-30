@@ -32,14 +32,26 @@
   "history_entries_before_run": 0,
   "history_entries_detected_before_append": 3,
   "latest_daily_run": {
-    "candidates": "/Users/elvis/Desktop/repo-signal/data/github-project-digest/candidates/2026-07-27.jsonl",
-    "checked_at": "2026-07-27T05:51:00+08:00",
-    "date": "2026-07-27",
-    "fallback": "短名单 enrichment 后段触发 GitHub 未认证 API 限流；降级为 GitHub Release/Commit Atom 与仓库事实核验。",
-    "report": "/Users/elvis/Desktop/repo-signal/data/github-project-digest/daily/2026-07-27.md",
-    "scanner_ran": true,
-    "skill_called": true,
-    "status": "passed_with_api_fallback"
+    "anomalies": [
+      "本机 Python 默认 CA 证书链失败；按 skill 规则仅以 --insecure 验证一次连通性，随后通过 certifi CA 恢复正常 TLS 校验。",
+      "alibaba/open-code-review 在 90 天内重复，但 Stars 较 2026-07-04 增长约 61%，并发布 v1.8.0，按显著增长规则破例。"
+    ],
+    "checked_at": "2026-07-30T06:35:59+08:00",
+    "checks": {
+      "candidate_jsonl": true,
+      "dedupe_90d": true,
+      "extra_count": 1,
+      "github_fact_source": true,
+      "history_jsonl": true,
+      "live_search": true,
+      "primary_count": 5,
+      "scanner_ran": true,
+      "skill_invoked": true,
+      "ten_fields_each": true,
+      "user_candidate_preserved_and_reverified": true
+    },
+    "date": "2026-07-30",
+    "status": "passed_live_api_with_tls_repair"
   },
   "main_recommendation_count": 3,
   "runs": [
@@ -95,6 +107,24 @@
       "scanner_ran": true,
       "skill_invoked": true,
       "status": "passed_with_api_fallback"
+    },
+    {
+      "checks": [
+        "fixed_format",
+        "primary_count_5",
+        "extra_count_1",
+        "required_fields",
+        "history_jsonl",
+        "candidate_jsonl",
+        "dedupe_90d",
+        "feedback_read"
+      ],
+      "date": "2026-07-30",
+      "fallback": "initial Python TLS verification failed; one --insecure connectivity check was followed by normal verified TLS using certifi CA; all live searches and six shortlist enrichments then succeeded without API rate-limit or webpage fallback",
+      "run_time": "2026-07-30 06:35:59 +0800",
+      "scanner_ran": true,
+      "skill_invoked": true,
+      "status": "passed_live_api_with_tls_repair"
     }
   ],
   "status": "passed_with_recovered_anomaly",
