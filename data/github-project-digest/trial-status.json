@@ -32,11 +32,14 @@
   "history_entries_before_run": 0,
   "history_entries_detected_before_append": 3,
   "latest_daily_run": {
+    "date": "2026-08-01",
+    "checked_at": "2026-08-01T06:11:52+0800",
+    "status": "passed_with_api_fallback",
     "anomalies": [
-      "本机 Python 默认 CA 证书链失败；按 skill 规则仅以 --insecure 验证一次连通性，随后通过 certifi CA 恢复正常 TLS 校验。",
-      "alibaba/open-code-review 在 90 天内重复，但 Stars 较 2026-07-04 增长约 61%，并发布 v1.8.0，按显著增长规则破例。"
+      "沙箱内扫描器首次 DNS 失败，经授权联网重跑成功。",
+      "常青查询首次返回 0，按时间通道设计放宽非时间关键词重试一次后返回 20。",
+      "短名单 --enrich 触发未认证 GitHub API 限流；降级为 GitHub 仓库、许可证、Release 页面与 Trending，未使用缓存冒充实时事实。"
     ],
-    "checked_at": "2026-07-30T06:35:59+08:00",
     "checks": {
       "candidate_jsonl": true,
       "dedupe_90d": true,
@@ -48,10 +51,9 @@
       "scanner_ran": true,
       "skill_invoked": true,
       "ten_fields_each": true,
-      "user_candidate_preserved_and_reverified": true
-    },
-    "date": "2026-07-30",
-    "status": "passed_live_api_with_tls_repair"
+      "user_candidates_present": false,
+      "time_lane_coverage": true
+    }
   },
   "main_recommendation_count": 3,
   "runs": [
@@ -125,6 +127,43 @@
       "scanner_ran": true,
       "skill_invoked": true,
       "status": "passed_live_api_with_tls_repair"
+    },
+    {
+      "date": "2026-07-31",
+      "run_time": "2026-07-31T06:02:17+0800",
+      "status": "passed_with_tls_and_api_fallback",
+      "skill_invoked": true,
+      "scanner_ran": true,
+      "fallback": "initial Python TLS verification failed; one --insecure connectivity retry completed five live searches; shortlist enrichments succeeded; later unauthenticated GitHub REST limit was reached and GitHub repository/release/commit pages plus Commit Atom were used",
+      "checks": [
+        "fixed_format",
+        "primary_count_5",
+        "extra_count_0",
+        "required_fields",
+        "history_jsonl",
+        "candidate_jsonl",
+        "dedupe_90d",
+        "feedback_read"
+      ]
+    },
+    {
+      "date": "2026-08-01",
+      "run_time": "2026-08-01T06:11:52+0800",
+      "status": "passed_with_api_fallback",
+      "skill_invoked": true,
+      "scanner_ran": true,
+      "fallback": "five broad scanner lanes ran after sandbox DNS retry; evergreen empty result was relaxed once; shortlist --enrich hit unauthenticated GitHub API limit, then GitHub repository/license/release pages and Trending were used",
+      "checks": [
+        "fixed_format",
+        "primary_count_5",
+        "extra_count_1",
+        "required_fields",
+        "history_jsonl",
+        "candidate_jsonl",
+        "dedupe_90d",
+        "feedback_read",
+        "time_lane_coverage"
+      ]
     }
   ],
   "status": "passed_with_recovered_anomaly",

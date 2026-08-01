@@ -1,6 +1,6 @@
 # 业务调查：跨工具 AI 编程用量与成本台账
 
-> 状态：通过发布门槛，L3 未完成；核实日期 2026-07-20。
+> 状态：通过发布门槛，L3 两次尝试均未完成；月末补跑核实日期 2026-08-01。
 
 ## 摘要
 
@@ -58,6 +58,7 @@
 - 计划：运行 CodeBurn 的轻量 `status --format json` 生成聚合数据，不显示或保存提示词/代码；用 DuckDB Node 客户端 `read_json` 导入并查询字段。
 - 已完成前置：CodeBurn npm 安装、CLI 启动和受限 provider 解析健康检查达到 L2；DuckDB 官方文档确认 JSON 导入接口。
 - 阻塞：沙箱内 npm 下载首先因 `registry.npmjs.org` DNS `ENOTFOUND` 失败；获准联网重试后超过两分钟仍没有数据或错误输出，主动终止。没有关闭 TLS 校验、替换不可信镜像或提升本机 Docker socket 权限。
+- 月末重试：2026-08-01 在项目目录外临时执行 CodeBurn 与 Chrome DevTools MCP 的锁定/一次性 npm 命令，两个进程均持续无输出；按有界验证原则终止。没有读取真实会话，也没有产生可导入 DuckDB 的合成 JSON，因此不能把前置命令启动写成 L1，更不能把组合写成 L3。
 - 结果：没有产生 DuckDB 查询结果，组合不得标为 L3。当前结论维持“部分可行”。
 - 继续所需：在能正常取得官方 DuckDB 包的环境重跑；实现 schema allowlist 和身份字段剥离后才允许导入真实聚合数据。
 
@@ -100,7 +101,7 @@
 
 未验证：真实团队愿意采用；跨设备身份映射；CodeBurn schema 长期稳定；管理员 API 接入；效率或 ROI 改善；任何收入或客户数量。
 
-来源（均核实于 2026-07-20）：
+来源（需求与替代方案于 2026-07-20 首次核实，仓库和验证边界于 2026-08-01 复核）：
 
 - [GitHub Copilot usage metrics](https://docs.github.com/en/enterprise-cloud@latest/copilot/concepts/copilot-usage-metrics/copilot-metrics)
 - [GitHub Copilot metric fields and NDJSON/API reports](https://docs.github.com/en/enterprise-cloud@latest/copilot/reference/copilot-usage-metrics/copilot-usage-metrics)

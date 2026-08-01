@@ -153,8 +153,17 @@ kbd { padding: .15rem .45rem; border: 1px solid var(--rule); background: var(--p
 .monthly-section-nav a:hover { background: var(--paper-deep); }
 .monthly-section { margin-top: 3.5rem; padding-top: 1.25rem; border-top: 2px solid var(--ink); scroll-margin-top: 1rem; }
 .monthly-section__heading { display: grid; grid-template-columns: minmax(16rem, 1fr) minmax(18rem, 34rem); gap: var(--space-7); align-items: end; margin-bottom: var(--space-6); }
+.monthly-section__heading--stacked { grid-template-columns: 1fr; }
 .monthly-section__heading h2, .monthly-methodology h2 { margin: 0; font: 500 clamp(1.35rem, 2.2vw, 1.85rem) var(--font-mono); }
 .monthly-section__heading > p { margin: 0; color: var(--ink-soft); font-size: .85rem; }
+.monthly-section__intro { max-width: 62rem; margin: var(--space-4) 0 0; color: var(--ink-soft); font-size: .85rem; }
+.monthly-discovery { margin-bottom: var(--space-7); }
+.monthly-discovery h3 { margin: 0 0 var(--space-4); font: 500 .9rem var(--font-mono); }
+.monthly-discovery__steps { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); margin: 0; padding: 0; border-block: 1px solid var(--rule); list-style: none; }
+.monthly-discovery__steps li { padding: var(--space-4); }
+.monthly-discovery__steps li + li { border-left: 1px solid var(--rule); }
+.monthly-discovery__steps strong { font: 500 .72rem var(--font-mono); }
+.monthly-discovery__steps p { margin: .65rem 0 0; color: var(--ink-soft); font-size: .8rem; }
 .monthly-projects { border-top: 1px solid var(--ink); }
 .monthly-project { padding: 2rem 0 2.5rem; border-bottom: 1px solid var(--ink); scroll-margin-top: 1rem; }
 .monthly-project__header { display: grid; grid-template-columns: 2.5rem minmax(0, 1fr) auto; gap: var(--space-5); align-items: start; }
@@ -268,6 +277,8 @@ kbd { padding: .15rem .45rem; border: 1px solid var(--rule); background: var(--p
   .monthly-section-nav a { justify-content: center; gap: 0; padding-inline: .35rem; }
   .monthly-section-nav span { display: none; }
   .monthly-section__heading { grid-template-columns: 1fr; gap: var(--space-3); }
+  .monthly-discovery__steps { grid-template-columns: 1fr; }
+  .monthly-discovery__steps li + li { border-top: 1px solid var(--rule); border-left: 0; }
   .monthly-project__header { grid-template-columns: minmax(0, 1fr) auto; }
   .monthly-rank { display: none; }
   .monthly-fact-grid, .monthly-score-grid, .monthly-analysis, .opportunity-ledger { grid-template-columns: 1fr; }

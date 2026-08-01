@@ -1,44 +1,49 @@
 # 2026-07 Top 5 评分底稿
 
-> 核实日期：2026-07-20。评分是按统一量表做出的可解释编辑判断，不是绝对客观排名。
+> 核实日期：2026-08-01。评分是按统一量表做出的可解释编辑判断，不是绝对客观排名。
 
 ## 候选池审计
 
-- 数据截止：2026-07-19（只使用截止日前已进入本地候选账本的事实）。
-- 确定性合格候选数：120，不是旧示例月报写的 94。
+- Asia/Shanghai 数据截止：2026-07-31。
+- 确定性合格候选数：203；生成器按小写 `owner/repo` 合并候选账本、7 月日报和与 7 月重叠的 ISO 周报。
 - 复现命令：`python3 scripts/generate_monthly_digest.py 2026-07 --output <临时文件>`。
-- 生成器自检：通过。
-- 已检查误收项：`0xkaz/llm-governance-dashboard`、`docs/superpowers`、`cli/tui`、`.github/workflows` 均未进入候选。
-- 深度候选只按月内可核实信号选取，选取时未预设最终名次。
+- 生成器把重叠周的 2026-08-02 周末日期钳制为 7 月 31 日公开截止；8 月 1 日日报不计入 7 月。
+- 硬门槛：仓库可访问、未归档、许可证与用途明确、有安装入口、7 月存在发布或有效变化，且没有直接否决推荐的安全或合规风险。
+- 深度候选按多来源重复、7 月发布/有效提交、工程材料和采用证据选择；Stars 不能单独触发深查或排名。
 
 ## 深度候选与评分
 
 | 仓库 | 月 /20 | 价值 /25 | 工程 /20 | 差异 /15 | 维护 /10 | 采用 /10 | 总分 | 验证 | 主要反对理由 |
 |---|---:|---:|---:|---:|---:|---:|---:|---|---|
-| alibaba/zvec | 20 | 23 | 19 | 14 | 9 | 8 | **93** | L2 | 仍是较新的嵌入式向量数据库；生产边界需用大数据量继续验证。 |
-| pydantic/pydantic-ai | 18 | 24 | 20 | 13 | 9 | 8 | **92** | L0 | 本机 Python TLS 阻断安装；快速演进会增加升级成本。 |
-| getagentseal/codeburn | 19 | 23 | 18 | 15 | 9 | 7 | **91** | L2 | 团队同步协议仍标为 preview，跨组织治理能力尚未成熟。 |
-| langchain4j/langchain4j | 18 | 23 | 20 | 12 | 9 | 9 | **91** | L0 | JVM 生态集成面很宽，团队仍需自己约束最小采用面；本机无 Java。 |
-| bytedance/deer-flow | 17 | 23 | 19 | 14 | 8 | 9 | **90** | L0 | 2.0 为大规模重写，长链路运行成本和失败恢复需要真实任务验证。 |
-| egonex-ai/understand-anything | 18 | 22 | 18 | 14 | 8 | 9 | 89 | L0 | 知识图谱质量高度依赖仓库结构与分析范围，本轮未运行真实仓库。 |
-| earendil-works/pi | 18 | 22 | 18 | 13 | 9 | 9 | 89 | L0 | 高度可定制也意味着团队规范、权限与评测主要由使用者承担。 |
-| microsoft/skillopt | 18 | 21 | 18 | 14 | 8 | 7 | 86 | L0 | 官方基准结果仍属于作者声明，能否迁移到真实任务尚未验证。 |
-| mempalace/mempalace | 18 | 21 | 17 | 13 | 8 | 8 | 85 | L0 | 默认分支与发布方式增加判断成本，长期记忆的正确性和删除边界需实测。 |
-| nexu-io/open-design | 18 | 20 | 17 | 13 | 8 | 8 | 84 | L0 | 采用热度很高，但桌面、MCP、BYOK 与导出链路均未运行复核。 |
-| VoltAgent/voltagent | 17 | 21 | 18 | 12 | 9 | 7 | 84 | L0 | 与多种 Agent 框架的能力重叠较多，差异价值需在生产任务中证明。 |
-| strukto-ai/mirage | 18 | 20 | 16 | 14 | 7 | 6 | 81 | L0 | 项目较新、采用证据有限，本轮未完成最小运行。 |
-| agents-flex/agents-flex | 16 | 19 | 16 | 11 | 7 | 5 | 74 | L0 | 采用和独立生产证据较弱，无法仅凭广泛功能面进入 Top 5。 |
-| dietrichgebert/ponytail | 18 | 17 | 14 | 14 | 7 | 8 | 78 | L0 | 极简约束有鲜明定位，但作者基准未独立复现，且不是完整运行时。 |
-| aprilnea/openlogi | 12 | 17 | 12 | 12 | 6 | 5 | 64 | 未完成 | 2026-07-20 官方仓库页面无法稳定访问，未通过可访问性门槛。 |
+| ChromeDevTools/chrome-devtools-mcp | 20 | 25 | 20 | 14 | 9 | 8 | **96** | L0 | 浏览器权限面大，本轮 npm 临时安装无输出，未完成最小握手。 |
+| heygen-com/hyperframes | 20 | 23 | 19 | 15 | 8 | 9 | **94** | 0.x 高频发布，浏览器、FFmpeg、字体和媒体资产会放大输出一致性风险。 |
+| alibaba/open-code-review | 20 | 23 | 19 | 15 | 8 | 8 | **93** | 公开基准和大规模内部采用主要来自作者，独立检出率尚未复现。 |
+| hyperdxio/hyperdx | 18 | 25 | 20 | 12 | 9 | 8 | **92** | ClickHouse、遥测留存和 session replay 带来显著运维与隐私成本。 |
+| cvat-ai/cvat | 18 | 24 | 20 | 11 | 9 | 9 | **91** | 系统体量、开放 Issue 和第三方资产许可证需要采用者逐项治理。 |
+| chatwoot/chatwoot | 17 | 24 | 19 | 11 | 9 | 9 | 89 | L0 | 自托管需要维护数据库、Redis、邮件和渠道凭据，企业目录许可证另算。 |
+| openai/openai-agents-python | 18 | 23 | 20 | 12 | 9 | 7 | 89 | L0 | 快速演进且深度使用通常绑定模型凭据、费用和数据边界。 |
+| alibaba/zvec | 17 | 23 | 19 | 14 | 9 | 7 | 89 | L2 | 生产数据规模、并发、恢复和升级边界仍需工作负载验证。 |
+| pydantic/pydantic-ai | 17 | 24 | 20 | 12 | 9 | 7 | 89 | L0 | 类型化体验突出，但 7 月下半月信号弱于榜首项目且本轮未运行。 |
+| topoteretes/cognee | 18 | 22 | 18 | 14 | 8 | 8 | 88 | L0 | 记忆正确性、删除语义和多后端组合复杂度未在真实任务验证。 |
+| langchain4j/langchain4j | 16 | 23 | 20 | 11 | 9 | 9 | 88 | L0 | JVM 集成面很宽，团队仍需自行约束版本、模块与最小采用面。 |
+| getagentseal/codeburn | 17 | 22 | 18 | 15 | 8 | 7 | 87 | L2 | 团队同步和隐私治理尚未成熟；本轮临时下载未完成。 |
+| bytedance/deer-flow | 16 | 22 | 18 | 13 | 8 | 9 | 86 | L0 | 长链路成本、沙箱权限和失败恢复需要真实任务验证。 |
+| ModelEngine-Group/nexent | 18 | 22 | 18 | 12 | 8 | 6 | 84 | L0 | 功能面宽且默认开发分支持续变化，生产治理成本未实测。 |
+| different-ai/openwork | 19 | 21 | 17 | 13 | 7 | 7 | 84 | L0 | Alpha 高频迭代，主体 MIT 与企业目录/远程控制面边界需要审查。 |
 
 ## 校准与冻结
 
-- 首轮试评分后检查了成熟项目、明星数和大公司背景是否自动占优；六维权重保持设计值，**未调整**。Stars/Forks 只进入 10 分的采用证据，不参与其他维度。
-- `codeburn` 与 `langchain4j` 同为 91 分。前者月内发布和差异化更强且完成 L2，因此排在前；没有为覆盖技术方向而人工调榜。
-- 冻结 Top 5：`alibaba/zvec`、`pydantic/pydantic-ai`、`getagentseal/codeburn`、`langchain4j/langchain4j`、`bytedance/deer-flow`。
-- `Understand-Anything` 是最接近入榜者；其用途真实，但本轮缺少运行验证，且总分低 1 分。
+- 六维权重保持设计值，未调整。Stars/Forks 只辅助采用证据，不进入其他维度。
+- 未为技术方向多样性或业务组合用途调榜；分数按总分降序冻结。
+- Pydantic AI 与 zvec 在旧截止稿中领先，但月末新增候选具备更强的 7 月发布、工程和采用信号，重新统一评分后未进入前五。
+- 冻结 Top 5：`ChromeDevTools/chrome-devtools-mcp`、`heygen-com/hyperframes`、`alibaba/open-code-review`、`hyperdxio/hyperdx`、`cvat-ai/cvat`。
+- 核实日期：2026-08-01。指标使用当日 GitHub 公开页面快照，精确 release 日期使用官方 Releases；未认证 API 403 后没有猜测精确 Stars。
 
 ## 主要事实来源
 
-- 各仓库 canonical GitHub 页面：[zvec](https://github.com/alibaba/zvec)、[Pydantic AI](https://github.com/pydantic/pydantic-ai)、[CodeBurn](https://github.com/getagentseal/codeburn)、[LangChain4j](https://github.com/langchain4j/langchain4j)、[DeerFlow](https://github.com/bytedance/deer-flow)、[Understand Anything](https://github.com/egonex-ai/understand-anything)、[pi](https://github.com/earendil-works/pi)、[SkillOpt](https://github.com/microsoft/skillopt)、[MemPalace](https://github.com/mempalace/mempalace)、[Open Design](https://github.com/nexu-io/open-design)、[VoltAgent](https://github.com/VoltAgent/voltagent)、[Mirage](https://github.com/strukto-ai/mirage)、[agents-flex](https://github.com/agents-flex/agents-flex)、[ponytail](https://github.com/dietrichgebert/ponytail)。
-- 精确指标、release、许可证与验证边界见同目录 `repository-verification.md`；公开月报只采用已完成复核的字段。
+- [Chrome DevTools MCP](https://github.com/ChromeDevTools/chrome-devtools-mcp)、[Releases](https://github.com/ChromeDevTools/chrome-devtools-mcp/releases)
+- [HyperFrames](https://github.com/heygen-com/hyperframes)、[Releases](https://github.com/heygen-com/hyperframes/releases)
+- [OpenCodeReview](https://github.com/alibaba/open-code-review)、[Releases](https://github.com/alibaba/open-code-review/releases)
+- [HyperDX](https://github.com/hyperdxio/hyperdx)、[Releases](https://github.com/hyperdxio/hyperdx/releases)
+- [CVAT](https://github.com/cvat-ai/cvat)、[Releases](https://github.com/cvat-ai/cvat/releases)
+- 其余候选的 canonical GitHub 页面与同目录 `repository-verification.md`。

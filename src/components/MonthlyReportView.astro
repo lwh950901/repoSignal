@@ -66,7 +66,7 @@ const scoreDimensions = [
             </header>
 
             <p class="monthly-change"><strong>本月变化</strong>{project.monthlyChange}</p>
-            <details class="monthly-evidence">
+            <details class="monthly-evidence" open>
               <summary>查看评分与核实证据</summary>
               <div class="monthly-evidence__body">
                 <dl class="monthly-fact-grid">
@@ -105,10 +105,22 @@ const scoreDimensions = [
     </section>
 
     <section class="monthly-section" aria-labelledby="monthly-opportunities">
-      <div class="monthly-section__heading">
-        <div><p class="eyebrow">BUSINESS RESEARCH</p><h2 id="monthly-opportunities">真实业务与项目机会</h2></div>
-        <p>只发布通过需求、替代方案、组合和 MVP 门槛的方案；与 Top 5 排名无关。</p>
+      <div class="monthly-section__heading monthly-section__heading--stacked">
+        <div>
+          <p class="eyebrow">BUSINESS RESEARCH</p>
+          <h2 id="monthly-opportunities">真实业务与项目机会</h2>
+          <p class="monthly-section__intro">先从本月仓库中寻找可组合的能力，再核对需求证据、商业产品、开源替代和现实人工流程。至少一个核心仓库需跑通单仓库核心流程（L2）；随后尝试让两个以上仓库用真实格式数据完成连接（L3），未跑通则明确降级。</p>
+        </div>
       </div>
+      <section class="monthly-discovery" aria-labelledby="monthly-discovery-title">
+        <h3 id="monthly-discovery-title">发现流程</h3>
+        <ol class="monthly-discovery__steps">
+          <li><strong>01｜仓库盘点</strong><p>汇总当月日报、周报、候选账本和研究材料，去重后筛出值得继续核实的仓库。</p></li>
+          <li><strong>02｜需求核实</strong><p>寻找至少两类独立需求证据，并调查商业产品、开源或自托管替代，以及现实人工流程。</p></li>
+          <li><strong>03｜组合设计</strong><p>选择 2–5 个职责不重叠的仓库，核对接口、输入输出、许可证、部署限制和需要自行开发的部分。</p></li>
+          <li><strong>04｜验证发布</strong><p>至少一个核心仓库达到 L2，并尝试安全的 L3 组合验证；未达到门槛则降级或不发布。</p></li>
+        </ol>
+      </section>
       {report.opportunities.length === 0
         ? <p class="monthly-empty">本月未发现通过完整验证的新机会。</p>
         : report.opportunities.map((opportunity, index) => (
