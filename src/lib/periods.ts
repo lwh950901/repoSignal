@@ -1,4 +1,4 @@
-export type ReportPeriod = "monthly" | "weekly" | "daily";
+export type ReportPeriod = "monthly" | "weekly" | "daily" | "radar";
 
 function href(type: ReportPeriod, slug?: string): string {
   return `/${type}/${slug ? `${slug}/` : ""}`;
@@ -14,10 +14,12 @@ export function resolvePeriodLinks(
   monthly: string[],
   weekly: string[],
   daily: string[],
+  radar: string[],
 ): Record<ReportPeriod, string> {
   return {
     monthly: href("monthly", latest(monthly)),
     weekly: href("weekly", latest(weekly)),
     daily: href("daily", latest(daily)),
+    radar: href("radar", latest(radar)),
   };
 }

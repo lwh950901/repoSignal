@@ -4,11 +4,13 @@ import MonthlyReportView from "../../components/MonthlyReportView.astro";
 import { createMonthlySearchIndex, loadMonthlyReports, type MonthlyReport } from "../../lib/monthly";
 import { createSearchIndex, loadDailyReports, loadWeeklyReports } from "../../lib/digests";
 import { resolvePeriodLinks } from "../../lib/periods";
+import { loadRadarReports } from "../../lib/radar";
 export function getStaticPaths() { return loadMonthlyReports().map((report) => ({ params: { month: report.slug }, props: { report } })); }
 interface Props { report: MonthlyReport }
 const { report } = Astro.props;
 const monthlyReports = loadMonthlyReports(); const weeklyReports = loadWeeklyReports(); const dailyReports = loadDailyReports();
+const radarReports = loadRadarReports();
 const searchItems = [...createMonthlySearchIndex(monthlyReports), ...createSearchIndex([...weeklyReports, ...dailyReports])];
-const periodLinks = resolvePeriodLinks("monthly", report.slug, monthlyReports.map((item) => item.slug), weeklyReports.map((item) => item.slug), dailyReports.map((item) => item.slug));
+const periodLinks = resolvePeriodLinks("monthly", report.slug, monthlyReports.map((item) => item.slug), weeklyReports.map((item) => item.slug), dailyReports.map((item) => item.slug), radarReports.map((item) => item.slug));
 ---
 <BaseLayout title={`${report.slug}｜${report.theme}`} description={report.conclusion} canonical={`/monthly/${report.slug}/`} searchItems={searchItems} activePeriod="monthly" periodLinks={periodLinks}><MonthlyReportView report={report} months={monthlyReports} /></BaseLayout>

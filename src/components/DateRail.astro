@@ -1,28 +1,35 @@
 ---
-import type { DigestReport } from "../lib/digests";
 import ArchiveTimeline from "./ArchiveTimeline.astro";
 
+interface ArchiveReport { slug: string; date: string }
 interface Props {
-  reports: DigestReport[];
-  period: "weekly" | "daily";
+  reports: ArchiveReport[];
+  period: "weekly" | "daily" | "radar";
   currentSlug: string;
 }
 
 const { reports, period, currentSlug } = Astro.props;
-const weekly = period === "weekly";
-const archiveLabel = weekly ? "周报" : "日报";
+const periodMeta = {
+  weekly: { archiveLabel: "周报", eyebrow: "WEEKLY" },
+  daily: { archiveLabel: "日报", eyebrow: "DAILY" },
+  radar: { archiveLabel: "开源雷达周刊", eyebrow: "RADAR" },
+} as const;
+const { archiveLabel, eyebrow } = periodMeta[period];
 const href = (slug: string) => `/${period}/${slug}/`;
 const archiveItems = reports.map((report) => ({
-  label: weekly ? report.slug : report.date,
+  label: period === "daily" ? report.date : report.slug,
   href: href(report.slug),
   current: report.slug === currentSlug,
 }));
+const optionLabel = (report: ArchiveReport) => period === "weekly"
+  ? `${report.slug} 周精选`
+  : period === "radar" ? `${report.slug} 开源雷达周刊` : report.date;
 ---
 
 <aside class="date-rail" aria-label={`${archiveLabel}归档`}>
   <div class="archive-rail__header">
     <div class="date-rail__heading">
-      <span>{weekly ? "WEEKLY" : "DAILY"}</span>
+      <span>{eyebrow}</span>
       <span>{reports.length} 期</span>
     </div>
     <button class="archive-rail-toggle" type="button" data-archive-rail-toggle data-archive-label={archiveLabel} aria-expanded="true" aria-label={`收起${archiveLabel}归档`}>
@@ -33,10 +40,10 @@ const archiveItems = reports.map((report) => ({
     <span>选择报告</span>
     <select data-report-select>
       {reports.map((report) => (
-        <option value={href(report.slug)} selected={report.slug === currentSlug}>{weekly ? `${report.slug} 周精选` : report.date}</option>
+        <option value={href(report.slug)} selected={report.slug === currentSlug}>{optionLabel(report)}</option>
       ))}
     </select>
   </label>
   <ArchiveTimeline items={archiveItems} />
-  <noscript><div class="archive-links">{reports.map((report) => <a href={href(report.slug)}>{weekly ? report.slug : report.date}</a>)}</div></noscript>
+  <noscript><div class="archive-links">{reports.map((report) => <a href={href(report.slug)}>{period === "daily" ? report.date : report.slug}</a>)}</div></noscript>
 </aside>

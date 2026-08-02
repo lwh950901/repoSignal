@@ -134,6 +134,15 @@ kbd { padding: .15rem .45rem; border: 1px solid var(--rule); background: var(--p
 .prose a { color: var(--moss); }
 .prose li + li { margin-top: .35rem; }
 .prose h2, .prose h3 { line-height: 1.3; }
+.radar-article { min-width: 0; padding: var(--space-7) 0 var(--space-8); }
+.radar-cover { display: block; width: 100%; height: auto; aspect-ratio: 2.35 / 1; object-fit: cover; border: 1px solid var(--ink); }
+.radar-hero { max-width: 52rem; padding: var(--space-7) 0; border-bottom: 1px solid var(--ink); }
+.radar-hero h1 { margin: 0; font-size: clamp(2rem, 3.5vw, 3.25rem); font-weight: 600; letter-spacing: -.045em; line-height: 1.12; }
+.radar-body { max-width: 52rem; padding-top: var(--space-7); font-size: 1.02rem; line-height: 1.85; }
+.radar-body h2 { margin: var(--space-8) 0 var(--space-5); padding-top: var(--space-4); border-top: 2px solid var(--ink); font: 500 clamp(1.35rem, 2.2vw, 1.75rem) var(--font-mono); }
+.radar-body h3 { margin: var(--space-7) 0 var(--space-3); font-size: 1.2rem; }
+.radar-body p { margin: 0 0 var(--space-5); }
+.radar-body hr { margin: var(--space-8) 0; border: 0; border-top: 1px solid var(--rule); }
 .bonus-findings { margin-top: var(--space-8); padding-top: var(--space-4); border-top: 2px solid var(--ink); }
 .bonus-findings__heading { margin: 0 0 var(--space-5); font: 500 clamp(1rem, 2vw, 1.35rem) var(--font-mono); letter-spacing: -.02em; display: flex; align-items: center; gap: var(--space-4); }
 .bonus-findings__heading::after { content: ""; flex: 1; height: 1px; background: var(--rule); }
@@ -246,9 +255,13 @@ kbd { padding: .15rem .45rem; border: 1px solid var(--rule); background: var(--p
 }
 
 @media (max-width: 768px) {
-  .site-header { min-height: 4rem; padding: 0 var(--space-4); }
+  .site-header { min-height: 6.75rem; padding: var(--space-2) var(--space-4) 0; grid-template-columns: minmax(0, 1fr) auto; grid-template-rows: auto auto; }
+  .brand { grid-column: 1; grid-row: 1; }
+  .site-actions { grid-column: 2; grid-row: 1; }
+  .site-period-navigation { grid-column: 1 / -1; grid-row: 2; justify-self: stretch; }
   .site-actions > a { display: none; }
-  .period-switcher { gap: .7rem; }
+  .period-switcher { justify-content: center; gap: clamp(.55rem, 3vw, 1rem); }
+  .period-switcher a { display: flex; align-items: center; min-height: 2.75rem; padding: .35rem 0 .2rem; white-space: nowrap; }
   .search-trigger { min-width: 2.75rem; min-height: 2.75rem; justify-content: center; padding: 0; }
   .search-trigger__label,
   .search-trigger kbd { display: none; }
@@ -270,6 +283,9 @@ kbd { padding: .15rem .45rem; border: 1px solid var(--rule); background: var(--p
   .project-introduction { font-size: .95rem; }
   .project-facts > div { grid-template-columns: 1fr; gap: .35rem; }
   .project-details .prose { padding: var(--space-4); }
+  .radar-article { padding-top: var(--space-5); }
+  .radar-hero { padding: var(--space-6) 0; }
+  .radar-body { padding-top: var(--space-5); font-size: 1rem; }
   .search-palette { margin-top: 1rem; }
   .search-palette__bar { grid-template-columns: 1fr auto; }
   .search-palette__bar label { display: none; }

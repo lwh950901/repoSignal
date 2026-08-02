@@ -1,0 +1,23 @@
+---
+import type { RadarReport } from "../lib/radar";
+import DateRail from "./DateRail.astro";
+
+interface Props {
+  report: RadarReport;
+  reports: RadarReport[];
+}
+
+const { report, reports } = Astro.props;
+---
+
+<main id="main-content" class="archive-shell radar-shell" data-archive-shell>
+  <DateRail reports={reports} period="radar" currentSlug={report.slug} />
+  <article class="radar-article">
+    <img class="radar-cover" src={report.cover} alt={report.coverAlt} width="1923" height="818" />
+    <header class="radar-hero">
+      <p class="eyebrow">OPEN SOURCE RADAR / <time datetime={report.date}>{report.date}</time></p>
+      <h1>{report.title}</h1>
+    </header>
+    <div class="radar-body prose" set:html={report.html}></div>
+  </article>
+</main>

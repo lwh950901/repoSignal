@@ -4,13 +4,15 @@ import ReportView from "../components/ReportView.astro";
 import { createSearchIndex, loadDailyReports, loadWeeklyReports, selectDefaultReport } from "../lib/digests";
 import { createMonthlySearchIndex, loadMonthlyReports } from "../lib/monthly";
 import { resolvePeriodLinks } from "../lib/periods";
+import { loadRadarReports } from "../lib/radar";
 
 const dailyReports = loadDailyReports();
 const weeklyReports = loadWeeklyReports();
 const monthlyReports = loadMonthlyReports();
+const radarReports = loadRadarReports();
 const report = selectDefaultReport(dailyReports, weeklyReports);
 const searchItems = [...createMonthlySearchIndex(monthlyReports), ...createSearchIndex([...weeklyReports, ...dailyReports])];
-const periodLinks = report ? resolvePeriodLinks(report.type, report.slug, monthlyReports.map((item) => item.slug), weeklyReports.map((item) => item.slug), dailyReports.map((item) => item.slug)) : { monthly: "/monthly/", weekly: "/weekly/", daily: "/daily/" };
+const periodLinks = report ? resolvePeriodLinks(report.type, report.slug, monthlyReports.map((item) => item.slug), weeklyReports.map((item) => item.slug), dailyReports.map((item) => item.slug), radarReports.map((item) => item.slug)) : { monthly: "/monthly/", weekly: "/weekly/", daily: "/daily/", radar: "/radar/" };
 ---
 
 <BaseLayout title="RepoSignal｜GitHub 优质项目" searchItems={searchItems} activePeriod={report?.type ?? "weekly"} periodLinks={periodLinks}>

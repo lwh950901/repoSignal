@@ -2,6 +2,19 @@ import { readFile } from "node:fs/promises";
 import { describe, expect, test } from "vitest";
 
 describe("navigation layout contract", () => {
+  test("adds the full radar weekly tab as the fourth report period", async () => {
+    const switcher = await readFile(new URL("./PeriodSwitcher.astro", import.meta.url), "utf8");
+    const periods = await readFile(new URL("../lib/periods.ts", import.meta.url), "utf8");
+
+    expect(periods).toContain('"monthly" | "weekly" | "daily" | "radar"');
+    expect(switcher).toContain('monthly: "月度洞察"');
+    expect(switcher).toContain('weekly: "每周精选"');
+    expect(switcher).toContain('daily: "每日发现"');
+    expect(switcher).toContain('radar: "开源雷达周刊"');
+    expect(switcher).toContain('["monthly", "weekly", "daily", "radar"]');
+    expect(switcher).toContain('aria-current={active === period ? "true" : undefined}');
+  });
+
   test("places the period switcher in the header center column", async () => {
     const layout = await readFile(new URL("../layouts/BaseLayout.astro", import.meta.url), "utf8");
     const switcher = await readFile(new URL("./PeriodSwitcher.astro", import.meta.url), "utf8");
@@ -59,6 +72,46 @@ describe("navigation layout contract", () => {
     expect(dailyPage).toContain("reports={dailyReports}");
     expect(dailyPage).not.toContain("weeklyReports={weeklyReports}");
     expect(homePage).toContain('reports={report.type === "daily" ? dailyReports : weeklyReports}');
+  });
+
+  test("reuses the date archive for radar weekly issues", async () => {
+    const rail = await readFile(new URL("./DateRail.astro", import.meta.url), "utf8");
+    const view = await readFile(new URL("./RadarReportView.astro", import.meta.url), "utf8");
+
+    expect(rail).toContain('period: "weekly" | "daily" | "radar"');
+    expect(rail).toContain('radar: { archiveLabel: "开源雷达周刊", eyebrow: "RADAR"');
+    expect(rail).toContain('`${report.slug} 开源雷达周刊`');
+    expect(rail).toContain("<ArchiveTimeline items={archiveItems} />");
+    expect(rail).toContain("<noscript>");
+    expect(view).toContain('class="archive-shell radar-shell"');
+    expect(view).toContain('period="radar"');
+    expect(view).toContain('class="radar-cover"');
+    expect(view).toContain('class="radar-body prose"');
+    expect(view).not.toContain("{report.description}");
+  });
+
+  test("defines stable radar index and issue routes without adding radar search items", async () => {
+    const issuePage = await readFile(new URL("../pages/radar/[week].astro", import.meta.url), "utf8");
+    const indexPage = await readFile(new URL("../pages/radar/index.astro", import.meta.url), "utf8");
+
+    expect(issuePage).toContain("getStaticPaths");
+    expect(issuePage).toContain('canonical={`/radar/${report.slug}/`}');
+    expect(issuePage).toContain('activePeriod="radar"');
+    expect(issuePage).toContain("<RadarReportView");
+    expect(indexPage).toContain("打开最新一期");
+    expect(indexPage).toContain("暂时没有开源雷达周刊");
+    expect(issuePage).not.toContain("createRadarSearchIndex");
+    expect(indexPage).not.toContain("createRadarSearchIndex");
+  });
+
+  test("uses a two-row mobile header and readable radar article measure", async () => {
+    const styles = await readFile(new URL("../styles/global.css", import.meta.url), "utf8");
+
+    expect(styles).toMatch(/@media \(max-width: 768px\)[\s\S]*\.site-header\s*\{[^}]*grid-template-columns:\s*minmax\(0, 1fr\) auto[^}]*grid-template-rows:\s*auto auto/s);
+    expect(styles).toMatch(/@media \(max-width: 768px\)[\s\S]*\.site-period-navigation\s*\{[^}]*grid-column:\s*1 \/ -1[^}]*grid-row:\s*2/s);
+    expect(styles).toMatch(/@media \(max-width: 768px\)[\s\S]*\.period-switcher a\s*\{[^}]*min-height:\s*2\.75rem/s);
+    expect(styles).toMatch(/\.radar-cover\s*\{[^}]*height:\s*auto[^}]*aspect-ratio:\s*2\.35 \/ 1/s);
+    expect(styles).toMatch(/\.radar-body\s*\{[^}]*max-width:\s*52rem/s);
   });
 
   test("uses one daily-style timeline for monthly, weekly, and daily archives", async () => {

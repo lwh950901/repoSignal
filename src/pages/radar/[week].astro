@@ -1,0 +1,25 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import RadarReportView from "../../components/RadarReportView.astro";
+import { createSearchIndex, loadDailyReports, loadWeeklyReports } from "../../lib/digests";
+import { createMonthlySearchIndex, loadMonthlyReports } from "../../lib/monthly";
+import { resolvePeriodLinks } from "../../lib/periods";
+import { loadRadarReports, type RadarReport } from "../../lib/radar";
+
+export function getStaticPaths() {
+  return loadRadarReports().map((report) => ({ params: { week: report.slug }, props: { report } }));
+}
+
+interface Props { report: RadarReport }
+const { report } = Astro.props;
+const monthlyReports = loadMonthlyReports();
+const weeklyReports = loadWeeklyReports();
+const dailyReports = loadDailyReports();
+const radarReports = loadRadarReports();
+const searchItems = [...createMonthlySearchIndex(monthlyReports), ...createSearchIndex([...weeklyReports, ...dailyReports])];
+const periodLinks = resolvePeriodLinks("radar", report.slug, monthlyReports.map((item) => item.slug), weeklyReports.map((item) => item.slug), dailyReports.map((item) => item.slug), radarReports.map((item) => item.slug));
+---
+
+<BaseLayout title={`${report.title}｜${report.slug}`} description={report.description} canonical={`/radar/${report.slug}/`} searchItems={searchItems} activePeriod="radar" periodLinks={periodLinks}>
+  <RadarReportView report={report} reports={radarReports} />
+</BaseLayout>

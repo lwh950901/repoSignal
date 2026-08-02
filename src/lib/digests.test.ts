@@ -166,7 +166,7 @@ describe("digest discovery", () => {
       }
     }
     for (const report of weekly) {
-      expect(report.projects.length, `${report.slug} projects`).toBeGreaterThan(0);
+      expect(report.projects.length, `${report.slug} projects`).toBe(10);
       expect(weeklyFieldOrderIsValid(report.markdown), `${report.slug} weekly field order`).toBe(true);
       for (const project of report.projects) {
         expect(project.url, `${report.slug} ${project.repository} url`).toMatch(/^https:\/\/github\.com\//);

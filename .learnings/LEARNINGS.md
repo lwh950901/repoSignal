@@ -1,5 +1,29 @@
 # Learnings
 
+## [LRN-20260802-001] correction
+
+**Logged**: 2026-08-02T20:12:00+08:00
+**Priority**: high
+**Status**: promoted
+**Area**: config
+
+### Summary
+仅少量文案修改应立即处理，不创建规格、计划或额外确认流程。
+
+### Details
+在调整顶部 Tab 的几个短标签时，原流程把一个可直接完成的文案替换扩展成了设计文档、用户复核和提交步骤，增加了不必要的等待。用户明确纠正：当改动仅涉及少量现有文案，目标和替换内容已经清楚时，应直接修改并进行与风险相称的轻量验证。
+
+### Suggested Action
+先判断是否属于局部、明确、低风险的纯文案替换；若是，跳过 brainstorming、规格和实施计划，直接编辑相关文件并运行定向检查。只有文案会改变信息架构、产品行为或存在关键歧义时，才进入设计流程。
+
+### Metadata
+- Source: user_feedback
+- Related Files: src/components/PeriodSwitcher.astro, docs/superpowers/specs/2026-08-02-period-tab-labels-design.md
+- Tags: workflow, copy-editing, planning, user-preference
+- Promoted: AGENTS.md
+
+---
+
 ## [LRN-20260629-001] correction
 
 **Logged**: 2026-06-29T00:00:00+08:00

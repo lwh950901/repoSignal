@@ -3,8 +3,11 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
 import MonthlyReportView from "../../components/MonthlyReportView.astro";
 import { createMonthlySearchIndex, loadMonthlyReports } from "../../lib/monthly";
 import { createSearchIndex, loadDailyReports, loadWeeklyReports } from "../../lib/digests";
+import { loadRadarReports } from "../../lib/radar";
+import { resolvePeriodLinks } from "../../lib/periods";
 const monthlyReports = loadMonthlyReports(); const weeklyReports = loadWeeklyReports(); const dailyReports = loadDailyReports();
+const radarReports = loadRadarReports();
 const searchItems = [...createMonthlySearchIndex(monthlyReports), ...createSearchIndex([...weeklyReports, ...dailyReports])];
-const links = { monthly: monthlyReports[0] ? `/monthly/${monthlyReports[0].slug}/` : "/monthly/", weekly: weeklyReports[0] ? `/weekly/${weeklyReports[0].slug}/` : "/weekly/", daily: dailyReports[0] ? `/daily/${dailyReports[0].slug}/` : "/daily/" };
+const links = resolvePeriodLinks("monthly", "", monthlyReports.map((item) => item.slug), weeklyReports.map((item) => item.slug), dailyReports.map((item) => item.slug), radarReports.map((item) => item.slug));
 ---
 <BaseLayout title="月度精选｜RepoSignal" searchItems={searchItems} activePeriod="monthly" periodLinks={links}>{monthlyReports[0] ? <MonthlyReportView report={monthlyReports[0]} months={monthlyReports} /> : <main id="main-content" class="empty-state empty-state--page"><h1>月度精选正在筹备</h1><p>月报会沉淀独立 Top 5、真实业务研究与仓库组合证据。</p></main>}</BaseLayout>
