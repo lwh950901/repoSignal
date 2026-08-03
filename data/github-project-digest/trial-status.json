@@ -32,18 +32,19 @@
   "history_entries_before_run": 0,
   "history_entries_detected_before_append": 3,
   "latest_daily_run": {
-    "date": "2026-08-01",
-    "checked_at": "2026-08-01T06:11:52+0800",
-    "status": "passed_with_api_fallback",
+    "date": "2026-08-03",
+    "checked_at": "2026-08-03T05:45:13+0800",
+    "status": "passed_with_tls_and_api_fallback",
     "anomalies": [
-      "沙箱内扫描器首次 DNS 失败，经授权联网重跑成功。",
-      "常青查询首次返回 0，按时间通道设计放宽非时间关键词重试一次后返回 20。",
-      "短名单 --enrich 触发未认证 GitHub API 限流；降级为 GitHub 仓库、许可证、Release 页面与 Trending，未使用缓存冒充实时事实。"
+      "扫描器首次遇到本机 Python CA 证书链失败；按 skill 规则仅用一次 --insecure 验证连通性，随后通过 certifi CA 恢复正常 TLS。",
+      "沙箱内五个通道均因 DNS 失败，经授权联网重跑后各返回 20 项。",
+      "短名单 --enrich 在第一项前触发未认证 GitHub API 限流；降级为同轮 Search API/Trending 指标与 GitHub 仓库、Release、README、Commit Atom 页面，未使用缓存冒充实时事实。",
+      "2026-08-02 为周日未自动运行；原定当日用户指定候选 modstart-lib/linkandroid 已保留并合并到今日账本重新核验。"
     ],
     "checks": {
       "candidate_jsonl": true,
       "dedupe_90d": true,
-      "extra_count": 1,
+      "extra_count": 2,
       "github_fact_source": true,
       "history_jsonl": true,
       "live_search": true,
@@ -51,7 +52,7 @@
       "scanner_ran": true,
       "skill_invoked": true,
       "ten_fields_each": true,
-      "user_candidates_present": false,
+      "user_candidates_present": true,
       "time_lane_coverage": true
     }
   },
@@ -162,6 +163,26 @@
         "candidate_jsonl",
         "dedupe_90d",
         "feedback_read",
+        "time_lane_coverage"
+      ]
+    },
+    {
+      "date": "2026-08-03",
+      "run_time": "2026-08-03T05:45:13+0800",
+      "status": "passed_with_tls_and_api_fallback",
+      "skill_invoked": true,
+      "scanner_ran": true,
+      "fallback": "initial Python TLS verification failed; one --insecure connectivity check was followed by certifi verified TLS; five scanner lanes then succeeded after sandbox DNS escalation; shortlist --enrich hit unauthenticated GitHub API limit and fell back to same-run Search API/Trending plus GitHub repository, README, release and Commit Atom pages",
+      "checks": [
+        "fixed_format",
+        "primary_count_5",
+        "extra_count_2",
+        "required_fields",
+        "history_jsonl",
+        "candidate_jsonl",
+        "dedupe_90d",
+        "feedback_read",
+        "user_candidate_carried_forward",
         "time_lane_coverage"
       ]
     }
