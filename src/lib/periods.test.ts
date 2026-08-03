@@ -18,7 +18,7 @@ describe("resolvePeriodLinks", () => {
     });
   });
 
-  it("falls back safely to a period index when no earlier report exists", () => {
+  it("falls back to undated latest entrypoints when no earlier report exists", () => {
     expect(resolvePeriodLinks("daily", "2026-07-01", [], [], [], [])).toEqual({
       monthly: "/monthly/", weekly: "/weekly/", daily: "/daily/", radar: "/radar/",
     });

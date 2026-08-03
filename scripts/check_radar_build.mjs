@@ -10,6 +10,8 @@ const issues = new Map([
 ]);
 const indexPath = new URL("../dist/radar/index.html", import.meta.url);
 const indexHtml = await readFile(indexPath, "utf8");
+const redirectsPath = new URL("../dist/_redirects", import.meta.url);
+const redirects = await readFile(redirectsPath, "utf8");
 
 for (const [week, projectCount] of issues) {
   const issuePath = new URL(`../dist/radar/${week}/index.html`, import.meta.url);
@@ -24,6 +26,9 @@ for (const [week, projectCount] of issues) {
   assert.doesNotMatch(issueHtml, /SITE_BASE_URL|utm_/iu);
   assert.doesNotMatch(issueHtml, /reportType&quot;:&quot;radar|reportType":"radar/iu);
 }
-assert.match(indexHtml, /href="\/radar\/2026-W31\/">打开最新一期 2026-W31<\/a>/u);
+assert.match(indexHtml, /http-equiv="refresh" content="2;url=\/radar\/2026-W31\/"/u);
+assert.match(indexHtml, /<link rel="canonical" href="\/radar\/2026-W31\/">/u);
+assert.ok(redirects.includes("/radar /radar/2026-W31/ 302"));
+assert.ok(redirects.includes("/radar/ /radar/2026-W31/ 302"));
 
 console.log(`Radar build output verified: /radar/ and ${issues.size} weekly issues.`);

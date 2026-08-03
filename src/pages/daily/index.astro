@@ -1,5 +1,7 @@
 ---
-import BaseLayout from "../../layouts/BaseLayout.astro"; import { createSearchIndex, loadDailyReports, loadWeeklyReports } from "../../lib/digests"; import { createMonthlySearchIndex, loadMonthlyReports } from "../../lib/monthly"; import { loadRadarReports } from "../../lib/radar"; import { resolvePeriodLinks } from "../../lib/periods";
-const daily = loadDailyReports(); const weekly = loadWeeklyReports(); const monthly = loadMonthlyReports(); const radar = loadRadarReports(); const items = [...createMonthlySearchIndex(monthly), ...createSearchIndex([...weekly, ...daily])]; const links = resolvePeriodLinks("daily", "", monthly.map((item) => item.slug), weekly.map((item) => item.slug), daily.map((item) => item.slug), radar.map((item) => item.slug));
+import { loadDailyReports } from "../../lib/digests";
+
+const latest = loadDailyReports()[0];
+if (!latest) throw new Error("No daily report is available for the latest entrypoint.");
+return Astro.redirect(`/daily/${latest.slug}/`, 302);
 ---
-<BaseLayout title="日报归档｜RepoSignal" searchItems={items} activePeriod="daily" periodLinks={links}><main id="main-content" class="empty-state empty-state--page"><h1>日报归档</h1>{daily.length ? <a href={`/daily/${daily[0].slug}/`}>打开最新日报 {daily[0].slug}</a> : <p>暂时没有日报。</p>}</main></BaseLayout>

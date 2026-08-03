@@ -1,5 +1,7 @@
 ---
-import BaseLayout from "../../layouts/BaseLayout.astro"; import { createSearchIndex, loadDailyReports, loadWeeklyReports } from "../../lib/digests"; import { createMonthlySearchIndex, loadMonthlyReports } from "../../lib/monthly"; import { loadRadarReports } from "../../lib/radar"; import { resolvePeriodLinks } from "../../lib/periods";
-const weekly = loadWeeklyReports(); const daily = loadDailyReports(); const monthly = loadMonthlyReports(); const radar = loadRadarReports(); const items = [...createMonthlySearchIndex(monthly), ...createSearchIndex([...weekly, ...daily])]; const links = resolvePeriodLinks("weekly", "", monthly.map((item) => item.slug), weekly.map((item) => item.slug), daily.map((item) => item.slug), radar.map((item) => item.slug));
+import { loadWeeklyReports } from "../../lib/digests";
+
+const latest = loadWeeklyReports()[0];
+if (!latest) throw new Error("No weekly report is available for the latest entrypoint.");
+return Astro.redirect(`/weekly/${latest.slug}/`, 302);
 ---
-<BaseLayout title="周报归档｜RepoSignal" searchItems={items} activePeriod="weekly" periodLinks={links}><main id="main-content" class="empty-state empty-state--page"><h1>周报归档</h1>{weekly.length ? <a href={`/weekly/${weekly[0].slug}/`}>打开最新周报 {weekly[0].slug}</a> : <p>暂时没有周报。</p>}</main></BaseLayout>

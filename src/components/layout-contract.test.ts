@@ -2,6 +2,23 @@ import { readFile } from "node:fs/promises";
 import { describe, expect, test } from "vitest";
 
 describe("navigation layout contract", () => {
+  test("redirects every undated report route to its latest dated page", async () => {
+    const routes = [
+      ["monthly", "loadMonthlyReports"],
+      ["weekly", "loadWeeklyReports"],
+      ["daily", "loadDailyReports"],
+      ["radar", "loadRadarReports"],
+    ] as const;
+
+    for (const [period, loader] of routes) {
+      const source = await readFile(new URL(`../pages/${period}/index.astro`, import.meta.url), "utf8");
+      expect(source, period).toContain(`${loader}()[0]`);
+      expect(source, period).toMatch(new RegExp(`return Astro\\.redirect\\(\\\`/${period}/\\$\\{latest\\.slug\\}/\\\`, 302\\)`));
+      expect(source, period).not.toContain("<BaseLayout");
+      expect(source, period).not.toContain("<main");
+    }
+  });
+
   test("serves interactive behavior from same-origin scripts allowed by the production CSP", async () => {
     const layout = await readFile(new URL("../layouts/BaseLayout.astro", import.meta.url), "utf8");
     const palette = await readFile(new URL("./SearchPalette.astro", import.meta.url), "utf8");
@@ -119,8 +136,8 @@ describe("navigation layout contract", () => {
     expect(issuePage).toContain('canonical={`/radar/${report.slug}/`}');
     expect(issuePage).toContain('activePeriod="radar"');
     expect(issuePage).toContain("<RadarReportView");
-    expect(indexPage).toContain("打开最新一期");
-    expect(indexPage).toContain("暂时没有开源雷达周刊");
+    expect(indexPage).toContain('return Astro.redirect(`/radar/${latest.slug}/`, 302)');
+    expect(indexPage).not.toContain("打开最新一期");
     expect(issuePage).not.toContain("createRadarSearchIndex");
     expect(indexPage).not.toContain("createRadarSearchIndex");
   });

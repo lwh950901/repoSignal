@@ -5,11 +5,12 @@
   "type": "module",
   "scripts": {
     "dev": "ASTRO_TELEMETRY_DISABLED=1 astro dev",
-    "build": "ASTRO_TELEMETRY_DISABLED=1 astro build",
+    "build": "ASTRO_TELEMETRY_DISABLED=1 astro build && node scripts/generate_latest_redirects.mjs",
     "preview": "ASTRO_TELEMETRY_DISABLED=1 astro preview",
     "test": "vitest run",
     "check:monthly-generator": "python3 scripts/generate_monthly_digest.py --check",
     "check:radar-build": "node scripts/check_radar_build.mjs",
+    "check:latest-redirects": "node scripts/generate_latest_redirects.mjs",
     "check": "ASTRO_TELEMETRY_DISABLED=1 astro check"
   },
   "dependencies": {
