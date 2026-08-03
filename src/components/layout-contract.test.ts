@@ -2,6 +2,23 @@ import { readFile } from "node:fs/promises";
 import { describe, expect, test } from "vitest";
 
 describe("navigation layout contract", () => {
+  test("serves interactive behavior from same-origin scripts allowed by the production CSP", async () => {
+    const layout = await readFile(new URL("../layouts/BaseLayout.astro", import.meta.url), "utf8");
+    const palette = await readFile(new URL("./SearchPalette.astro", import.meta.url), "utf8");
+    const headers = await readFile(new URL("../../public/_headers", import.meta.url), "utf8");
+    const archiveScript = await readFile(new URL("../../public/scripts/archive-shell.js", import.meta.url), "utf8").catch(() => "");
+    const searchScript = await readFile(new URL("../../public/scripts/search-palette.js", import.meta.url), "utf8").catch(() => "");
+
+    expect(headers).toContain("script-src 'self'");
+    expect(headers).not.toContain("'unsafe-inline'");
+    expect(layout).toContain('<script is:inline src="/scripts/archive-shell.js" defer></script>');
+    expect(palette).toContain('<script is:inline src="/scripts/search-palette.js" defer></script>');
+    expect(layout).not.toMatch(/<script>([\s\S]*?)<\/script>/);
+    expect(palette).not.toMatch(/<script>([\s\S]*?)<\/script>/);
+    expect(archiveScript).toContain('shell.classList.add("is-enhanced")');
+    expect(searchScript).toContain("dialog.showModal()");
+  });
+
   test("adds the full radar weekly tab as the fourth report period", async () => {
     const switcher = await readFile(new URL("./PeriodSwitcher.astro", import.meta.url), "utf8");
     const periods = await readFile(new URL("../lib/periods.ts", import.meta.url), "utf8");
@@ -32,14 +49,16 @@ describe("navigation layout contract", () => {
     const layout = await readFile(new URL("../layouts/BaseLayout.astro", import.meta.url), "utf8");
     const view = await readFile(new URL("./MonthlyReportView.astro", import.meta.url), "utf8");
     const styles = await readFile(new URL("../styles/global.css", import.meta.url), "utf8");
+    const script = await readFile(new URL("../../public/scripts/archive-shell.js", import.meta.url), "utf8");
 
     expect(view).toContain("data-archive-shell");
     expect(view).toContain("data-archive-rail-toggle");
     expect(view).toContain('aria-expanded="true"');
     expect(view).not.toContain("<script>");
-    expect(layout).toContain('querySelector<HTMLElement>("[data-archive-shell]")');
-    expect(layout).toContain('classList.add("is-enhanced")');
-    expect(layout).toContain('shell?.toggleAttribute("data-rail-collapsed")');
+    expect(layout).toContain('src="/scripts/archive-shell.js"');
+    expect(script).toContain('querySelector("[data-archive-shell]")');
+    expect(script).toContain('classList.add("is-enhanced")');
+    expect(script).toContain('shell?.toggleAttribute("data-rail-collapsed")');
     expect(styles).toMatch(/\.archive-rail-toggle\s*\{[^}]*display:\s*none/s);
     expect(styles).toMatch(/\.archive-shell\.is-enhanced \.archive-rail-toggle\s*\{[^}]*display:\s*grid/s);
     expect(styles).toMatch(/\.archive-shell\[data-rail-collapsed\]\s*\{[^}]*grid-template-columns:\s*3\.25rem minmax\(0, 1fr\)/s);
@@ -48,10 +67,12 @@ describe("navigation layout contract", () => {
   test("keeps mobile report selectors navigable", async () => {
     const layout = await readFile(new URL("../layouts/BaseLayout.astro", import.meta.url), "utf8");
     const styles = await readFile(new URL("../styles/global.css", import.meta.url), "utf8");
+    const script = await readFile(new URL("../../public/scripts/archive-shell.js", import.meta.url), "utf8");
 
-    expect(layout).toContain('querySelector<HTMLSelectElement>("[data-report-select]")');
-    expect(layout).toContain('addEventListener("change"');
-    expect(layout).toContain("window.location.assign(select.value)");
+    expect(layout).toContain('src="/scripts/archive-shell.js"');
+    expect(script).toContain('querySelector("[data-report-select]")');
+    expect(script).toContain('addEventListener("change"');
+    expect(script).toContain("window.location.assign(select.value)");
     expect(styles).toMatch(/@media \(max-width: 768px\)[\s\S]*\.report-select\s*\{[^}]*display:\s*grid/s);
   });
 
