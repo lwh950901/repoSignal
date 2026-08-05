@@ -109,6 +109,7 @@ kbd { padding: .15rem .45rem; border: 1px solid var(--rule); background: var(--p
 .project-stamp { display: inline-block; padding: .18rem .5rem; border: 1px solid var(--ink); background: var(--marker); font: 600 .66rem var(--font-mono); letter-spacing: .08em; transform: rotate(-1deg); }
 .project-stamp--实用型 { background: var(--paper-deep); color: var(--moss); border-color: var(--moss); }
 .project-stamp--潜力型 { background: var(--ink); color: var(--white); }
+.project-stamp--学习型 { background: var(--marker); color: var(--ink); border-color: var(--ink-soft); }
 .project-stamp--周精选 { background: var(--moss); color: var(--white); }
 .project-score { flex: 0 0 auto; display: flex; align-items: baseline; gap: .2rem; font-family: var(--font-mono); }
 .project-score strong { font-size: 1.6rem; font-weight: 500; }

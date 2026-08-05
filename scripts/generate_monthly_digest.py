@@ -24,7 +24,7 @@ DAILY_REPO_LINE_RE = re.compile(
     re.IGNORECASE,
 )
 DAILY_TITLE_RE = re.compile(
-    r"^###\s+\d+\.\s+(?:爆发型|实用型|潜力型)[：:]\s*([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+)(?:\s|—|–|-|$)"
+    r"^###\s+\d+\.\s+(?:爆发型|实用型|潜力型|学习型)[：:]\s*([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+)(?:\s|—|–|-|$)"
 )
 DAILY_EXTRA_TITLE_RE = re.compile(
     r"^###\s+额外发现[：:]\s*([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+)(?:\s|—|–|-|$)"

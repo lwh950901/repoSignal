@@ -1,7 +1,7 @@
 import { marked } from "marked";
 import type { SearchItem } from "./search";
 
-export type ProjectKind = "爆发型" | "实用型" | "潜力型" | "周精选" | "额外发现";
+export type ProjectKind = "爆发型" | "实用型" | "潜力型" | "学习型" | "周精选" | "额外发现";
 
 export interface ProjectRecord {
   id: string;
@@ -92,7 +92,7 @@ function stripField(body: string, label: string): string {
 
 function parseProjects(markdown: string, type: DigestReport["type"]): ProjectRecord[] {
   const headingPattern = type === "daily"
-    ? /^###\s+\d+\.\s+(爆发型|实用型|潜力型)：(.+?)(?:\s+[—-]\s+(\d+)\/100)?\s*$/gmu
+    ? /^###\s+\d+\.\s+(爆发型|实用型|潜力型|学习型)：(.+?)(?:\s+[—-]\s+(\d+)\/100)?\s*$/gmu
     : /^##\s+\d+\.\s+(.+?)\s*$/gmu;
   const matches = [...markdown.matchAll(headingPattern)];
 

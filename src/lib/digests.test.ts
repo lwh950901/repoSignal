@@ -36,6 +36,14 @@ const sample = `# GitHub 优质项目每日发现｜2026-07-01
 - 仓库：[h4ckf0r0day/obscura](https://github.com/h4ckf0r0day/obscura)
 - 一句话定位：面向 Agent 的 Rust 无头浏览器。
 - 主要技术栈：Rust、V8、CDP。
+
+### 4. 学习型：HKUDS/AutoAgent — 68/100
+
+- 仓库：[HKUDS/AutoAgent](https://github.com/HKUDS/AutoAgent)
+- 一句话定位：适合拆解自然语言生成 Agent、工具和工作流的研究型框架。
+- 主要技术栈：Python、Docker、LiteLLM。
+- 风险：核心代码维护新鲜度不足，不宜直接照搬生产。
+- 推荐理由：架构和评测实现具有明确学习价值。
 `;
 
 const bonusSample = `# GitHub 优质项目每日发现｜2026-07-08
@@ -104,6 +112,7 @@ describe("parseDailyReport", () => {
       "爆发型",
       "实用型",
       "潜力型",
+      "学习型",
     ]);
     expect(report.projects[0].repository).toBe("safishamsi/graphify");
     expect(report.projects[0].score).toBe(82);
