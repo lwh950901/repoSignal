@@ -32,19 +32,18 @@
   "history_entries_before_run": 0,
   "history_entries_detected_before_append": 3,
   "latest_daily_run": {
-    "date": "2026-08-03",
-    "checked_at": "2026-08-03T05:45:13+0800",
+    "date": "2026-08-05",
+    "checked_at": "2026-08-05T17:30:39+0800",
     "status": "passed_with_tls_and_api_fallback",
     "anomalies": [
-      "扫描器首次遇到本机 Python CA 证书链失败；按 skill 规则仅用一次 --insecure 验证连通性，随后通过 certifi CA 恢复正常 TLS。",
-      "沙箱内五个通道均因 DNS 失败，经授权联网重跑后各返回 20 项。",
-      "短名单 --enrich 在第一项前触发未认证 GitHub API 限流；降级为同轮 Search API/Trending 指标与 GitHub 仓库、Release、README、Commit Atom 页面，未使用缓存冒充实时事实。",
-      "2026-08-02 为周日未自动运行；原定当日用户指定候选 modstart-lib/linkandroid 已保留并合并到今日账本重新核验。"
+      "Python 扫描器首次请求因本机 CA 证书链失败；按 skill 规则仅用一次 --insecure 连通性路径完成四个 live search 通道。",
+      "短名单 --enrich 请求触发 GitHub 未认证 API 限流；降级为同轮 Search API 精确指标与 GitHub 仓库、README、Release、Commit Atom 页面，未使用缓存冒充实时事实。",
+      "用户指定 HKUDS/AutoAgent 的网页指标只能显示约 9.7k/1.4k；账本保留前一日精确快照并以 verified:false 标记，处置依据实时主分支活动与 Release feed。"
     ],
     "checks": {
       "candidate_jsonl": true,
       "dedupe_90d": true,
-      "extra_count": 2,
+      "extra_count": 1,
       "github_fact_source": true,
       "history_jsonl": true,
       "live_search": true,
@@ -54,6 +53,28 @@
       "ten_fields_each": true,
       "user_candidates_present": true,
       "time_lane_coverage": true
+    }
+  },
+  "latest_backfill": {
+    "checked_at": "2026-08-04T18:35:35+0800",
+    "dates": [
+      "2026-08-03",
+      "2026-08-04"
+    ],
+    "projects": [
+      "superradcompany/microsandbox",
+      "microsoft/flint-chart"
+    ],
+    "type": "学习型",
+    "skill_invoked": true,
+    "scanner_ran": false,
+    "fallback": "none; no new candidates or metrics were introduced, and the original same-day GitHub-verified facts were preserved",
+    "checks": {
+      "candidate_jsonl": true,
+      "history_jsonl": true,
+      "learning_slot_4": true,
+      "primary_count_5": true,
+      "ten_fields_each": true
     }
   },
   "main_recommendation_count": 3,
@@ -183,6 +204,47 @@
         "dedupe_90d",
         "feedback_read",
         "user_candidate_carried_forward",
+        "time_lane_coverage"
+      ]
+    },
+    {
+      "date": "2026-08-04",
+      "run_time": "2026-08-04T05:40:10+0800",
+      "status": "passed_with_api_fallback",
+      "skill_invoked": true,
+      "scanner_ran": true,
+      "fallback": "five no-cache scanner lanes succeeded after sandbox DNS escalation using verified certifi TLS; GitHub Trending REST enrichment then hit anonymous API 403 and fell back to same-run Search API/Trending exact metrics plus GitHub repository, README, release and Commit Atom pages",
+      "checks": [
+        "fixed_format",
+        "primary_count_5",
+        "extra_count_0",
+        "required_fields",
+        "history_jsonl",
+        "candidate_jsonl",
+        "dedupe_90d",
+        "feedback_read",
+        "no_user_candidates",
+        "time_lane_coverage"
+      ]
+    },
+    {
+      "date": "2026-08-05",
+      "run_time": "2026-08-05T17:30:39+0800",
+      "status": "passed_with_tls_and_api_fallback",
+      "skill_invoked": true,
+      "scanner_ran": true,
+      "fallback": "initial Python TLS verification failed; one --insecure live-search path formed the candidate pool; shortlist enrichment then hit the unauthenticated GitHub API limit and fell back to same-run Search API metrics plus GitHub repository, README, release and Commit Atom pages",
+      "checks": [
+        "fixed_format",
+        "primary_count_5",
+        "extra_count_1",
+        "required_fields",
+        "history_jsonl",
+        "candidate_jsonl",
+        "dedupe_90d",
+        "feedback_read",
+        "user_candidate_promoted_to_extra",
+        "learning_slot_4",
         "time_lane_coverage"
       ]
     }
