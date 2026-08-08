@@ -32,27 +32,28 @@
   "history_entries_before_run": 0,
   "history_entries_detected_before_append": 3,
   "latest_daily_run": {
-    "date": "2026-08-05",
-    "checked_at": "2026-08-05T17:30:39+0800",
+    "date": "2026-08-07",
+    "checked_at": "2026-08-07T05:40:11+0800",
     "status": "passed_with_tls_and_api_fallback",
     "anomalies": [
-      "Python 扫描器首次请求因本机 CA 证书链失败；按 skill 规则仅用一次 --insecure 连通性路径完成四个 live search 通道。",
-      "短名单 --enrich 请求触发 GitHub 未认证 API 限流；降级为同轮 Search API 精确指标与 GitHub 仓库、README、Release、Commit Atom 页面，未使用缓存冒充实时事实。",
-      "用户指定 HKUDS/AutoAgent 的网页指标只能显示约 9.7k/1.4k；账本保留前一日精确快照并以 verified:false 标记，处置依据实时主分支活动与 Release feed。"
+      "五个无缓存扫描通道首次因本机 Python TLS 证书链失败；按技能规则仅使用一次 --insecure 重试，随后全部成功。",
+      "短名单 --enrich 触发匿名 GitHub API 限流；降级到同轮 Search/Trending 指标和 GitHub 仓库、README、Release、提交、Issue/PR 页面，未使用缓存冒充实时事实。"
     ],
     "checks": {
+      "fixed_format": true,
+      "primary_count_5": true,
+      "extra_count_2": true,
+      "required_fields": true,
+      "history_jsonl": true,
       "candidate_jsonl": true,
       "dedupe_90d": true,
-      "extra_count": 1,
+      "feedback_read": true,
+      "no_user_candidates": true,
+      "learning_slot_4": true,
+      "time_lane_coverage": true,
       "github_fact_source": true,
-      "history_jsonl": true,
-      "live_search": true,
-      "primary_count": 5,
-      "scanner_ran": true,
       "skill_invoked": true,
-      "ten_fields_each": true,
-      "user_candidates_present": true,
-      "time_lane_coverage": true
+      "scanner_ran": true
     }
   },
   "latest_backfill": {
@@ -77,7 +78,7 @@
       "ten_fields_each": true
     }
   },
-  "main_recommendation_count": 3,
+  "main_recommendation_count": 5,
   "runs": [
     {
       "checks": [
@@ -246,6 +247,49 @@
         "user_candidate_promoted_to_extra",
         "learning_slot_4",
         "time_lane_coverage"
+      ]
+    },
+    {
+      "date": "2026-08-06",
+      "run_time": "2026-08-06T05:38:44+0800",
+      "status": "passed_with_enrichment_page_fallback",
+      "skill_invoked": true,
+      "scanner_ran": true,
+      "fallback": "five no-cache live-search lanes succeeded after certifi TLS repair and network escalation; shortlist --enrich was not executed because local network approval capacity was unavailable, so same-run Search API and GitHub Trending metrics plus GitHub repository, release and commit pages were used; some commit page requests returned cache miss or 429 and were not used",
+      "checks": [
+        "fixed_format",
+        "primary_count_5",
+        "extra_count_2",
+        "required_fields",
+        "history_jsonl",
+        "candidate_jsonl",
+        "dedupe_90d",
+        "feedback_read",
+        "no_user_candidates",
+        "learning_slot_4",
+        "time_lane_coverage"
+      ]
+    },
+    {
+      "date": "2026-08-07",
+      "run_time": "2026-08-07T05:40:11+0800",
+      "status": "passed_with_tls_and_api_fallback",
+      "skill_invoked": true,
+      "scanner_ran": true,
+      "fallback": "five no-cache scanner lanes succeeded after one required --insecure retry for the local Python TLS certificate failure; shortlist --enrich then hit the unauthenticated GitHub API limit, so same-run Search/Trending metrics plus GitHub repository, README, Release, commit and Issue/PR pages were used",
+      "checks": [
+        "fixed_format",
+        "primary_count_5",
+        "extra_count_2",
+        "required_fields",
+        "history_jsonl",
+        "candidate_jsonl",
+        "dedupe_90d",
+        "feedback_read",
+        "no_user_candidates",
+        "learning_slot_4",
+        "time_lane_coverage",
+        "github_fact_source"
       ]
     }
   ],
