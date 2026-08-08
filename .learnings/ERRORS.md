@@ -33,6 +33,103 @@ Use `GITHUB_TOKEN` for recurring scans, reserve enrichment for the final shortli
 - **Notes**: Used live GitHub repository, Release, Commit and Issue/PR pages; no cache was presented as live evidence.
 
 ---
+
+## [ERR-20260807-001] github_daily_jsonl_separator
+
+**Logged**: 2026-08-07T05:42:00+08:00
+**Priority**: high
+**Status**: resolved
+**Area**: data
+
+### Summary
+An inline Python generator emitted the two-character sequence `\\n` instead of a real newline between JSONL records.
+
+### Error
+```
+json.decoder.JSONDecodeError: Extra data: line 1 column 351 (char 350)
+```
+
+### Context
+- The candidate ledger and the seven newly appended history records were generated from shell-escaped Python one-liners.
+- The first formatting self-check caught the invalid JSONL before completion; no invalid data was reported as final.
+
+### Suggested Fix
+Use a dedicated script or a literal `"\\n"` inside Python source, then parse the written JSONL immediately before reporting completion. Avoid double-escaping the separator in shell-embedded Python.
+
+### Metadata
+- Reproducible: yes
+- Related Files: data/github-project-digest/candidates/2026-08-07.jsonl; data/github-project-digest/history.jsonl
+
+### Resolution
+- **Resolved**: 2026-08-07T05:44:00+08:00
+- **Notes**: Replaced all 118 literal separators atomically, then re-read 111 candidate records and 182 history records successfully; subsequent format, dedupe, and diff checks passed.
+
+---
+
+## [ERR-20260806-001] luna_codex_exec_argument_build
+
+**Logged**: 2026-08-06T06:00:00+08:00
+**Priority**: low
+**Status**: resolved
+**Area**: infra
+
+### Summary
+The first isolated Luna test command failed while constructing the `model_reasoning_effort` override in an inline Python f-string.
+
+### Error
+```
+NameError: name 'reasoning_effort' is not defined
+```
+
+### Context
+- The nested `codex exec` process had not started, so no test files or external state were changed.
+- Shell quoting removed the intended dictionary-key quotes inside the f-string expression.
+
+### Suggested Fix
+Build the TOML override with string concatenation instead of a nested f-string expression.
+
+### Metadata
+- Reproducible: yes
+- Related Files: `/Users/elvis/.codex/automations/github/automation.toml`
+
+### Resolution
+- **Resolved**: 2026-08-06T06:00:00+08:00
+- **Notes**: Replaced the nested f-string with explicit string concatenation before retrying.
+
+---
+
+## [ERR-20260806-002] nested_codex_state_db_readonly
+
+**Logged**: 2026-08-06T15:51:17+08:00
+**Priority**: low
+**Status**: resolved
+**Area**: infra
+
+### Summary
+The isolated Luna test could not initialize Codex because the outer workspace sandbox made the Codex state database read-only.
+
+### Error
+```
+failed to open state DB at /Users/elvis/.codex/state_5.sqlite: attempt to write a readonly database
+Error: failed to initialize in-process app-server client: Operation not permitted
+```
+
+### Context
+- The nested agent had not started and the isolated test directory was unchanged.
+- Codex CLI requires access to its own state under `/Users/elvis/.codex`, outside the workspace-write boundary.
+
+### Suggested Fix
+Run the official Codex CLI with a scoped outer escalation while retaining `workspace-write` for the nested agent and an isolated working directory.
+
+### Metadata
+- Reproducible: yes
+- Related Files: `/Users/elvis/.codex/state_5.sqlite`
+
+### Resolution
+- **Resolved**: 2026-08-06T15:51:17+08:00
+- **Notes**: Retried the official Codex CLI with scoped outer authorization; the nested run remains confined to the temporary project copy.
+
+---
 ## [ERR-20260708-001] apply_patch_context
 
 **Logged**: 2026-07-08T08:45:00+08:00
