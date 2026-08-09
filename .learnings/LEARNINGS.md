@@ -142,6 +142,87 @@ W32 周报在 8 月 8 日日报尚未生成时，仍使用周一至周五 32 个
 
 ---
 
+## [LRN-20260809-003] correction
+
+**Logged**: 2026-08-09T19:30:00+08:00
+**Priority**: high
+**Status**: resolved
+**Area**: docs
+
+### Summary
+雷达项目段落应沿用历史结构，把推荐依据放在“适合”之前，并让“适合”与“注意”直接相邻。
+
+### Details
+为减少 AI 模板腔，W32 删除了重复的“为什么推荐”标签，但没有移动其正文，导致每项形成“适合 → 无标签推荐段落 → 注意”的新结构。W31 及此前文章的稳定阅读顺序是先完成项目介绍和推荐判断，再给出“适合”和“注意”。只删标签、不调整段落位置破坏了栏目一致性。
+
+### Suggested Action
+雷达自动化固定项目内部顺序为“项目介绍与推荐依据 → 适合 → 注意”，禁止在“适合”和“注意”之间插入段落，也不恢复模板化“为什么推荐”标签。
+
+### Metadata
+- Source: user_feedback
+- Related Files: data/github-project-digest/radar/2026-W32.md, data/github-project-digest/distribution-drafts/2026-W32-wechat.md, /Users/elvis/.codex/automations/automation/automation.toml
+- Tags: radar-weekly, editorial-structure, consistency, correction
+
+### Resolution
+- **Resolved**: 2026-08-09T19:30:00+08:00
+- **Notes**: 已重排 W32 两份雷达稿的 10 个项目段落，将固定顺序写入雷达自动化，并在公开雷达解析器中加入“适合”与“注意”相邻的构建期回归检查。
+
+---
+
+## [LRN-20260809-004] correction
+
+**Logged**: 2026-08-09T19:30:00+08:00
+**Priority**: high
+**Status**: resolved
+**Area**: docs
+
+### Summary
+从 W32 起，雷达项目正文固定使用“补充介绍、推荐依据、适合、注意”四个同级加粗标签。
+
+### Details
+仅把推荐依据移动到“适合”之前仍没有完全满足格式一致性：前两段保持无标签，而后两段有“适合、注意”标签，视觉层级不统一。用户进一步明确，补充介绍和推荐依据也应与适合、注意采用相同格式。
+
+### Suggested Action
+每个项目严格按 `**补充介绍：**`、`**推荐依据：**`、`**适合：**`、`**注意：**` 的顺序书写，四项各占一个自然段，不插入无标签段落。历史冻结文章不迁移，新格式从 W32 起由解析器、测试、自动化和 Luna 清单共同强制。
+
+### Metadata
+- Source: user_feedback
+- Related Files: data/github-project-digest/radar/2026-W32.md, data/github-project-digest/distribution-drafts/2026-W32-wechat.md, src/lib/radar.ts, src/lib/radar.test.ts, /Users/elvis/.codex/automations/automation/automation.toml
+- Tags: radar-weekly, labeled-sections, format-contract, correction
+
+### Resolution
+- **Resolved**: 2026-08-09T19:30:00+08:00
+- **Notes**: W32 两份雷达稿已统一四标签格式；构建期校验、测试、自动化和 Luna 复核清单均已同步。
+
+---
+
+## [LRN-20260809-005] correction
+
+**Logged**: 2026-08-09T19:34:00+08:00
+**Priority**: high
+**Status**: resolved
+**Area**: docs
+
+### Summary
+雷达四标签的第一个标签必须精确写为“介绍”，不能扩写成“补充介绍”。
+
+### Details
+用户要求前两段与“适合、注意”使用同级标签时，错误地把第一个标签命名为“补充介绍”。用户随后明确正确名称是“介绍”。这说明格式契约不仅要约束顺序和层级，还要约束标签的精确文字，不能自行扩写。
+
+### Suggested Action
+从 W32 起只接受 `**介绍：**`、`**推荐依据：**`、`**适合：**`、`**注意：**` 四个精确标签。自动化、Luna 清单、解析器错误信息和测试均使用同一组常量文字。
+
+### Metadata
+- Source: user_feedback
+- Related Files: data/github-project-digest/radar/2026-W32.md, data/github-project-digest/distribution-drafts/2026-W32-wechat.md, src/lib/radar.ts, src/lib/radar.test.ts, /Users/elvis/.codex/automations/automation/automation.toml
+- Tags: radar-weekly, exact-labels, format-contract, correction
+
+### Resolution
+- **Resolved**: 2026-08-09T19:34:00+08:00
+- **Notes**: W32 稿件、构建校验、测试、自动化和 Luna 清单已全部改为精确标签“介绍”。
+
+---
+
 ## [LRN-20260802-001] correction
 
 **Logged**: 2026-08-02T20:12:00+08:00

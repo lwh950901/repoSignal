@@ -34,6 +34,36 @@ Use `GITHUB_TOKEN` for recurring scans, reserve enrichment for the final shortli
 
 ---
 
+## [ERR-20260809-001] radar_label_source_assertion
+
+**Logged**: 2026-08-09T19:34:02+08:00
+**Priority**: low
+**Status**: resolved
+**Area**: tests
+
+### Summary
+雷达标签终检把 TypeScript 正则源码误当作未转义的 Markdown 文本匹配。
+
+### Error
+终检断言查找字面量 `**介绍：**`，但 `radar.ts` 中保存的是正则源码 `^\*\*介绍：\*\*`，导致产品测试通过时辅助断言误报失败。
+
+### Context
+- 命令：W32 四标签格式的 Python 辅助终检。
+- 产品文件、解析器测试和 Astro 检查未因该断言失败而受损。
+
+### Suggested Fix
+检查正则源码时匹配转义后的字符串，Markdown 内容文件才匹配未转义标签。
+
+### Metadata
+- Reproducible: yes
+- Related Files: src/lib/radar.ts
+
+### Resolution
+- **Resolved**: 2026-08-09T19:34:26+08:00
+- **Notes**: 修正辅助断言后重跑，精确标签检查、55 项测试和 Astro 检查全部通过。
+
+---
+
 ## [ERR-20260807-001] github_daily_jsonl_separator
 
 **Logged**: 2026-08-07T05:42:00+08:00
