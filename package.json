@@ -9,6 +9,7 @@
     "preview": "ASTRO_TELEMETRY_DISABLED=1 astro preview",
     "test": "vitest run",
     "check:monthly-generator": "python3 scripts/generate_monthly_digest.py --check",
+    "check:monthly-history": "python3 scripts/sync_monthly_history.py --check",
     "check:radar-build": "node scripts/check_radar_build.mjs",
     "check": "ASTRO_TELEMETRY_DISABLED=1 astro check"
   },

@@ -35,6 +35,12 @@ python3 scripts/generate_monthly_digest.py 2026-07
 
 候选生成只聚合本地候选账本、日报和重叠 ISO 周报，是研究入口，不是公开结论。编辑在发布前从 GitHub、官方文档和实际运行中核实 Top 5、需求、替代方案与仓库组合，并把评分、失败记录和证据摘要保存在 `monthly-research/`。公开结论随后写入 `monthly/` 并冻结。
 
+公开月报定稿写入 `monthly/` 后，将 Top 5 和标记为“本月核心”的仓库同步到共享推荐历史；补充组件、竞品和普通来源链接不会写入：
+
+```bash
+python3 scripts/sync_monthly_history.py 2026-07
+```
+
 Astro 生产构建只读取 `monthly/`、`weekly/` 和 `daily/` 的冻结 Markdown，不访问 GitHub 或商业产品 API，也不把 `monthly-research/`、临时命令日志或研究模板加入路由和搜索索引。提交新的公开报告后，下一次构建会生成对应静态页面，并更新首页、归档导航与本地搜索。
 
 ## Cloudflare Pages
