@@ -39,6 +39,60 @@ describe("parseRadarReport", () => {
   ])("rejects invalid public content in %s with a clear %s error", (filename, expected, article = validArticle) => {
     expect(() => parseRadarReport(article, filename)).toThrow(new RegExp(`${filename}.*${expected}`, "u"));
   });
+
+  it("rejects project copy inserted between audience and risk notes", () => {
+    const invalidOrder = `${validArticle}
+### 1. 示例项目
+
+[示例项目](https://github.com/example/project) 是一个示例工具。
+
+**适合：** 需要示例工具的开发者。
+
+这段推荐依据不应出现在适合与注意之间。
+
+**注意：** 试用前应确认边界。
+`;
+
+    expect(() => parseRadarReport(invalidOrder, "2026-W31.md")).toThrow(
+      /2026-W31\.md.*“适合”后必须直接接“注意”/u,
+    );
+  });
+
+  it("requires four labeled project blocks from W32 onward", () => {
+    const unlabeledProject = `${validArticle}
+### 1. 示例项目
+
+[示例项目](https://github.com/example/project) 是一个示例工具。
+
+它有明确的试用价值。
+
+**适合：** 需要示例工具的开发者。
+
+**注意：** 试用前应确认边界。
+`;
+
+    expect(() => parseRadarReport(unlabeledProject, "2026-W32.md")).toThrow(
+      /2026-W32\.md.*介绍.*推荐依据.*适合.*注意/u,
+    );
+  });
+
+  it("rejects 补充介绍 as a substitute for the 介绍 label", () => {
+    const supplementaryIntroduction = `${validArticle}
+### 1. 示例项目
+
+**补充介绍：** [示例项目](https://github.com/example/project) 是一个示例工具。
+
+**推荐依据：** 它有明确的试用价值。
+
+**适合：** 需要示例工具的开发者。
+
+**注意：** 试用前应确认边界。
+`;
+
+    expect(() => parseRadarReport(supplementaryIntroduction, "2026-W32.md")).toThrow(
+      /2026-W32\.md.*“介绍、推荐依据、适合、注意”/u,
+    );
+  });
 });
 
 describe("radar discovery", () => {
@@ -59,6 +113,10 @@ describe("radar discovery", () => {
       expect(report.markdown.match(/^###\s+\d+\./gmu)?.length, `${report.slug} project headings`).toBe(10);
       expect(report.markdown.match(/^\*\*适合：\*\*/gmu)?.length, `${report.slug} audience notes`).toBe(10);
       expect(report.markdown.match(/^\*\*注意：\*\*/gmu)?.length, `${report.slug} risk notes`).toBe(10);
+      if (report.slug >= "2026-W32") {
+        expect(report.markdown.match(/^\*\*介绍：\*\*/gmu)?.length, `${report.slug} introductions`).toBe(10);
+        expect(report.markdown.match(/^\*\*推荐依据：\*\*/gmu)?.length, `${report.slug} recommendation reasons`).toBe(10);
+      }
     }
   });
 });
