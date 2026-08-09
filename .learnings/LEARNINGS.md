@@ -119,6 +119,29 @@
 
 ---
 
+## [LRN-20260809-002] correction
+
+**Logged**: 2026-08-09T18:25:00+08:00
+**Priority**: critical
+**Status**: pending
+**Area**: config
+
+### Summary
+周精选必须覆盖当周周一至周六全部已要求的日报；缺少任何一天时应阻塞，不能提前锁定不完整候选范围。
+
+### Details
+W32 周报在 8 月 8 日日报尚未生成时，仍使用周一至周五 32 个候选完成了 10 项精选。8 月 8 日日报后来补录了 7 个候选，但此前只修改周报说明为“范围已锁定”，没有重新筛选，违背了“本周日报和周报”的输入边界。正确处理是把六份日报视为完整输入集合；任何一份缺失都不生成周报，输入补齐后必须基于全部候选重新统一复核。
+
+### Suggested Action
+在周报自动化中增加六份日报存在性硬检查，缺一即阻塞且不写周报；雷达自动化也应在读取周报前确认六份日报齐全，并确认周报的候选范围确实包含周一至周六。修正 W32 周报后再据其重写雷达 10 项。
+
+### Metadata
+- Source: user_feedback
+- Related Files: /Users/elvis/.codex/automations/github-2/automation.toml, /Users/elvis/.codex/automations/automation/automation.toml, data/github-project-digest/weekly/2026-W32.md, data/github-project-digest/daily/2026-08-08.md
+- Tags: weekly-digest, input-completeness, automation, blocking, correction
+
+---
+
 ## [LRN-20260802-001] correction
 
 **Logged**: 2026-08-02T20:12:00+08:00
