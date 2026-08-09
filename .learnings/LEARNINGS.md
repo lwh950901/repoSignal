@@ -1,5 +1,124 @@
 # Learnings
 
+## [LRN-20260809-005] correction
+
+**Logged**: 2026-08-09T16:12:13+08:00
+**Priority**: critical
+**Status**: pending
+**Area**: backend
+
+### Summary
+月报候选范围应只来自已发布日报和周报；候选账本是扫描审计层，不是月报可直接选材的发布来源。
+
+### Details
+用户明确质疑月报筛选候选账本。2026-07-20 的设计为了让月报“不是四份周报的拼接”并扩大人工策展池，未经可验证的用户要求就把候选账本、日报和周报并列为月报来源；实现计划随后把这一选择固化进 `generate_monthly_digest.py`。这允许未进入任何日报或周报的扫描候选（如 Mailpit）直接进入月报，绕过推荐历史与既有发布层级。正确层级是：候选账本只服务每日发现的扫描、审计和筛选；日报发布发现；周报从日报精选；月报从已发布日报与周报汇总并重新核实，不应从候选账本补项目。
+
+### Suggested Action
+从月报生成器的 `collect_candidates` 删除 `candidate_evidence` 输入，更新测试确保仅存在于候选账本的仓库不会进入月度候选，并同步修正文档与月报自动化提示。保留候选账本本身供日报审计使用。
+
+### Metadata
+- Source: user_feedback
+- Related Files: scripts/generate_monthly_digest.py, docs/superpowers/specs/2026-07-20-monthly-selection-design.md, docs/superpowers/specs/2026-07-20-monthly-business-research-redesign.md, README.md
+- Tags: monthly-source-boundary, candidate-ledger, publication-pipeline, correction
+- See Also: LRN-20260809-004, LRN-20260809-003
+
+---
+
+## [LRN-20260809-004] correction
+
+**Logged**: 2026-08-09T16:08:15+08:00
+**Priority**: high
+**Status**: pending
+**Area**: docs
+
+### Summary
+仓库设计文档中的规则不能直接归因于用户明确说过；应区分可验证的书面记录与会话来源。
+
+### Details
+用户追问“什么时候说过月报需要筛选候选账本”。Git 证据只能确认该规则最早写入 2026-07-20 的月度设计文档，由 Elvis 提交，并在同日的业务研究重构和 README 中继续保留。当前上下文没有用户原话或审批记录，提交作者也不能证明规则由用户主动提出。此前把现行规格自然地当成用户意图，归因过度。
+
+### Suggested Action
+回答历史决策来源时分别说明：当前会话明确要求、仓库现行规格、Git 最早记录、以及无法确认的原始讨论；没有会话证据时不要说“用户要求过”。
+
+### Metadata
+- Source: user_feedback
+- Related Files: docs/superpowers/specs/2026-07-20-monthly-selection-design.md, docs/superpowers/specs/2026-07-20-monthly-business-research-redesign.md, README.md
+- Tags: provenance, git-history, user-intent, correction
+- See Also: LRN-20260809-002, LRN-20260809-003
+
+---
+
+## [LRN-20260809-003] correction
+
+**Logged**: 2026-08-09T15:55:14+08:00
+**Priority**: high
+**Status**: pending
+**Area**: docs
+
+### Summary
+雷达周刊只以本周周报和日报为事实来源是正确契约；读取月度内容只能是可选的分发去重参考，不能称为缺失输入。
+
+### Details
+用户指出雷达周刊本来就应根据本周周精选和日发现撰写。此前将“没有读取月度全文”描述为自动化缺陷，混淆了事实来源与跨栏目编辑协调。当前 W32 草稿忠实包含周报最终 10 项，因此包含 Mailpit 是符合既有任务要求的；与月度发现重合是两个栏目共享上游项目产生的自然结果。只有用户额外要求避免跨栏目重复时，才应增加月度内容作为负向编辑参考，而且不得用它改变本周事实或项目名单。
+
+### Suggested Action
+后续解释和实现时明确两层：日报/周报决定雷达项目与事实；月度内容若启用，只用于标记延续观察、调整角度或提示重复，不作为事实来源和选项过滤器。
+
+### Metadata
+- Source: user_feedback
+- Related Files: data/github-project-digest/distribution-drafts/2026-W32-wechat.md, data/github-project-digest/weekly/2026-W32.md, data/github-project-digest/monthly/2026-07.md
+- Tags: source-contract, editorial-deduplication, radar-weekly, monthly, correction
+- See Also: LRN-20260809-001, LRN-20260809-002
+
+---
+
+## [LRN-20260809-002] correction
+
+**Logged**: 2026-08-09T15:49:00+08:00
+**Priority**: critical
+**Status**: pending
+**Area**: docs
+
+### Summary
+用户说“这周雷达周刊”时应先确认其指向已公开最新一期，而不能默认指向尚未发布的当前周审核稿。
+
+### Details
+用户询问雷达周刊与月度发现重合，实际指的是已公开 `radar/2026-W31.md` 与 `monthly/2026-07.md`。此前错误地比较了新生成但未发布的 `distribution-drafts/2026-W32-wechat.md`，因此只发现 Mailpit 这一无关重合。正确对比显示 W31 雷达 10 项中有 3 项与 7 月月度发现重合：`cvat-ai/cvat`、`heygen-com/hyperframes`、`alibaba/open-code-review`。
+
+### Suggested Action
+处理“本周、最新、当前”内容问题时，先根据发布目录和草稿目录区分公开最新一期与待审核下一期；报告比较对象和发布状态后再分析重合。
+
+### Metadata
+- Source: user_feedback
+- Related Files: data/github-project-digest/radar/2026-W31.md, data/github-project-digest/monthly/2026-07.md, data/github-project-digest/distribution-drafts/2026-W32-wechat.md
+- Tags: publication-state, period-resolution, radar-weekly, monthly, correction
+- See Also: LRN-20260809-001
+
+---
+
+## [LRN-20260809-001] correction
+
+**Logged**: 2026-08-09T15:45:30+08:00
+**Priority**: high
+**Status**: pending
+**Area**: docs
+
+### Summary
+月报与雷达周刊内容重合是分发层的编辑问题，不应擅自扩大为周报选项或推荐历史问题。
+
+### Details
+用户指出 W32 周报本身没有问题；问题只在公众号雷达周刊与已发布月度发现出现重合。此前建议重做周报名单、替换 Mailpit 并修改跨周期去重，错误地改变了上游事实来源和周报职责。正确边界是保持周报最终 10 项不变，在雷达周刊写作前读取最近月度内容；遇到重合项目时，将其标为延续观察，换用本周新增证据和不同编辑角度，避免把月度内容重新包装成首次发现。
+
+### Suggested Action
+修改雷达周刊自动化写作规则：月报只作为分发文案去重参考，不影响周报项目选择；重合项目仍完整出现，但必须说明与月度内容的关系、避免复述原角度，并聚焦本周更新与单仓库试用边界。
+
+### Metadata
+- Source: user_feedback
+- Related Files: data/github-project-digest/distribution-drafts/2026-W32-wechat.md, data/github-project-digest/monthly/2026-07.md, data/github-project-digest/weekly/2026-W32.md
+- Tags: editorial-scope, radar-weekly, monthly, overlap, correction
+
+---
+
 ## [LRN-20260802-001] correction
 
 **Logged**: 2026-08-02T20:12:00+08:00
