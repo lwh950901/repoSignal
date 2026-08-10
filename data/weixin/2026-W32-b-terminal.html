@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>开源雷达周刊 2026-W32（微信排版版·方案B 终端日志）</title>
+<!--
+════════════════════════════════════════════════════════════
+发布前操作清单（以下内容不进入正文）
+1. 标题（三选一，≤30 字）：
+   A. 每周 10 个开源项目｜从 PDF 解析到 Agent 安全，先试最小链路
+   B. 开源雷达 W32：这周值得动手的 10 个工具，两个和 Agent 直接相关
+   C. PDF 先分类再 OCR、命令输出先压缩再进上下文——本周 10 个开源项目
+2. 摘要（勾选原创后可填，120 字内）：
+   PDF 解析、容器桌面、自托管笔记、命令压缩、代码审查门禁、
+   跨宿主 Agent 工作流、microVM 隔离、Agent 安全基准——
+   本周 10 个项目，先验证最小链路。
+3. 封面图：上传 public/covers/repository-radar-weekly-subtitle.png
+   （大封面 900×383，小封面另裁 1:1 方图）
+4. 发布时删除正文中两个【发布前删除】占位框
+5. 后台「阅读原文」指向完整周报页面 URL（如已部署）
+6. 勾选「原创」，添加话题标签：#开源项目 #开发者工具 #AI 编程
+正文文字与原版 2026-W32 周报逐字一致，仅去除了链接语法。
+════════════════════════════════════════════════════════════
+-->
+</head>
+<body style="margin:0;padding:0;">
+
+<button id="copyArticleBtn" style="position:fixed;right:20px;bottom:24px;z-index:9999;font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;font-size:14px;color:#fff;background:#ff7a1a;border:none;border-radius:999px;padding:10px 18px;box-shadow:0 4px 12px rgba(255,122,26,.35);cursor:pointer;">一键复制全文</button>
+
+<section style="font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;color:#26282b;font-size:16px;line-height:1.9;letter-spacing:0.5px;max-width:680px;margin:0 auto;padding:24px 16px;background:#f6f7f8;">
+
+  <!-- 封面占位：发布前删除本框，图片在后台单独上传 -->
+  <section style="border:2px dashed #c9d4e8;border-radius:8px;background:#f7f9fc;color:#7a8aa5;font-size:14px;text-align:center;padding:18px 12px;margin-bottom:20px;">
+    【发布前删除】封面图占位：上传 public/covers/repository-radar-weekly-subtitle.png<br>
+    大封面 900×383，小封面另裁 1:1 方图（注意小封面会裁中间）
+  </section>
+
+  <h1 style="font-size:22px;font-weight:bold;color:#0f6b4f;margin:0 0 24px;">开源雷达周刊</h1>
+
+  <p style="font-size:14px;color:#5c6b7a;margin:10px 0;">本周的 10 个项目，一头连着可以马上动手的日常工具：PDF 解析、容器桌面、自托管笔记和命令输出压缩；另一头则伸向代码审查、跨宿主 Agent 工作流、隔离执行与安全研究。它们解决的问题都很具体，不需要先接受一套宏大的技术叙事。</p>
+
+  <p style="font-size:14px;color:#5c6b7a;margin:10px 0;">更明显的变化是，Agent 工程的重点正在从“能调用工具”转向上下文选择、质量门禁、运行隔离和效果评测。与此同时，边界清楚的成熟工具依然最容易带来确定收益：先拿真实数据跑通一条最小链路，往往比先搭一整套平台更划算。</p>
+
+  <!-- ════════ 一、本地工具与日常基础设施 ════════ -->
+  <h2 style="font-size:18px;font-weight:bold;color:#0f6b4f;border-left:4px solid #0f6b4f;padding-left:10px;margin:30px 0 6px;">一、本地工具与日常基础设施</h2>
+
+  <h3 style="font-size:17px;font-weight:bold;color:#26282b;margin:22px 0 4px;"><span style="font-family:Menlo,Consolas,monospace;color:#0f6b4f;">1.</span> <span style="color:#26282b;">pdf-inspector</span>：先判断 PDF，再决定是否调用 OCR</h3>
+  <p style="margin:10px 0;"><strong style="color:#0f6b4f;">介绍：</strong> pdf-inspector 是一个纯 Rust 的 PDF 分类、文本抽取和 Markdown 转换库，同时提供 Python、Node.js、WASM 绑定与 CLI。它可以先区分文本型、扫描型、图像型或混合型 PDF，再决定哪些页面需要进入 OCR 流程。</p>
+  <p style="margin:10px 0;"><strong>推荐依据：</strong> 项目不仅有多语言入口，还公开了 200 份 PDF 的项目方实验、逐文档结果和基准工具；本周也有依赖升级与嵌套 PDF 拒绝服务风险修复，既能直接试用，也适合观察解析设计和安全响应。</p>
+  <p style="margin:10px 0;"><strong>适合：</strong> 正在搭建 RAG 文档预处理、报告抽取或 OCR 分流链路的开发者。</p>
+  <p style="font-size:15px;color:#8a8f98;background:#eef0ef;border-left:3px solid #b45309;padding:10px 12px;margin:10px 0;"><strong style="color:#999;">注意：</strong> 它本身不执行 OCR，扫描件仍要交给外部工具。项目方基准不能替代自有语料验证，复杂字体、多栏、表格、恶意文件和超大文件都应在隔离环境中复测；目前没有正式 Release，生产使用宜固定提交或包版本。</p>
+
+  <h3 style="font-size:17px;font-weight:bold;color:#26282b;margin:22px 0 4px;"><span style="font-family:Menlo,Consolas,monospace;color:#0f6b4f;">2.</span> <span style="color:#26282b;">Podman Desktop</span>：把容器与 Kubernetes 工作流放进桌面端</h3>
+  <p style="margin:10px 0;"><strong style="color:#0f6b4f;">介绍：</strong> Podman Desktop 是跨平台容器桌面应用，可用于安装、配置和管理 Podman、镜像、Pod、卷、注册表及 Kubernetes 上下文，并提供扩展机制。</p>
+  <p style="margin:10px 0;"><strong>推荐依据：</strong> 项目已有稳定发布节奏，README、独立文档、路线图、贡献指南和采用者清单齐全；仓库还配置了 Playwright、CodeQL、Codecov 与 OpenSSF Scorecard 等质量和供应链检查。它的优势不是某个新功能，而是一套相对完整的工程闭环。</p>
+  <p style="margin:10px 0;"><strong>适合：</strong> 希望用图形界面管理本地容器环境，或正在评估 Docker Desktop 兼容工作流的开发团队。</p>
+  <p style="font-size:15px;color:#8a8f98;background:#eef0ef;border-left:3px solid #b45309;padding:10px 12px;margin:10px 0;"><strong style="color:#999;">注意：</strong> 桌面应用、虚拟机、容器引擎与 Kubernetes 叠加后，网络、卷、权限、代理和证书行为都会受操作系统影响。企业落地前应先验证注册表策略、代理链路和多引擎兼容性。</p>
+
+  <h3 style="font-size:17px;font-weight:bold;color:#26282b;margin:22px 0 4px;"><span style="font-family:Menlo,Consolas,monospace;color:#0f6b4f;">3.</span> <span style="color:#26282b;">Memos</span>：轻量、自托管的快速记录系统</h3>
+  <p style="margin:10px 0;"><strong style="color:#0f6b4f;">介绍：</strong> Memos 是 Markdown 原生的自托管笔记应用，可用 Go 二进制或 Docker 部署，支持 SQLite、MySQL、PostgreSQL，并提供 REST 与 gRPC API。</p>
+  <p style="margin:10px 0;"><strong>推荐依据：</strong> 它的部署、迁移和集成入口较完整，既能直接作为应用使用，也适合阅读 Go 服务、数据库抽象、API 与前端之间的组织方式。本周报告记录的最新明确版本为 v0.30.0。</p>
+  <p style="margin:10px 0;"><strong>适合：</strong> 想建立个人知识记录空间，或需要把轻量笔记后端接入小团队工作流的用户。</p>
+  <p style="font-size:15px;color:#8a8f98;background:#eef0ef;border-left:3px solid #b45309;padding:10px 12px;margin:10px 0;"><strong style="color:#999;">注意：</strong> 公开部署仍需自行配置访问控制、TLS、附件与数据库备份，并实际演练恢复。项目处于 v0.x，升级前要固定镜像版本、阅读迁移说明，不能把默认 Docker 参数当作生产安全配置。</p>
+
+  <h3 style="font-size:17px;font-weight:bold;color:#26282b;margin:22px 0 4px;"><span style="font-family:Menlo,Consolas,monospace;color:#0f6b4f;">4.</span> <span style="color:#26282b;">RTK</span>：在命令输出进入上下文前先做压缩</h3>
+  <p style="margin:10px 0;"><strong style="color:#0f6b4f;">介绍：</strong> RTK 是一个 Rust CLI 代理，在命令输出进入模型上下文前完成过滤、分组、截断和去重。它覆盖 <code style="font-family:Menlo,Consolas,monospace;background:#e4e7e5;border-radius:3px;padding:1px 5px;font-size:15px;">git</code>、搜索、测试、Docker 等 100 多个常见命令，并可通过 hooks 接入 Claude Code、Codex、Gemini CLI 和 Cursor 等工具。</p>
+  <p style="margin:10px 0;"><strong>推荐依据：</strong> 它把上下文工程落到一条可以直接测量的命令链路：在同一个仓库对比原始输出与压缩输出，就能观察信息保留、上下文体积和排障体验。8 月 8 日补录日报记录的最新可见 Release 为 v0.45.0。</p>
+  <p style="margin:10px 0;"><strong>适合：</strong> 经常让 Agent 读取终端输出，希望减少无效上下文，又不想先改造整套开发流程的个人或团队。</p>
+  <p style="font-size:15px;color:#8a8f98;background:#eef0ef;border-left:3px solid #b45309;padding:10px 12px;margin:10px 0;"><strong style="color:#999;">注意：</strong> 项目方“最多减少 90% Bash 输出”不等于账单减少 90%，token 数也是估算值。自动 hook 可能改变输出语义，首次试用应只接管少量命令，并保留绕过 RTK、查看原始输出的路径。</p>
+
+  <!-- ════════ 二、代码质量与 Agent 工程 ════════ -->
+  <h2 style="font-size:18px;font-weight:bold;color:#0f6b4f;border-left:4px solid #0f6b4f;padding-left:10px;margin:30px 0 6px;">二、代码质量与 Agent 工程</h2>
+
+  <h3 style="font-size:17px;font-weight:bold;color:#26282b;margin:22px 0 4px;"><span style="font-family:Menlo,Consolas,monospace;color:#0f6b4f;">5.</span> <span style="color:#26282b;">code-review-graph</span>：用代码关系图缩小审查上下文</h3>
+  <p style="margin:10px 0;"><strong style="color:#0f6b4f;">介绍：</strong> code-review-graph 为代码库构建持久化关系图，再通过 MCP、CLI 和 GitHub Action 返回与变更影响相关的审查上下文。它支持增量更新和 blast-radius 分析，目标是减少 Agent 在大型仓库中盲目读取文件。</p>
+  <p style="margin:10px 0;"><strong>推荐依据：</strong> 项目把 Tree-sitter 解析、关系图、影响分析、评测和多种工具接入放在同一条链路中，并提供 tests、CI、SECURITY.md 与可复现评测材料。v2.3.7 还记录了多语言、MCP 并发和安全处理改进。</p>
+  <p style="margin:10px 0;"><strong>适合：</strong> 维护中大型代码库、正在评估 AI 代码审查，或希望研究结构化代码上下文的团队。</p>
+  <p style="font-size:15px;color:#8a8f98;background:#eef0ef;border-left:3px solid #b45309;padding:10px 12px;margin:10px 0;"><strong style="color:#999;">注意：</strong> 上下文缩减和 recall 数字来自项目方评测，不是对所有仓库的保证；小变更未必值得建图。接入远程 Embedding 前，还要确认代码数据的驻留与脱敏边界。</p>
+
+  <h3 style="font-size:17px;font-weight:bold;color:#26282b;margin:22px 0 4px;"><span style="font-family:Menlo,Consolas,monospace;color:#0f6b4f;">6.</span> <span style="color:#26282b;">Fallow</span>：把代码健康检查变成可消费的变更门禁</h3>
+  <p style="margin:10px 0;"><strong style="color:#0f6b4f;">介绍：</strong> Fallow 是用 Rust 编写的 TypeScript、JavaScript 代码库健康工具，提供单二进制、npm 包、GitHub Action、MCP，以及 JSON、SARIF 等输出。它的 <code style="font-family:Menlo,Consolas,monospace;background:#e4e7e5;border-radius:3px;padding:1px 5px;font-size:15px;">audit</code> 模式可以只阻断新增问题。</p>
+  <p style="margin:10px 0;"><strong>推荐依据：</strong> 稳定 JSON 合约、退出码和 changed-file gate 让它便于自动化消费；仓库还包含 tests、fuzz、benchmarks、SECURITY.md 和 Docker 示例。本周发布的 v3.14.0 带验证签名。</p>
+  <p style="margin:10px 0;"><strong>适合：</strong> 想把静态检查接入 CI、PR 门禁或 Agent 工作流的 TypeScript、JavaScript 团队。</p>
+  <p style="font-size:15px;color:#8a8f98;background:#eef0ef;border-left:3px solid #b45309;padding:10px 12px;margin:10px 0;"><strong style="color:#999;">注意：</strong> 框架约定、生成代码和缺失入口可能造成误报，type-aware 模式也不能替代 <code style="font-family:Menlo,Consolas,monospace;background:#e4e7e5;border-radius:3px;padding:1px 5px;font-size:14px;">tsc</code> 或完整测试。可选的 Fallow Runtime 属于付费能力，评估时要区分开源核心与商业层。</p>
+
+  <h3 style="font-size:17px;font-weight:bold;color:#26282b;margin:22px 0 4px;"><span style="font-family:Menlo,Consolas,monospace;color:#0f6b4f;">7.</span> <span style="color:#26282b;">ECC</span>：跨多个 Agent 宿主复用工程工作流</h3>
+  <p style="margin:10px 0;"><strong style="color:#0f6b4f;">介绍：</strong> ECC 是一套面向 Claude Code、Codex、OpenCode、Kimi、Hermes 等宿主的 Agent harness、Skills、Hooks、记忆与安全工作流集合，可按需选择规则、命令和工具安装。</p>
+  <p style="margin:10px 0;"><strong>推荐依据：</strong> v2.1.0 更新说明包含 Plan Canvas、跨宿主安装目标和统一 Memory Vault；仓库也提供安装文档、测试与 CI。它的看点不只是功能多，而是尝试把分散在不同客户端中的 Agent 工程习惯整理成可选择、可复用的资产。</p>
+  <p style="margin:10px 0;"><strong>适合：</strong> 同时使用多个 Agent 客户端，希望复用工程规则、工具调用、测试、代码审查和记忆配置的开发者或团队。</p>
+  <p style="font-size:15px;color:#8a8f98;background:#eef0ef;border-left:3px solid #b45309;padding:10px 12px;margin:10px 0;"><strong style="color:#999;">注意：</strong> Hooks、MCP、命令和第三方模型配置会扩大执行与供应链审计面，ECC Tools Pro、GitHub App 与开源核心的边界也要逐项核对。不要整包接入生产仓库，先在隔离样例中验证文件改动、外部连接、权限和撤销路径。</p>
+
+  <!-- ════════ 三、隔离、安全与学习路径 ════════ -->
+  <h2 style="font-size:18px;font-weight:bold;color:#0f6b4f;border-left:4px solid #0f6b4f;padding-left:10px;margin:30px 0 6px;">三、隔离、安全与学习路径</h2>
+
+  <h3 style="font-size:17px;font-weight:bold;color:#26282b;margin:22px 0 4px;"><span style="font-family:Menlo,Consolas,monospace;color:#0f6b4f;">8.</span> <span style="color:#26282b;">Microsandbox</span>：用 microVM 隔离不可信代码</h3>
+  <p style="margin:10px 0;"><strong style="color:#0f6b4f;">介绍：</strong> Microsandbox 提供本地优先的 microVM 运行时、CLI 和 SDK，并支持 MCP/Skills 接入，可用于隔离 Agent、插件、CI 和自动化任务中的不可信代码，支持 Rust、Python、TypeScript 和 Go 调用。</p>
+  <p style="margin:10px 0;"><strong>推荐依据：</strong> Rust 核心、多个 SDK、示例、文档、安全材料和多平台发布资产形成了完整的学习路径；最新明确版本为 v0.6.8。它既能用最小示例观察隔离边界，也能沿调用链拆解 microVM 如何接入 Agent 工具。</p>
+  <p style="margin:10px 0;"><strong>适合：</strong> 需要为代码执行增加隔离层，或想拆解 microVM 生命周期与跨语言 SDK 设计的开发者。</p>
+  <p style="font-size:15px;color:#8a8f98;background:#eef0ef;border-left:3px solid #b45309;padding:10px 12px;margin:10px 0;"><strong style="color:#999;">注意：</strong> 本地 microVM 不自动等于多租户生产级隔离。网络、镜像、权限、虚拟化能力和镜像供应链都要按自身威胁模型测试；项目仍标注为 beta，0.x API 可能出现破坏性变化。</p>
+
+  <h3 style="font-size:17px;font-weight:bold;color:#26282b;margin:22px 0 4px;"><span style="font-family:Menlo,Consolas,monospace;color:#0f6b4f;">9.</span> <span style="color:#26282b;">ADR</span>：从遥测到检测的 Agent 安全研究样本</h3>
+  <p style="margin:10px 0;"><strong style="color:#0f6b4f;">介绍：</strong> ADR 面向 Agent 安全研究与防御工程，包含 Agent 遥测 Sensor、ADR-Bench 安全基准和双层威胁检测器，并提供 Python 代码、评测脚本、合成 fixture、论文及复现实验文档。</p>
+  <p style="margin:10px 0;"><strong>推荐依据：</strong> 项目将 Sensor、Detection 与 benchmark 分层组织，覆盖 300 多个任务、133 个 MCP server 和 17 类攻击技术；README 明确称 ADR 已在 Uber 生产部署，同时给出了可复现实验流程和 Sensor v1.0.0 Release。</p>
+  <p style="margin:10px 0;"><strong>适合：</strong> 正在研究 Agent 攻击检测、遥测协议或内部安全评测的团队。</p>
+  <p style="font-size:15px;color:#8a8f98;background:#eef0ef;border-left:3px solid #b45309;padding:10px 12px;margin:10px 0;"><strong style="color:#999;">注意：</strong> 这不是可以直接照搬的完整生产防线。开源版不包含 Prevention 和离线 ADR Explorer，benchmark 含合成环境，双 Agent 检测还依赖模型与 API 成本；项目方生产部署说明也不等于对其他组织环境的独立验证。</p>
+
+  <h3 style="font-size:17px;font-weight:bold;color:#26282b;margin:22px 0 4px;"><span style="font-family:Menlo,Consolas,monospace;color:#0f6b4f;">10.</span> <span style="color:#26282b;">learn-claude-code</span>：逐章拆解 Agent harness</h3>
+  <p style="margin:10px 0;"><strong style="color:#0f6b4f;">介绍：</strong> learn-claude-code 是内容型可执行教程，不是生产 Agent 框架。它用 20 个章节和独立代码讲解 Agent 循环、工具、上下文压缩、子代理、团队、MCP、worktree 与权限机制。</p>
+  <p style="margin:10px 0;"><strong>推荐依据：</strong> <code style="font-family:Menlo,Consolas,monospace;background:#e4e7e5;border-radius:3px;padding:1px 5px;font-size:15px;">s01</code> 到 <code style="font-family:Menlo,Consolas,monospace;background:#e4e7e5;border-radius:3px;padding:1px 5px;font-size:15px;">s20</code> 的章节结构把叙事、代码、图示和测试分开，并提供中英日文说明及可执行入口，便于对照观察每一步新增的机制与复杂度。它的长处是一条可复现的学习路线，而不是包装成框架的示例代码。</p>
+  <p style="margin:10px 0;"><strong>适合：</strong> 想从最小循环开始理解 Agent harness，或需要一条可逐章实验学习路线的开发者。</p>
+  <p style="font-size:15px;color:#8a8f98;background:#eef0ef;border-left:3px solid #b45309;padding:10px 12px;margin:10px 0;"><strong style="color:#999;">注意：</strong> 教程实现为了可读性刻意简化，不具备完整的模型路由、密钥管理、并发限流、沙箱、审计和回滚能力；项目也没有正式 Release，API 变化可能让部分章节失效，不能直接复制为生产系统。</p>
+
+  <!-- ════════ 本周优先试用 ════════ -->
+  <h2 style="font-size:18px;font-weight:bold;color:#0f6b4f;border-left:4px solid #0f6b4f;padding-left:10px;margin:30px 0 6px;">本周优先试用</h2>
+
+  <p style="margin:10px 0;">如果只安排一次短试用，优先级可以更明确：文档管线先用 pdf-inspector 跑一组真实 PDF；经常被终端输出挤满上下文的团队，可以先让 RTK 只接管 <code style="font-family:Menlo,Consolas,monospace;background:#e4e7e5;border-radius:3px;padding:1px 5px;font-size:15px;">git status</code>、<code style="font-family:Menlo,Consolas,monospace;background:#e4e7e5;border-radius:3px;padding:1px 5px;font-size:15px;">git diff</code> 和测试命令；Agent 安全研究则从 ADR 的离线 benchmark 或 Microsandbox 的无敏感数据示例开始。先验证最小链路，再决定是否进入团队基础设施。</p>
+
+  <p style="margin:10px 0;">完整周报记录了这 10 个项目的维护证据、版本口径、许可证、风险与上手建议。</p>
+
+  <p style="font-size:14px;color:#8a8f98;margin:10px 0;"><strong>阅读全文：</strong> 2026-W32 完整周报</p>
+
+  <p style="margin:10px 0;">这 10 个项目里，你更想先看哪一个的真实试用记录，或者你正在解决的工程问题更接近哪一类？</p>
+
+  <hr style="border:none;border-top:1px solid #d8dcd9;margin:28px 0 20px;">
+
+  <section style="background:#e9edeb;border-radius:8px;padding:14px 18px;">
+    <p style="font-weight:bold;color:#222;margin:0 0 6px;">关于仓库雷达</p>
+    <p style="font-size:15px;color:#555;margin:0;">仓库雷达持续整理值得使用、学习和二次开发的开源项目。日报负责发现，周报负责筛选，也会尽量把风险和低成本试法说清楚。</p>
+  </section>
+
+  <!-- 阅读原文占位：发布前删除本框 -->
+  <section style="border:2px dashed #c9d4e8;border-radius:8px;background:#f7f9fc;color:#7a8aa5;font-size:14px;text-align:center;padding:14px 12px;margin-top:20px;">
+    【发布前删除】后台设置「阅读原文」→ 完整周报页面 URL（如已部署）
+  </section>
+
+</section>
+
+<script>
+(function(){
+  var btn = document.getElementById('copyArticleBtn');
+  if (!btn) return;
+  btn.addEventListener('click', function(){
+    var placeholders = document.querySelectorAll('section[style*="dashed"]');
+    var hidden = [];
+    placeholders.forEach(function(s){ s.style.display = 'none'; hidden.push(s); });
+    var h1 = document.querySelector('body > section h1');
+    if (h1) { h1.style.display = 'none'; hidden.push(h1); }
+    var box = document.querySelector('body > section') || document.body;
+    var r = document.createRange();
+    r.selectNodeContents(box);
+    var sel = window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(r);
+    var ok = false;
+    try { ok = document.execCommand('copy'); } catch(e) { ok = false; }
+    sel.removeAllRanges();
+    hidden.forEach(function(s){ s.style.display = ''; });
+    var old = btn.textContent;
+    btn.textContent = ok ? '✅ 已复制，去公众号粘贴' : '❌ 复制失败，请手动框选正文';
+    btn.style.background = ok ? '#0b3d66' : '#b00020';
+    setTimeout(function(){ btn.textContent = old; btn.style.background = '#ff7a1a'; }, 2000);
+  });
+})();
+</script>
+
+</body>
+</html>
