@@ -485,3 +485,33 @@ Use `[.]` for literal dots in awk regexes embedded in JavaScript strings.
 - **Notes**: Verified that `/^## [1-5][.] /` matches all five weekly project headings before rerunning the full check.
 
 ---
+
+## [ERR-20260811-001] daily_report_node_validation
+
+**Logged**: 2026-08-11T14:20:00+08:00
+**Priority**: low
+**Status**: resolved
+**Area**: tests
+
+### Summary
+An inline Node validation command double-escaped regex literals through the JavaScript tool string, producing an invalid-regexp-flags error.
+
+### Error
+`SyntaxError: Invalid regular expression flags`
+
+### Context
+- Command: ad hoc Node format validation for `data/github-project-digest/daily/2026-08-11.md`
+- Root cause: regex escaping was interpreted once by the tool string and again by Node.
+
+### Suggested Fix
+Use line-prefix checks and string parsing for shell-embedded validation, or put complex regex validation in a checked-in script.
+
+### Metadata
+- Reproducible: yes
+- Related Files: data/github-project-digest/daily/2026-08-11.md
+
+### Resolution
+- **Resolved**: 2026-08-11T14:20:00+08:00
+- **Notes**: Replaced the regex-only command with a line-oriented Node validation. The first replacement still used a faulty heading-boundary lookup; direct per-heading slices confirmed the report fields before the final check.
+
+---

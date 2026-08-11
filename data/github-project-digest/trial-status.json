@@ -82,7 +82,7 @@
       "ten_fields_each": true
     }
   },
-  "main_recommendation_count": 4,
+  "main_recommendation_count": 5,
   "runs": [
     {
       "date": "2026-08-10",
@@ -336,15 +336,15 @@
     }
   ],
   "current_run": {
-    "date": "2026-08-11",
-    "run_time": "2026-08-11T05:39:19+0800",
+    "date": "2026-08-12",
+    "run_time": "2026-08-12T05:42:51+0800",
     "status": "passed_with_tls_and_web_fallback",
     "skill_invoked": true,
     "scanner_ran": true,
-    "fallback": "初次无缓存扫描因本机 Python TLS 证书链失败，按技能规则仅使用一次 --insecure 重试后成功；短名单 enrich 遇匿名 GitHub API 限流，降级为同轮 Search API 指标与 GitHub 仓库、README、Release、Issue/PR 和提交页面核验。",
+    "fallback": "初次无缓存扫描因本机 Python TLS 证书链失败并遇沙箱 DNS 失败，按技能规则仅使用一次 --insecure，随后经联网权限完成 5 组 live search；7 个短名单 enrichment 成功，Trending 候选 cathrynlavery/diagram-design 的精确 enrichment 触发未认证 GitHub API 限流，改用同日 GitHub Trending、仓库页、Release 页和提交页核验。",
     "checks": {
       "fixed_format": true,
-      "primary_count_4": true,
+      "primary_count_5": true,
       "extra_count_1": true,
       "required_fields": true,
       "history_jsonl": true,
@@ -357,18 +357,20 @@
       "skill_invoked": true,
       "scanner_ran": true,
       "history_append_readback_verified": true,
-      "links_and_metrics_verified_live": true
+      "links_and_metrics_verified_live": true,
+      "candidate_ledger_check": true,
+      "git_diff_check": true
     },
     "anomalies": [
-      "用户指定候选文件不存在，已按规范初始化；本轮无用户指定候选。",
-      "本机 TLS 证书链失败后仅一次 --insecure 重试成功。",
-      "短名单 enrichment 触发未认证 GitHub API 限流，按规则降级为可核验网页；未使用缓存冒充实时事实。",
-      "addyosmani/agent-skills 命中 2026-07-13 历史，按 90 天去重排除。"
+      "今日候选文件不存在，已按规范安全初始化；没有新的用户指定候选。",
+      "本机 Python TLS 证书链与沙箱 DNS 失败后，仅按技能规则使用一次 --insecure，并通过联网权限完成实时扫描。",
+      "cathrynlavery/diagram-design 精确 scanner enrichment 触发未认证 GitHub API 限流；改用同日 Trending、仓库、Release 与提交页核验，提交页返回 429，因此未猜最近提交时间。",
+      "反馈中的 miounet11/life-kline 已在 2026-08-08 历史中，按 90 天规则排除重复推荐。"
     ],
-    "history_entries_added": 5,
-    "history_entries_after_append": 206,
-    "report": "data/github-project-digest/daily/2026-08-11.md",
-    "candidate_ledger": "data/github-project-digest/candidates/2026-08-11.jsonl"
+    "history_entries_added": 6,
+    "history_entries_after_append": 213,
+    "report": "data/github-project-digest/daily/2026-08-12.md",
+    "candidate_ledger": "data/github-project-digest/candidates/2026-08-12.jsonl"
   },
   "status": "passed_with_tls_and_web_fallback",
   "timezone": "Asia/Shanghai",
