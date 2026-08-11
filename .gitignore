@@ -6,3 +6,4 @@ scripts/__pycache__/
 .worktrees/
 .superpowers/
 data/github-project-digest/monthly-drafts/
+data/.daily-commit-push.log

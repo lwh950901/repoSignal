@@ -136,6 +136,14 @@ describe("parseDailyReport", () => {
     expect(report.bonusProjects[0].kind).toBe("额外发现");
     expect(report.bonusProjects[0].positioning).toContain("持续整理");
   });
+
+  it("does not include the bonus section in the last primary project", () => {
+    const report = parseDailyReport(bonusSample, "2026-07-08.md");
+
+    expect(report.projects).toHaveLength(1);
+    expect(report.projects[0].markdown).not.toContain("## 额外发现");
+    expect(report.projects[0].markdown).not.toContain("asgeirtj/system_prompts_leaks");
+  });
 });
 
 describe("parseWeeklyReport", () => {

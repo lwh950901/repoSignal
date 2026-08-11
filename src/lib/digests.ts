@@ -96,9 +96,14 @@ function parseProjects(markdown: string, type: DigestReport["type"]): ProjectRec
     : /^##\s+\d+\.\s+(.+?)\s*$/gmu;
   const matches = [...markdown.matchAll(headingPattern)];
 
-  return matches.flatMap((match, index) => {
+  return matches.flatMap((match) => {
     const start = match.index ?? 0;
-    const end = matches[index + 1]?.index ?? markdown.length;
+    const nextHeading = markdown
+      .slice(start + match[0].length)
+      .match(/^#{2,3}\s+.+$/mu);
+    const end = nextHeading?.index !== undefined
+      ? start + match[0].length + nextHeading.index
+      : markdown.length;
     const section = markdown.slice(start, end).trim();
     const body = section.replace(/^#{2,3}.+\n/u, "").trim();
     const repo = getRepository(body);
