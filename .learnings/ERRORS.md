@@ -34,6 +34,36 @@ Use `GITHUB_TOKEN` for recurring scans, reserve enrichment for the final shortli
 
 ---
 
+## [ERR-20260813-001] daily_report_patch_generation
+
+**Logged**: 2026-08-13T00:00:00+08:00
+**Priority**: low
+**Status**: resolved
+**Area**: docs
+
+### Summary
+The first generated daily-report patch failed because Markdown inline-code backticks were interpreted as JavaScript template-literal delimiters.
+
+### Error
+`SyntaxError: Unexpected identifier 'find'`
+
+### Context
+- Operation: generate and apply `data/github-project-digest/daily/2026-08-13.md`
+- Root cause: the report body was embedded in a JavaScript template literal without escaping its backticks.
+
+### Suggested Fix
+Use plain Chinese quotation marks in generated Markdown or escape all backticks before composing a tool patch.
+
+### Metadata
+- Reproducible: yes
+- Related Files: data/github-project-digest/daily/2026-08-13.md
+
+### Resolution
+- **Resolved**: 2026-08-13T00:00:00+08:00
+- **Notes**: Regenerated the report body without inline-code backticks before applying the patch.
+
+---
+
 ## [ERR-20260809-001] radar_label_source_assertion
 
 **Logged**: 2026-08-09T19:34:02+08:00

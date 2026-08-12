@@ -32,17 +32,17 @@
   "history_entries_before_run": 0,
   "history_entries_detected_before_append": 3,
   "latest_daily_run": {
-    "date": "2026-08-10",
-    "checked_at": "2026-08-10T08:45:00+0800",
-    "status": "passed_with_tls_fallback_and_dedupe",
+    "date": "2026-08-13",
+    "checked_at": "2026-08-13T00:00:00+0800",
+    "status": "passed_with_tls_and_api_web_fallback",
     "anomalies": [
-      "Python 本地 TLS 证书链失败；按技能规则仅使用一次 --insecure 重试后四个分层 live search 成功。",
-      "短名单使用同轮 GitHub Search API 与仓库/Release/Commit 页面核验；本轮未发生 API 限流，未使用缓存冒充实时事实。",
-      "用户指定候选 miounet11/life-kline 已重新核验为 318 Stars / 94 Forks，但最近代码活动仍为 2025-12-22，且 2026-08-08 已发布，按 90 天规则排除重复推荐。"
+      "四条初次无缓存扫描因本机 Python TLS 证书链失败，按技能规则仅使用一次 --insecure 重试成功。",
+      "短名单 enrich 触发匿名 GitHub API 限流；改用同轮 Search API 指标与 GitHub 仓库、README、Release、提交和 Issue/PR 页面核验。",
+      "RAG Topic 页面返回 429，未将其内容当作指标事实；今日候选文件不存在，已安全初始化且无新的用户指定候选。"
     ],
     "checks": {
       "fixed_format": true,
-      "primary_count_4": true,
+      "primary_count_5": true,
       "extra_count_1": true,
       "required_fields": true,
       "history_jsonl": true,
@@ -57,6 +57,8 @@
       "skill_invoked": true,
       "scanner_ran": true,
       "history_append_readback_verified": true,
+      "history_entries_after_append": 219,
+      "candidate_count": 57,
       "links_and_metrics_verified_live": true
     }
   },
@@ -336,12 +338,12 @@
     }
   ],
   "current_run": {
-    "date": "2026-08-12",
-    "run_time": "2026-08-12T05:42:51+0800",
-    "status": "passed_with_tls_and_web_fallback",
+    "date": "2026-08-13",
+    "run_time": "2026-08-13T00:00:00+0800",
+    "status": "passed_with_tls_and_api_web_fallback",
     "skill_invoked": true,
     "scanner_ran": true,
-    "fallback": "初次无缓存扫描因本机 Python TLS 证书链失败并遇沙箱 DNS 失败，按技能规则仅使用一次 --insecure，随后经联网权限完成 5 组 live search；7 个短名单 enrichment 成功，Trending 候选 cathrynlavery/diagram-design 的精确 enrichment 触发未认证 GitHub API 限流，改用同日 GitHub Trending、仓库页、Release 页和提交页核验。",
+    "fallback": "四条 no-cache live search 首次因本机 Python TLS 证书链失败，按 skill 规则仅一次 --insecure 重试成功；短名单 enrich 遇匿名 GitHub API 限流，改用同轮 Search API 指标与 GitHub 仓库、README、Release、提交和 Issue/PR 页面核验。",
     "checks": {
       "fixed_format": true,
       "primary_count_5": true,
@@ -359,18 +361,18 @@
       "history_append_readback_verified": true,
       "links_and_metrics_verified_live": true,
       "candidate_ledger_check": true,
-      "git_diff_check": true
+      "git_diff_check": true,
+      "trial_status_updated": true
     },
     "anomalies": [
       "今日候选文件不存在，已按规范安全初始化；没有新的用户指定候选。",
-      "本机 Python TLS 证书链与沙箱 DNS 失败后，仅按技能规则使用一次 --insecure，并通过联网权限完成实时扫描。",
-      "cathrynlavery/diagram-design 精确 scanner enrichment 触发未认证 GitHub API 限流；改用同日 Trending、仓库、Release 与提交页核验，提交页返回 429，因此未猜最近提交时间。",
-      "反馈中的 miounet11/life-kline 已在 2026-08-08 历史中，按 90 天规则排除重复推荐。"
+      "本机 Python TLS 证书链失败后仅按技能规则使用一次 --insecure；GitHub API enrich 限流后改用同轮 Search API 与 GitHub 页面核验，未使用缓存冒充实时事实。",
+      "RAG Topic 页面返回 429，未把其内容当作指标事实；用户反馈已读取且 feedback.jsonl 未修改。"
     ],
     "history_entries_added": 6,
-    "history_entries_after_append": 213,
-    "report": "data/github-project-digest/daily/2026-08-12.md",
-    "candidate_ledger": "data/github-project-digest/candidates/2026-08-12.jsonl"
+    "history_entries_after_append": 219,
+    "report": "data/github-project-digest/daily/2026-08-13.md",
+    "candidate_ledger": "data/github-project-digest/candidates/2026-08-13.jsonl"
   },
   "status": "passed_with_tls_and_web_fallback",
   "timezone": "Asia/Shanghai",
