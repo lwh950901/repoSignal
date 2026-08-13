@@ -32,17 +32,15 @@
   "history_entries_before_run": 0,
   "history_entries_detected_before_append": 3,
   "latest_daily_run": {
-    "date": "2026-08-13",
-    "checked_at": "2026-08-13T00:00:00+0800",
-    "status": "passed_with_tls_and_api_web_fallback",
-    "anomalies": [
-      "四条初次无缓存扫描因本机 Python TLS 证书链失败，按技能规则仅使用一次 --insecure 重试成功。",
-      "短名单 enrich 触发匿名 GitHub API 限流；改用同轮 Search API 指标与 GitHub 仓库、README、Release、提交和 Issue/PR 页面核验。",
-      "RAG Topic 页面返回 429，未将其内容当作指标事实；今日候选文件不存在，已安全初始化且无新的用户指定候选。"
-    ],
+    "date": "2026-08-14",
+    "run_time": "2026-08-14T05:39:09+08:00",
+    "status": "passed_with_tls_and_search_only_fallback",
+    "skill_invoked": true,
+    "scanner_ran": true,
+    "fallback": "5 条 no-cache live search 初次因本机 Python TLS 证书链失败，按技能规则仅一次 --insecure 重试成功；匿名 GitHub REST/API 随后限流，HTML 与网页搜索受当前网络策略阻断，因此只使用同轮 Search API 指标与可确认的 GitHub 搜索事实，未使用缓存冒充实时事实。",
     "checks": {
       "fixed_format": true,
-      "primary_count_5": true,
+      "primary_count_4": true,
       "extra_count_1": true,
       "required_fields": true,
       "history_jsonl": true,
@@ -57,10 +55,19 @@
       "skill_invoked": true,
       "scanner_ran": true,
       "history_append_readback_verified": true,
-      "history_entries_after_append": 219,
-      "candidate_count": 57,
-      "links_and_metrics_verified_live": true
-    }
+      "links_and_metrics_verified_live": true,
+      "trial_status_updated": true
+    },
+    "anomalies": [
+      "今日候选文件不存在，已安全初始化；没有新的用户指定候选。",
+      "匿名 GitHub API 达到限流；Release、具体提交、README 与 Issue/PR 细节无法复核，报告逐项标注未核实。",
+      "GitHub HTML/网页搜索访问被运行环境网络策略阻断；未绕过限制或以旧缓存替代实时事实。",
+      "本轮 Search API 返回 60 条结果，规范化后候选账本 56 条。"
+    ],
+    "history_entries_added": 5,
+    "history_entries_after_append": 223,
+    "report": "data/github-project-digest/daily/2026-08-14.md",
+    "candidate_ledger": "data/github-project-digest/candidates/2026-08-14.jsonl"
   },
   "latest_backfill": {
     "checked_at": "2026-08-09T01:15:47+0800",
@@ -84,7 +91,7 @@
       "ten_fields_each": true
     }
   },
-  "main_recommendation_count": 5,
+  "main_recommendation_count": 4,
   "runs": [
     {
       "date": "2026-08-10",
@@ -93,7 +100,21 @@
       "skill_invoked": true,
       "scanner_ran": true,
       "fallback": "Python TLS 证书链失败后仅一次 --insecure 重试成功；未发生 API 限流，最终短名单使用同轮 Search API 与 GitHub 仓库、Release、Commit 页面核验。",
-      "checks": ["fixed_format","primary_count_4","extra_count_1","required_fields","history_jsonl","candidate_jsonl","dedupe_90d","feedback_read","user_candidate_processed","learning_slot_4","github_fact_source","candidate_ledger_check","git_diff_check"]
+      "checks": [
+        "fixed_format",
+        "primary_count_4",
+        "extra_count_1",
+        "required_fields",
+        "history_jsonl",
+        "candidate_jsonl",
+        "dedupe_90d",
+        "feedback_read",
+        "user_candidate_processed",
+        "learning_slot_4",
+        "github_fact_source",
+        "candidate_ledger_check",
+        "git_diff_check"
+      ]
     },
     {
       "checks": [
@@ -335,18 +356,56 @@
         "Python TLS 证书链失败后按技能规则仅使用一次 --insecure；匿名 GitHub API enrich 触发限流，未使用缓存冒充实时事实。",
         "用户指定候选 miounet11/life-kline 已重新核验，但最近代码活动停留在 2025-12-22，因此仅进入额外发现。"
       ]
+    },
+    {
+      "date": "2026-08-14",
+      "run_time": "2026-08-14T05:39:09+08:00",
+      "status": "passed_with_tls_and_search_only_fallback",
+      "skill_invoked": true,
+      "scanner_ran": true,
+      "fallback": "5 条 no-cache live search 初次因本机 Python TLS 证书链失败，按技能规则仅一次 --insecure 重试成功；匿名 GitHub REST/API 随后限流，HTML 与网页搜索受当前网络策略阻断，因此只使用同轮 Search API 指标与可确认的 GitHub 搜索事实，未使用缓存冒充实时事实。",
+      "checks": {
+        "fixed_format": true,
+        "primary_count_4": true,
+        "extra_count_1": true,
+        "required_fields": true,
+        "history_jsonl": true,
+        "candidate_jsonl": true,
+        "dedupe_90d": true,
+        "feedback_read": true,
+        "user_candidate_processed": true,
+        "learning_slot_4": true,
+        "github_fact_source": true,
+        "candidate_ledger_check": true,
+        "git_diff_check": true,
+        "skill_invoked": true,
+        "scanner_ran": true,
+        "history_append_readback_verified": true,
+        "links_and_metrics_verified_live": true,
+        "trial_status_updated": true
+      },
+      "anomalies": [
+        "今日候选文件不存在，已安全初始化；没有新的用户指定候选。",
+        "匿名 GitHub API 达到限流；Release、具体提交、README 与 Issue/PR 细节无法复核，报告逐项标注未核实。",
+        "GitHub HTML/网页搜索访问被运行环境网络策略阻断；未绕过限制或以旧缓存替代实时事实。",
+        "本轮 Search API 返回 60 条结果，规范化后候选账本 56 条。"
+      ],
+      "history_entries_added": 5,
+      "history_entries_after_append": 223,
+      "report": "data/github-project-digest/daily/2026-08-14.md",
+      "candidate_ledger": "data/github-project-digest/candidates/2026-08-14.jsonl"
     }
   ],
   "current_run": {
-    "date": "2026-08-13",
-    "run_time": "2026-08-13T00:00:00+0800",
-    "status": "passed_with_tls_and_api_web_fallback",
+    "date": "2026-08-14",
+    "run_time": "2026-08-14T05:39:09+08:00",
+    "status": "passed_with_tls_and_search_only_fallback",
     "skill_invoked": true,
     "scanner_ran": true,
-    "fallback": "四条 no-cache live search 首次因本机 Python TLS 证书链失败，按 skill 规则仅一次 --insecure 重试成功；短名单 enrich 遇匿名 GitHub API 限流，改用同轮 Search API 指标与 GitHub 仓库、README、Release、提交和 Issue/PR 页面核验。",
+    "fallback": "5 条 no-cache live search 初次因本机 Python TLS 证书链失败，按技能规则仅一次 --insecure 重试成功；匿名 GitHub REST/API 随后限流，HTML 与网页搜索受当前网络策略阻断，因此只使用同轮 Search API 指标与可确认的 GitHub 搜索事实，未使用缓存冒充实时事实。",
     "checks": {
       "fixed_format": true,
-      "primary_count_5": true,
+      "primary_count_4": true,
       "extra_count_1": true,
       "required_fields": true,
       "history_jsonl": true,
@@ -356,25 +415,26 @@
       "user_candidate_processed": true,
       "learning_slot_4": true,
       "github_fact_source": true,
+      "candidate_ledger_check": true,
+      "git_diff_check": true,
       "skill_invoked": true,
       "scanner_ran": true,
       "history_append_readback_verified": true,
       "links_and_metrics_verified_live": true,
-      "candidate_ledger_check": true,
-      "git_diff_check": true,
       "trial_status_updated": true
     },
     "anomalies": [
-      "今日候选文件不存在，已按规范安全初始化；没有新的用户指定候选。",
-      "本机 Python TLS 证书链失败后仅按技能规则使用一次 --insecure；GitHub API enrich 限流后改用同轮 Search API 与 GitHub 页面核验，未使用缓存冒充实时事实。",
-      "RAG Topic 页面返回 429，未把其内容当作指标事实；用户反馈已读取且 feedback.jsonl 未修改。"
+      "今日候选文件不存在，已安全初始化；没有新的用户指定候选。",
+      "匿名 GitHub API 达到限流；Release、具体提交、README 与 Issue/PR 细节无法复核，报告逐项标注未核实。",
+      "GitHub HTML/网页搜索访问被运行环境网络策略阻断；未绕过限制或以旧缓存替代实时事实。",
+      "本轮 Search API 返回 60 条结果，规范化后候选账本 56 条。"
     ],
-    "history_entries_added": 6,
-    "history_entries_after_append": 219,
-    "report": "data/github-project-digest/daily/2026-08-13.md",
-    "candidate_ledger": "data/github-project-digest/candidates/2026-08-13.jsonl"
+    "history_entries_added": 5,
+    "history_entries_after_append": 223,
+    "report": "data/github-project-digest/daily/2026-08-14.md",
+    "candidate_ledger": "data/github-project-digest/candidates/2026-08-14.jsonl"
   },
-  "status": "passed_with_tls_and_web_fallback",
+  "status": "passed_with_tls_and_search_only_fallback",
   "timezone": "Asia/Shanghai",
   "verification": {
     "repos": [
