@@ -37,10 +37,10 @@
     "status": "passed_with_tls_and_search_only_fallback",
     "skill_invoked": true,
     "scanner_ran": true,
-    "fallback": "5 条 no-cache live search 初次因本机 Python TLS 证书链失败，按技能规则仅一次 --insecure 重试成功；匿名 GitHub REST/API 随后限流，HTML 与网页搜索受当前网络策略阻断，因此只使用同轮 Search API 指标与可确认的 GitHub 搜索事实，未使用缓存冒充实时事实。",
+    "fallback": "5 条 no-cache live search 初次因本机 Python TLS 证书链失败，按技能规则仅一次 --insecure 重试成功；宽搜索后匿名 GitHub REST/API 曾限流，但用户补充候选的精确 repo Search 在本轮 TLS 修复后成功，未使用缓存冒充实时事实。",
     "checks": {
       "fixed_format": true,
-      "primary_count_4": true,
+      "primary_count_4": false,
       "extra_count_1": true,
       "required_fields": true,
       "history_jsonl": true,
@@ -56,18 +56,24 @@
       "scanner_ran": true,
       "history_append_readback_verified": true,
       "links_and_metrics_verified_live": true,
-      "trial_status_updated": true
+      "trial_status_updated": true,
+      "user_candidate_reverified": true,
+      "primary_count_5": true
     },
     "anomalies": [
       "今日候选文件不存在，已安全初始化；没有新的用户指定候选。",
       "匿名 GitHub API 达到限流；Release、具体提交、README 与 Issue/PR 细节无法复核，报告逐项标注未核实。",
       "GitHub HTML/网页搜索访问被运行环境网络策略阻断；未绕过限制或以旧缓存替代实时事实。",
-      "本轮 Search API 返回 60 条结果，规范化后候选账本 56 条。"
+      "本轮 Search API 返回 60 条结果，规范化后候选账本 56 条。",
+      "用户补充候选 deepseek-ai/deepseek-harness 未出现在宽搜索结果；精确 repo 扫描在一次 TLS 修复后成功，已实时核验并补入第 5 个正式推荐位。",
+      "本轮宽搜索未独立抓取 GitHub Trending，也未加入 DeepSeek owner 的精确候选通道，导致 deepseek-ai/deepseek-harness 漏检；已由用户补充并完成精确核验。"
     ],
-    "history_entries_added": 5,
-    "history_entries_after_append": 223,
+    "history_entries_added": 6,
+    "history_entries_after_append": 224,
     "report": "data/github-project-digest/daily/2026-08-14.md",
-    "candidate_ledger": "data/github-project-digest/candidates/2026-08-14.jsonl"
+    "candidate_ledger": "data/github-project-digest/candidates/2026-08-14.jsonl",
+    "user_candidate_processed": true,
+    "user_candidate_reverified": true
   },
   "latest_backfill": {
     "checked_at": "2026-08-09T01:15:47+0800",
@@ -91,7 +97,7 @@
       "ten_fields_each": true
     }
   },
-  "main_recommendation_count": 4,
+  "main_recommendation_count": 5,
   "runs": [
     {
       "date": "2026-08-10",
@@ -402,10 +408,10 @@
     "status": "passed_with_tls_and_search_only_fallback",
     "skill_invoked": true,
     "scanner_ran": true,
-    "fallback": "5 条 no-cache live search 初次因本机 Python TLS 证书链失败，按技能规则仅一次 --insecure 重试成功；匿名 GitHub REST/API 随后限流，HTML 与网页搜索受当前网络策略阻断，因此只使用同轮 Search API 指标与可确认的 GitHub 搜索事实，未使用缓存冒充实时事实。",
+    "fallback": "5 条 no-cache live search 初次因本机 Python TLS 证书链失败，按技能规则仅一次 --insecure 重试成功；宽搜索后匿名 GitHub REST/API 曾限流，但用户补充候选的精确 repo Search 在本轮 TLS 修复后成功，未使用缓存冒充实时事实。",
     "checks": {
       "fixed_format": true,
-      "primary_count_4": true,
+      "primary_count_4": false,
       "extra_count_1": true,
       "required_fields": true,
       "history_jsonl": true,
@@ -421,18 +427,24 @@
       "scanner_ran": true,
       "history_append_readback_verified": true,
       "links_and_metrics_verified_live": true,
-      "trial_status_updated": true
+      "trial_status_updated": true,
+      "user_candidate_reverified": true,
+      "primary_count_5": true
     },
     "anomalies": [
       "今日候选文件不存在，已安全初始化；没有新的用户指定候选。",
       "匿名 GitHub API 达到限流；Release、具体提交、README 与 Issue/PR 细节无法复核，报告逐项标注未核实。",
       "GitHub HTML/网页搜索访问被运行环境网络策略阻断；未绕过限制或以旧缓存替代实时事实。",
-      "本轮 Search API 返回 60 条结果，规范化后候选账本 56 条。"
+      "本轮 Search API 返回 60 条结果，规范化后候选账本 56 条。",
+      "用户补充候选 deepseek-ai/deepseek-harness 未出现在宽搜索结果；精确 repo 扫描在一次 TLS 修复后成功，已实时核验并补入第 5 个正式推荐位。",
+      "本轮宽搜索未独立抓取 GitHub Trending，也未加入 DeepSeek owner 的精确候选通道，导致 deepseek-ai/deepseek-harness 漏检；已由用户补充并完成精确核验。"
     ],
-    "history_entries_added": 5,
-    "history_entries_after_append": 223,
+    "history_entries_added": 6,
+    "history_entries_after_append": 224,
     "report": "data/github-project-digest/daily/2026-08-14.md",
-    "candidate_ledger": "data/github-project-digest/candidates/2026-08-14.jsonl"
+    "candidate_ledger": "data/github-project-digest/candidates/2026-08-14.jsonl",
+    "user_candidate_processed": true,
+    "user_candidate_reverified": true
   },
   "status": "passed_with_tls_and_search_only_fallback",
   "timezone": "Asia/Shanghai",
