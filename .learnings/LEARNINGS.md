@@ -300,3 +300,30 @@ GitHub 项目推荐中，用户反馈标注只能辅助微调，发现真正高�
 - **Notes**: 两个自动任务均已加入强制 skill 调用与执行证据要求；周任务同时限制 live search 只能核验本周候选。
 
 ---
+
+## [LRN-20260814-001] correction
+
+**Logged**: 2026-08-14T18:41:18+08:00
+**Priority**: medium
+**Status**: pending
+**Area**: config
+
+### Summary
+用户询问“每一类的优化方案”时，应围绕各类型分别优化，不扩展成整个发现流程的基础设施方案。
+
+### Details
+在 GitHub 日报规则讨论中，用户要求为爆发型、实用型、潜力型、学习型分别增加细节优化。先前回答把重点放到了指标快照、证据账本和整体判定流程，偏离了用户想比较四类自身筛选条件的范围。
+
+### Suggested Action
+遇到同类请求时，按类型逐项给出目标、加分项、否决项和建议阈值；只有用户明确询问整体流程时，再讨论扫描、快照、账本和验证基础设施。
+
+### Metadata
+- Source: user_feedback
+- Related Files: docs/superpowers/specs/2026-06-29-github-project-digest-design.md
+- Tags: github-discovery, classification, scope-control, automation
+- Pattern-Key: github_digest.answer_scope.per_type
+- Recurrence-Count: 2
+- First-Seen: 2026-08-14T18:41:18+08:00
+- Last-Seen: 2026-08-14T18:44:11+08:00
+
+---
