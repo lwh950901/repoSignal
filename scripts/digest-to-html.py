@@ -11,6 +11,7 @@ import sys
 H1 = '<h1 style="font-size:22px;font-weight:bold;color:#0b3d66;margin:0 0 24px;">{}</h1>'
 H2 = '<h2 style="font-size:18px;font-weight:bold;color:#0b3d66;border-left:4px solid #ff7a1a;padding-left:10px;margin:30px 0 6px;">{}</h2>'
 P = '<p style="margin:10px 0;">{}</p>'
+INTRO = '<p style="font-size:14px;color:#5c6b7a;margin:10px 0;">{}</p>'
 NOTE = ('<p style="font-size:15px;color:#5c6b7a;background:#eef3f7;border-left:3px solid #c7d3de;'
         'padding:10px 12px;margin:10px 0;"><strong style="color:#999;">注意：</strong> {}</p>')
 READMORE = '<p style="font-size:14px;color:#8a95a1;margin:10px 0;"><strong>阅读全文：</strong> {}</p>'
@@ -142,6 +143,8 @@ def main():
     out = [HEAD.format(week=week, button=COPY_BUTTON), COVER_PLACEHOLDER, '']
 
     in_card = False
+    seen_h1 = False
+    intro_left = 0
 
     def close_card():
         nonlocal in_card
@@ -156,6 +159,8 @@ def main():
         if line.startswith('# '):
             close_card()
             out.append(H1.format(inline(line[2:])))
+            seen_h1 = True
+            intro_left = 2
         elif line.startswith('### '):
             close_card()
             out.append(make_h3(line[4:]))
@@ -187,6 +192,9 @@ def main():
         else:
             if in_card:
                 out.append(CARD_P.format(inline(line)))
+            elif seen_h1 and intro_left > 0:
+                out.append(INTRO.format(inline(line)))
+                intro_left -= 1
             else:
                 out.append(P.format(inline(line)))
 

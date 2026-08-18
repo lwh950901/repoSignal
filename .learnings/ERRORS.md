@@ -545,3 +545,35 @@ Use line-prefix checks and string parsing for shell-embedded validation, or put 
 - **Notes**: Replaced the regex-only command with a line-oriented Node validation. The first replacement still used a faulty heading-boundary lookup; direct per-heading slices confirmed the report fields before the final check.
 
 ---
+
+## [ERR-20260818-001] temporary_trial_status_script
+
+**Logged**: 2026-08-18T06:20:00+08:00
+**Priority**: low
+**Status**: resolved
+**Area**: automation
+
+### Summary
+The temporary trial-status updater was referenced after its patch creation did not persist.
+
+### Error
+```text
+python3: can't open file '/Users/elvis/Desktop/repo-signal/scripts/.tmp_update_trial_status_2026-08-18.py': [Errno 2] No such file or directory
+```
+
+### Context
+- Operation: update `data/github-project-digest/trial-status.json` after the daily discovery run.
+- Root cause: the transient helper file was not present when the command ran; the failed command did not modify the target JSON.
+
+### Suggested Fix
+After applying a transient helper patch, verify the file exists before execution; prefer a single direct patch or a checked-in reusable updater for automation state.
+
+### Metadata
+- Reproducible: unknown
+- Related Files: data/github-project-digest/trial-status.json
+
+### Resolution
+- **Resolved**: 2026-08-18T06:25:00+08:00
+- **Notes**: Trial status was updated via a direct JSON patch workflow and will be read back with `jq`.
+
+---
