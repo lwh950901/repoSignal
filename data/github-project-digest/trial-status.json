@@ -15,12 +15,14 @@
     "GitHub Trending 页面联网核验成功，识别 11 个当日候选；Trending 仅作为发现/加速证据。",
     "5 个正式推荐均未命中 2026-05-20 以来的 90 天 history，未发生重复例外。",
     "2026-08-19 精确 enrichment 触发匿名 GitHub API 限流；按规则降级为同轮 Search/Trending 快照与 GitHub 仓库、README、Release、Commit、Issue/PR 页面核验。",
-    "2026-08-19 主推荐 4 项、额外发现 2 项；候选账本 19 条且规范化仓库唯一，今日无用户指定候选文件，已安全初始化。"
+    "2026-08-19 主推荐 4 项、额外发现 2 项；候选账本 19 条且规范化仓库唯一，今日无用户指定候选文件，已安全初始化。",
+    "2026-08-20 扫描器成功运行 6 次无缓存分层 Search 调用（其中增长通道重复一次）与 4 个官方组织精确 Search；精确 enrichment 因匿名 GitHub API 限流降级为同轮 GitHub 仓库、README、Release、Commit、Issue/PR 页面核验。",
+    "2026-08-20 候选账本 179 条规范化唯一记录；5 个主推荐和 1 个额外发现均未命中 2026-05-22 起的 90 天 history，Trending 证据支持 nautechsystems/nautilus_trader 爆发型位置。"
   ],
   "checks": {
     "fixed_format": true,
     "primary_count_5": true,
-    "extra_count_2": true,
+    "extra_count_1": true,
     "required_fields": true,
     "learning_slot_4": true,
     "history_jsonl": true,
@@ -39,26 +41,25 @@
     "trial_status_updated": true,
     "git_diff_check": true
   },
-  "date": "2026-08-19",
+  "date": "2026-08-20",
   "feedback_entries_read": 7,
   "history_duplicates_in_90_days": [],
   "history_entries_added_by_this_run": 6,
-  "history_entries_after_append": 244,
-  "history_entries_before_run": 238,
-  "history_entries_detected_before_append": 238,
+  "history_entries_after_append": 250,
+  "history_entries_before_run": 244,
+  "history_entries_detected_before_append": 244,
   "latest_daily_run": {
-    "date": "2026-08-19",
-    "run_time": "2026-08-19T05:41:45+08:00",
+    "date": "2026-08-20",
+    "run_time": "2026-08-20T05:50:00+08:00",
     "status": "passed_with_tls_api_and_trending_fallback",
     "skill_invoked": true,
     "scanner_ran": true,
-    "fallback": "5 条 no-cache 分层 Search 首次 TLS 失败后仅一次 --insecure 重试成功；精确 enrichment 遇匿名 GitHub API 限流，改用同轮 Search/Trending 指标和 GitHub 仓库页、README、Release、Commit、Issue/PR 页面核验；未使用缓存冒充实时事实。",
+    "fallback": "6 次无缓存分层 Search 调用（其中增长通道重复一次）与 4 个官方组织精确 Search 成功；首次 Python TLS 证书链失败后仅一次 --insecure 重试成功；精确 enrichment 触发匿名 GitHub API 限流，降级为同轮 GitHub 仓库、README、Release、Commit、Issue/PR 页面核验；Trending 页面实时核验成功，未使用缓存冒充实时事实。",
     "checks": {
       "fixed_format": true,
       "primary_count_5": true,
-      "extra_count_2": true,
+      "extra_count_1": true,
       "required_fields": true,
-      "learning_slot_4": true,
       "history_jsonl": true,
       "history_append_readback_verified": true,
       "candidate_jsonl": true,
@@ -77,17 +78,17 @@
     },
     "anomalies": [
       "今日候选文件运行前不存在，已安全初始化；feedback.jsonl 已读取 7 条且没有新的用户指定候选。",
-      "首次扫描 TLS 证书链失败后仅一次 --insecure 重试成功；精确 enrichment 遇匿名 GitHub API 限流，改用同轮 GitHub 页面核验。",
-      "GitHub Trending 页面联网核验成功，识别 11 个当日候选；Trending 仅作为发现/加速证据。",
-      "4 个正式推荐和 2 个额外发现均未命中 2026-05-21 以来的 90 天 history，未发生重复例外。"
+      "首次扫描 TLS 证书链失败后仅一次 --insecure 重试成功；精确 enrichment 遇匿名 GitHub API 限流，按技能规则降级为 GitHub 页面事实源。",
+      "GitHub Trending 页面 2026-08-20 核验到当日热度；nautechsystems/nautilus_trader 当前 26,409 Stars 且标注 +79 Stars，满足爆发型 Trending 加速证据。",
+      "5 个正式推荐和 1 个额外发现均未命中 2026-05-22 以来的 90 天 history，未发生重复例外。"
     ],
     "history_entries_added": 6,
-    "history_entries_after_append": 244,
-    "report": "data/github-project-digest/daily/2026-08-19.md",
-    "candidate_ledger": "data/github-project-digest/candidates/2026-08-19.jsonl",
+    "history_entries_after_append": 250,
+    "report": "data/github-project-digest/daily/2026-08-20.md",
+    "candidate_ledger": "data/github-project-digest/candidates/2026-08-20.jsonl",
     "user_candidate_processed": true,
     "user_candidate_reverified": false,
-    "candidate_count": 19
+    "candidate_count": 179
   },
   "latest_backfill": {
     "checked_at": "2026-08-09T01:15:47+0800",
@@ -111,7 +112,7 @@
       "ten_fields_each": true
     }
   },
-  "main_recommendation_count": 4,
+  "main_recommendation_count": 5,
   "runs": [
     {
       "date": "2026-08-18",
