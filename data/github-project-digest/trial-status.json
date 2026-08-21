@@ -626,5 +626,63 @@
     "status": "formal_weekly_digest_generated_with_web_fallback",
     "verified_at": "2026-07-04T12:32:23+08:00",
     "weekly_report": "data/github-project-digest/weekly/2026-W27.md"
+  },
+  "daily_run_2026-08-22": {
+    "date": "2026-08-22",
+    "run_time": "2026-08-22T05:00:00+08:00",
+    "status": "passed_with_tls_api_and_trending_fallback",
+    "skill_invoked": true,
+    "skill_files_read": [
+      "/Users/elvis/.codex/skills/find-github-projects/SKILL.md",
+      "/Users/elvis/.codex/skills/find-github-projects/references/scoring-rubric.md",
+      "/Users/elvis/.codex/skills/find-github-projects/references/search-patterns.md",
+      "docs/superpowers/specs/2026-06-29-github-project-digest-design.md"
+    ],
+    "scanner_ran": true,
+    "scanner": "9 条当前 --no-cache 分层 Search/官方组织通道已成功运行；首次 Python TLS 证书链失败后按技能规则仅一次 --insecure 重试成功。",
+    "fallback": "精确 enrichment 遇 GitHub 匿名 API 限流，降级为同轮 Search 快照与 GitHub 仓库、README、Release、提交、Issue/PR 页面；Trending 2026-08-22 页面实时核验成功；未使用缓存冒充实时事实。",
+    "candidate_file_preexisting": false,
+    "candidate_file_initialized": true,
+    "candidate_count": 182,
+    "primary_count": 4,
+    "extra_count": 1,
+    "history_entries_before_run": 255,
+    "history_entries_added": 5,
+    "history_entries_after_append": 260,
+    "history_duplicates_in_90_days": [],
+    "feedback_entries_read": 7,
+    "user_candidate_processed": true,
+    "user_candidate_reverified": false,
+    "user_candidate_note": "feedback 中 life-kline 为 2026-08-08 已处理请求，已读取但未重复核验或占用今日位置；其既有推荐受 90 天规则约束。",
+    "checks": {
+      "fixed_format": true,
+      "primary_count_4": true,
+      "extra_count_1": true,
+      "required_fields": true,
+      "learning_slot_4": true,
+      "history_jsonl": true,
+      "history_append_readback_verified": true,
+      "candidate_jsonl": true,
+      "candidate_ledger_check": true,
+      "dedupe_90d": true,
+      "feedback_read": true,
+      "user_candidate_processed": true,
+      "github_fact_source": true,
+      "trending_checked": true,
+      "time_lane_coverage": true,
+      "skill_invoked": true,
+      "scanner_ran": true,
+      "links_and_metrics_verified_live": true,
+      "trial_status_updated": true,
+      "git_diff_check": true
+    },
+    "anomalies": [
+      "今日候选文件运行前不存在，已安全初始化；feedback.jsonl 读取 7 条且未修改。",
+      "首次无缓存扫描 TLS 证书链失败，按技能规则仅一次 --insecure 重试成功；精确 enrichment 随后触发匿名 API 限流，按规则使用 GitHub 网页事实源降级。",
+      "GitHub Trending 2026-08-22 核验到 career-ops 当日约 +918 Stars，并与仓库页、Release 页、README 和提交/Issue/PR 事实交叉核对；爆发型门槛通过。",
+      "反馈中的 life-kline 是旧的 2026-08-08 请求，已读取并按既有历史/90 天规则排除；本轮没有新的用户指定候选。"
+    ],
+    "report": "data/github-project-digest/daily/2026-08-22.md",
+    "candidate_ledger": "data/github-project-digest/candidates/2026-08-22.jsonl"
   }
 }
