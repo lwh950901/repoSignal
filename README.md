@@ -24,6 +24,7 @@ npm run build
 
 - 日报：`data/github-project-digest/daily/*.md`
 - 周报：`data/github-project-digest/weekly/*.md`
+- 组合可行性方案（自动生成，不进入站点构建）：`data/github-project-digest/feasibility/YYYY-MM-DD.md`
 - 公开冻结月报：`data/github-project-digest/monthly/YYYY-MM.md`
 - 月度内部证据：`data/github-project-digest/monthly-research/YYYY-MM/*.md`
 
@@ -32,6 +33,15 @@ npm run build
 ```bash
 python3 scripts/generate_monthly_digest.py 2026-07
 ```
+
+组合可行性方案以**Kun 定时任务**方式每天 08:30 运行：任务定义见 `data/github-project-digest/feasibility/KUN-TASK.md`（自包含执行指令：目标/步骤/验证/汇报），在 Kun 中按该文件配置每日触发即可。以当天日报发现的项目为锚点（当天无日报则取最近一份），从最近 90 天项目池（日报+周报，当前约 255 个唯一项目）中组合组件，每天输出 3 个可行业务方案（业务定位 / 目标客户 / 市场机会 / 组合分工 / 差异化 / 风险 / 验证路径），不含代码：
+
+```bash
+python3 scripts/opportunity_analysis.py --check
+python3 scripts/opportunity_analysis.py --date 2026-08-24
+```
+
+本机备选（可选）：仓库附 launchd 配置 `scripts/com.reposignal.opportunity-analysis.plist`（每日 08:30），需要时手动安装。
 
 候选生成只聚合本地候选账本、日报和重叠 ISO 周报，是研究入口，不是公开结论。编辑在发布前从 GitHub、官方文档和实际运行中核实 Top 5、需求、替代方案与仓库组合，并把评分、失败记录和证据摘要保存在 `monthly-research/`。公开结论随后写入 `monthly/` 并冻结。
 

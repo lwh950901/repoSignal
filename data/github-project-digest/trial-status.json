@@ -744,5 +744,63 @@
     ],
     "report": "data/github-project-digest/daily/2026-08-24.md",
     "candidate_ledger": "data/github-project-digest/candidates/2026-08-24.jsonl"
+  },
+  "daily_run_2026-08-25": {
+    "date": "2026-08-25",
+    "run_time": "2026-08-25T06:00:00+08:00",
+    "status": "passed_with_tls_and_api_rate_limit_fallback",
+    "skill_invoked": true,
+    "skill_files_read": [
+      "/Users/elvis/.codex/skills/find-github-projects/SKILL.md",
+      "/Users/elvis/.codex/skills/find-github-projects/references/scoring-rubric.md",
+      "/Users/elvis/.codex/skills/find-github-projects/references/search-patterns.md",
+      "docs/superpowers/specs/2026-06-29-github-project-digest-design.md"
+    ],
+    "scanner_ran": true,
+    "scanner": "8 条当前 --no-cache 分层 Search/新建项目/官方组织通道已实际运行；首次 Python TLS 证书链失败后按技能规则仅一次 --insecure 重试成功；5 条精确 --enrich 随后因匿名 GitHub API 限流失败。",
+    "fallback": "使用同轮 GitHub Trending 2026-08-25、GitHub 仓库页、README、Release、提交历史和 Issue/PR 页面核验；未使用缓存冒充实时事实。",
+    "candidate_file_preexisting": false,
+    "candidate_file_initialized": true,
+    "candidate_count": 24,
+    "primary_count": 4,
+    "extra_count": 1,
+    "history_entries_before_run": 266,
+    "history_entries_added": 5,
+    "history_entries_after_append": 271,
+    "history_duplicates_in_90_days": [],
+    "feedback_entries_read": 7,
+    "user_candidate_processed": true,
+    "user_candidate_reverified": false,
+    "user_candidate_note": "feedback.jsonl 已读取 7 条；没有新的用户指定候选。旧 life-kline 请求已在此前运行处理，本轮未重复占位。",
+    "checks": {
+      "fixed_format": true,
+      "primary_count_4": true,
+      "extra_count_1": true,
+      "required_fields": true,
+      "learning_slot_4": true,
+      "history_jsonl": true,
+      "history_append_readback_verified": true,
+      "candidate_jsonl": true,
+      "candidate_ledger_check": true,
+      "dedupe_90d": true,
+      "feedback_read": true,
+      "user_candidate_processed": true,
+      "github_fact_source": true,
+      "trending_checked": true,
+      "time_lane_coverage": true,
+      "skill_invoked": true,
+      "scanner_ran": true,
+      "links_and_metrics_verified_live": true,
+      "trial_status_updated": true,
+      "git_diff_check": true
+    },
+    "anomalies": [
+      "今日候选文件运行前不存在，已安全初始化；feedback.jsonl 读取 7 条且未修改。",
+      "首次无缓存扫描 TLS 失败后仅一次 --insecure 重试成功；精确 enrichment 遇匿名 GitHub API 限流，按规则降级为同轮 GitHub 网页事实源。",
+      "GitHub Trending 2026-08-25 核验 ai-job-search 当日约新增 378 Stars、awesome-agent-skills 当日约新增 600 Stars；仅将前者用于爆发型位置，因为它同时满足 5,000 Stars 下限和质量门槛。",
+      "4 个正式推荐与 1 个额外发现均未命中 2026-05-27 起的 90 天 history；没有发生重复例外。"
+    ],
+    "report": "data/github-project-digest/daily/2026-08-25.md",
+    "candidate_ledger": "data/github-project-digest/candidates/2026-08-25.jsonl"
   }
 }

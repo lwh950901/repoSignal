@@ -7,3 +7,5 @@ scripts/__pycache__/
 .superpowers/
 data/github-project-digest/monthly-drafts/
 data/.daily-commit-push.log
+data/.opportunity-analysis.log
+data/github-project-digest/feasibility/runs.log
