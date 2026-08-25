@@ -577,3 +577,32 @@ After applying a transient helper patch, verify the file exists before execution
 - **Notes**: Trial status was updated via a direct JSON patch workflow and will be read back with `jq`.
 
 ---
+## [ERR-20260826-001] shortlist_repo_metadata_shell_loop
+
+**Logged**: 2026-08-26T00:00:00+08:00
+**Priority**: low
+**Status**: resolved
+**Area**: automation
+
+### Summary
+The zsh metadata loop used the read-only variable name `status` and aborted before processing the shortlist.
+
+### Error
+```text
+zsh:16: read-only variable: status
+```
+
+### Context
+- Operation: fetch live GitHub repository metadata for shortlisted daily-discovery candidates.
+- Root cause: `status` is reserved/read-only in zsh; the command had already created only the temporary detail directory and did not modify project data.
+
+### Suggested Fix
+Use task-specific variable names such as `repo_summary` in zsh loops and avoid common shell option names.
+
+### Metadata
+- Reproducible: yes
+- Related Files: data/github-project-digest/candidates/2026-08-26.jsonl
+
+### Resolution
+- **Resolved**: 2026-08-26T00:00:00+08:00
+- **Notes**: The rerun uses a non-reserved variable name.

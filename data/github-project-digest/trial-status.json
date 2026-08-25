@@ -42,25 +42,46 @@
     "trial_status_updated": true,
     "git_diff_check": true
   },
-  "date": "2026-08-24",
+  "date": "2026-08-26",
   "feedback_entries_read": 7,
   "history_duplicates_in_90_days": [],
-  "history_entries_added_by_this_run": 6,
-  "history_entries_after_append": 266,
-  "history_entries_before_run": 260,
+  "history_entries_added_by_this_run": 7,
+  "history_entries_after_append": 278,
+  "history_entries_before_run": 271,
   "history_entries_detected_before_append": 260,
   "latest_daily_run": {
-    "date": "2026-08-24",
-    "run_time": "2026-08-24T05:45:00+08:00",
-    "status": "passed_with_tls_and_api_dns_fallback",
+    "date": "2026-08-26",
+    "run_time": "2026-08-26T05:41:35+08:00",
+    "status": "passed_with_tls_api_rate_limit_and_web_fallback",
     "skill_invoked": true,
+    "skill_files_read": [
+      "/Users/elvis/.codex/skills/find-github-projects/SKILL.md",
+      "/Users/elvis/.codex/skills/find-github-projects/references/scoring-rubric.md",
+      "/Users/elvis/.codex/skills/find-github-projects/references/search-patterns.md",
+      "docs/superpowers/specs/2026-06-29-github-project-digest-design.md"
+    ],
     "scanner_ran": true,
-    "fallback": "6 条 --no-cache 分层 Search 首次 TLS 失败后按技能规则仅一次 --insecure 重试；另有 1 条精确实时 Search 在授权升权后成功并落盘 20 条结果；精确 enrichment 遇 DNS 错误，改用 GitHub Trending 2026-08-24、仓库、README/架构、提交和 Issue/PR 页面核验；未使用缓存冒充实时事实。",
+    "scanner": "10 条 --no-cache 分层 Search 已实际运行；首次 TLS/DNS 失败后按技能规则每条仅一次 --insecure 重试，8 条返回 130 条原始结果、2 条为空；官方组织、新建项目、增长、成熟和学习通道均已覆盖。",
+    "fallback": "精确 Search 前 10 条成功后匿名 GitHub API 触发限流；最终以同轮 Search、GitHub Trending 2026-08-26、仓库页、README、Release、Commit Atom 与 Issue/PR 页面核验，未使用缓存冒充实时事实。",
+    "candidate_file_preexisting": false,
+    "candidate_file_initialized": true,
+    "candidate_count": 143,
+    "primary_count": 5,
+    "extra_count": 2,
+    "history_entries_before_run": 271,
+    "history_entries_added": 7,
+    "history_entries_after_append": 278,
+    "history_duplicates_in_90_days": [],
+    "feedback_entries_read": 7,
+    "user_candidate_processed": true,
+    "user_candidate_reverified": false,
+    "user_candidate_note": "本日没有新的用户指定候选；feedback.jsonl 已读取 7 条且未修改，旧 life-kline 请求按既有记录处理。",
     "checks": {
       "fixed_format": true,
       "primary_count_5": true,
-      "extra_count_1": true,
+      "extra_count_2": true,
       "required_fields": true,
+      "learning_slot_4": true,
       "history_jsonl": true,
       "history_append_readback_verified": true,
       "candidate_jsonl": true,
@@ -78,20 +99,16 @@
       "git_diff_check": true
     },
     "anomalies": [
-      "今日候选文件运行前不存在，已安全初始化；feedback.jsonl 已读取 7 条且没有新的用户指定候选。",
-      "首次扫描 TLS 证书链失败后仅一次 --insecure 重试成功；入选项目完成同轮精确 enrichment/Search 和 GitHub 仓库、README、Release、Commit、Issue/PR 页面核验，未用缓存冒充实时事实。",
-      "GitHub Trending 页面 2026-08-24 核验 ruvnet/ruflo 当日约 +134 Stars；其实时 Stars 超过 5,000，爆发型位置成立。",
-      "5 个正式推荐和 1 个额外发现均未命中 2026-05-26 起的 90 天 history，未发生重复例外。"
+      "今日候选文件运行前不存在，已安全初始化；feedback.jsonl 读取 7 条且没有新的用户指定候选。",
+      "10 条无缓存 scanner 首次 TLS/DNS 失败后按规则每条仅一次 --insecure 重试；8 条返回 130 条原始结果、2 条为空。",
+      "精确 Search 在前 10 条成功后触发匿名 GitHub API 限流；按规则降级为同轮 Search 与 GitHub 页面事实源，未使用缓存冒充实时事实。",
+      "GitHub Trending 2026-08-26 实时核验 16 个候选；claude-obsidian 约新增 810 Stars、awesome-gpt-image-2 约新增 1,698 Stars、ai-engineering-from-scratch 约新增 572 Stars。爆发型仅采用 claude-obsidian，并同时核验质量、许可证和维护证据。",
+      "候选账本 143 条规范化唯一记录；5 个主推荐和 2 个额外发现均未命中 2026-05-28 起的 90 天 history。",
+      "短名单脚本首次使用 zsh 只读变量 status 失败，已改名重跑；错误记录于 .learnings/ERRORS.md，未改变 GitHub 事实或候选结果。"
     ],
-    "history_entries_added": 6,
-    "history_entries_after_append": 266,
-    "report": "data/github-project-digest/daily/2026-08-24.md",
-    "candidate_ledger": "data/github-project-digest/candidates/2026-08-24.jsonl",
-    "user_candidate_processed": true,
-    "user_candidate_reverified": false,
-    "candidate_count": 37,
-    "primary_count": 5,
-    "extra_count": 1
+    "history_entries_detected_before_append": 271,
+    "report": "data/github-project-digest/daily/2026-08-26.md",
+    "candidate_ledger": "data/github-project-digest/candidates/2026-08-26.jsonl"
   },
   "latest_backfill": {
     "checked_at": "2026-08-09T01:15:47+0800",
@@ -115,7 +132,7 @@
       "ten_fields_each": true
     }
   },
-  "main_recommendation_count": 4,
+  "main_recommendation_count": 5,
   "runs": [
     {
       "date": "2026-08-18",
@@ -547,19 +564,100 @@
       "user_candidate_processed": true,
       "user_candidate_reverified": true,
       "candidate_count": 89
+    },
+    {
+      "date": "2026-08-26",
+      "run_time": "2026-08-26T05:41:35+08:00",
+      "status": "passed_with_tls_api_rate_limit_and_web_fallback",
+      "skill_invoked": true,
+      "skill_files_read": [
+        "/Users/elvis/.codex/skills/find-github-projects/SKILL.md",
+        "/Users/elvis/.codex/skills/find-github-projects/references/scoring-rubric.md",
+        "/Users/elvis/.codex/skills/find-github-projects/references/search-patterns.md",
+        "docs/superpowers/specs/2026-06-29-github-project-digest-design.md"
+      ],
+      "scanner_ran": true,
+      "scanner": "10 条 --no-cache 分层 Search 已实际运行；首次 TLS/DNS 失败后按技能规则每条仅一次 --insecure 重试，8 条返回 130 条原始结果、2 条为空；官方组织、新建项目、增长、成熟和学习通道均已覆盖。",
+      "fallback": "精确 Search 前 10 条成功后匿名 GitHub API 触发限流；最终以同轮 Search、GitHub Trending 2026-08-26、仓库页、README、Release、Commit Atom 与 Issue/PR 页面核验，未使用缓存冒充实时事实。",
+      "candidate_file_preexisting": false,
+      "candidate_file_initialized": true,
+      "candidate_count": 143,
+      "primary_count": 5,
+      "extra_count": 2,
+      "history_entries_before_run": 271,
+      "history_entries_added": 7,
+      "history_entries_after_append": 278,
+      "history_duplicates_in_90_days": [],
+      "feedback_entries_read": 7,
+      "user_candidate_processed": true,
+      "user_candidate_reverified": false,
+      "user_candidate_note": "本日没有新的用户指定候选；feedback.jsonl 已读取 7 条且未修改，旧 life-kline 请求按既有记录处理。",
+      "checks": {
+        "fixed_format": true,
+        "primary_count_5": true,
+        "extra_count_2": true,
+        "required_fields": true,
+        "learning_slot_4": true,
+        "history_jsonl": true,
+        "history_append_readback_verified": true,
+        "candidate_jsonl": true,
+        "candidate_ledger_check": true,
+        "dedupe_90d": true,
+        "feedback_read": true,
+        "user_candidate_processed": true,
+        "github_fact_source": true,
+        "trending_checked": true,
+        "time_lane_coverage": true,
+        "skill_invoked": true,
+        "scanner_ran": true,
+        "links_and_metrics_verified_live": true,
+        "trial_status_updated": true,
+        "git_diff_check": true
+      },
+      "anomalies": [
+        "今日候选文件运行前不存在，已安全初始化；feedback.jsonl 读取 7 条且没有新的用户指定候选。",
+        "10 条无缓存 scanner 首次 TLS/DNS 失败后按规则每条仅一次 --insecure 重试；8 条返回 130 条原始结果、2 条为空。",
+        "精确 Search 在前 10 条成功后触发匿名 GitHub API 限流；按规则降级为同轮 Search 与 GitHub 页面事实源，未使用缓存冒充实时事实。",
+        "GitHub Trending 2026-08-26 实时核验 16 个候选；claude-obsidian 约新增 810 Stars、awesome-gpt-image-2 约新增 1,698 Stars、ai-engineering-from-scratch 约新增 572 Stars。爆发型仅采用 claude-obsidian，并同时核验质量、许可证和维护证据。",
+        "候选账本 143 条规范化唯一记录；5 个主推荐和 2 个额外发现均未命中 2026-05-28 起的 90 天 history。",
+        "短名单脚本首次使用 zsh 只读变量 status 失败，已改名重跑；错误记录于 .learnings/ERRORS.md，未改变 GitHub 事实或候选结果。"
+      ],
+      "history_entries_detected_before_append": 271,
+      "report": "data/github-project-digest/daily/2026-08-26.md",
+      "candidate_ledger": "data/github-project-digest/candidates/2026-08-26.jsonl"
     }
   ],
   "current_run": {
-    "date": "2026-08-15",
-    "run_time": "2026-08-15T05:41:23+08:00",
-    "status": "passed_with_tls_api_and_trending_fallback",
+    "date": "2026-08-26",
+    "run_time": "2026-08-26T05:41:35+08:00",
+    "status": "passed_with_tls_api_rate_limit_and_web_fallback",
     "skill_invoked": true,
+    "skill_files_read": [
+      "/Users/elvis/.codex/skills/find-github-projects/SKILL.md",
+      "/Users/elvis/.codex/skills/find-github-projects/references/scoring-rubric.md",
+      "/Users/elvis/.codex/skills/find-github-projects/references/search-patterns.md",
+      "docs/superpowers/specs/2026-06-29-github-project-digest-design.md"
+    ],
     "scanner_ran": true,
-    "fallback": "初次 6 条 no-cache scanner search 因本机 Python TLS 证书链失败，按技能规则仅一次 --insecure 重试；4 条宽搜索成功，Agent 与 OpenAI 官方宽搜索触发匿名 API 限流；部分精确 enrichment 也限流，改用同轮精确 Search/enrich、GitHub README/Release 页面和 Trending 页面核验，未使用缓存冒充实时事实。",
+    "scanner": "10 条 --no-cache 分层 Search 已实际运行；首次 TLS/DNS 失败后按技能规则每条仅一次 --insecure 重试，8 条返回 130 条原始结果、2 条为空；官方组织、新建项目、增长、成熟和学习通道均已覆盖。",
+    "fallback": "精确 Search 前 10 条成功后匿名 GitHub API 触发限流；最终以同轮 Search、GitHub Trending 2026-08-26、仓库页、README、Release、Commit Atom 与 Issue/PR 页面核验，未使用缓存冒充实时事实。",
+    "candidate_file_preexisting": false,
+    "candidate_file_initialized": true,
+    "candidate_count": 143,
+    "primary_count": 5,
+    "extra_count": 2,
+    "history_entries_before_run": 271,
+    "history_entries_added": 7,
+    "history_entries_after_append": 278,
+    "history_duplicates_in_90_days": [],
+    "feedback_entries_read": 7,
+    "user_candidate_processed": true,
+    "user_candidate_reverified": false,
+    "user_candidate_note": "本日没有新的用户指定候选；feedback.jsonl 已读取 7 条且未修改，旧 life-kline 请求按既有记录处理。",
     "checks": {
       "fixed_format": true,
       "primary_count_5": true,
-      "extra_count_1": true,
+      "extra_count_2": true,
       "required_fields": true,
       "learning_slot_4": true,
       "history_jsonl": true,
@@ -579,21 +677,18 @@
       "git_diff_check": true
     },
     "anomalies": [
-      "2026-08-15 候选文件运行前不存在，已安全初始化；feedback.jsonl 未提供新的用户指定候选。",
-      "6 条无缓存宽搜索中增长、RAG、开发工具、新建项目 4 条成功；Agent 与 OpenAI 官方宽搜索因匿名 GitHub API 配额触顶失败。",
-      "部分精确 enrichment 在匿名 API 窗口再次触限；入选项目均有本轮同轮精确 Search/enrich 或 GitHub README/Release 页面核验，未使用缓存冒充实时事实。",
-      "GitHub Trending 页面经联网重试成功，核验 17 个当日候选及 stars today；Trending 仅作为发现/热度证据，未把无完整事实的条目直接升为推荐。",
-      "deepseek-ai/deepseek-harness 在 2026-08-14 已推荐；本轮以 2026-08-14 历史快照 73,122 Stars、本轮 94,699 Stars、2026-08-13 创建且 7 日内超过 5,000 Stars 记录显著增长重复例外。"
+      "今日候选文件运行前不存在，已安全初始化；feedback.jsonl 读取 7 条且没有新的用户指定候选。",
+      "10 条无缓存 scanner 首次 TLS/DNS 失败后按规则每条仅一次 --insecure 重试；8 条返回 130 条原始结果、2 条为空。",
+      "精确 Search 在前 10 条成功后触发匿名 GitHub API 限流；按规则降级为同轮 Search 与 GitHub 页面事实源，未使用缓存冒充实时事实。",
+      "GitHub Trending 2026-08-26 实时核验 16 个候选；claude-obsidian 约新增 810 Stars、awesome-gpt-image-2 约新增 1,698 Stars、ai-engineering-from-scratch 约新增 572 Stars。爆发型仅采用 claude-obsidian，并同时核验质量、许可证和维护证据。",
+      "候选账本 143 条规范化唯一记录；5 个主推荐和 2 个额外发现均未命中 2026-05-28 起的 90 天 history。",
+      "短名单脚本首次使用 zsh 只读变量 status 失败，已改名重跑；错误记录于 .learnings/ERRORS.md，未改变 GitHub 事实或候选结果。"
     ],
-    "history_entries_added": 6,
-    "history_entries_after_append": 229,
-    "report": "data/github-project-digest/daily/2026-08-15.md",
-    "candidate_ledger": "data/github-project-digest/candidates/2026-08-15.jsonl",
-    "user_candidate_processed": true,
-    "user_candidate_reverified": true,
-    "candidate_count": 89
+    "history_entries_detected_before_append": 271,
+    "report": "data/github-project-digest/daily/2026-08-26.md",
+    "candidate_ledger": "data/github-project-digest/candidates/2026-08-26.jsonl"
   },
-  "status": "passed_with_tls_api_and_trending_fallback",
+  "status": "passed_with_tls_api_rate_limit_and_web_fallback",
   "timezone": "Asia/Shanghai",
   "verification": {
     "repos": [
@@ -802,5 +897,7 @@
     ],
     "report": "data/github-project-digest/daily/2026-08-25.md",
     "candidate_ledger": "data/github-project-digest/candidates/2026-08-25.jsonl"
-  }
+  },
+  "candidate_ledger": "data/github-project-digest/candidates/2026-08-26.jsonl",
+  "report": "data/github-project-digest/daily/2026-08-26.md"
 }
