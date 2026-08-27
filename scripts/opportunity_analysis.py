@@ -96,6 +96,14 @@ TAG_RULES = {
 }
 
 # 单点项目的商业化角度：每个标签 3 个变体，报告内按出现顺序轮换，避免同一句式连排。
+TAG_CN = {"agent": "Agent", "memory": "记忆", "rag": "检索", "sandbox": "沙箱",
+          "observability": "观测", "gateway": "网关", "codeintel": "代码理解",
+          "design": "设计", "security": "安全", "document": "文档",
+          "local": "本地", "comm": "协作"}
+COMBO_ROLES = {"agent": "Agent 编排", "memory": "长期记忆", "rag": "检索/知识库",
+               "sandbox": "执行沙箱", "observability": "观测/评测", "gateway": "模型网关",
+               "codeintel": "代码理解", "design": "设计/原型", "security": "安全审计",
+               "document": "文档处理", "local": "本地形态", "comm": "协作入口"}
 TAG_ANGLE = {
     "agent": ["可包装成垂直场景的 Agent 托管/订阅产品",
               "可拆出可复用的 Agent 编排能力做独立服务",
@@ -532,6 +540,83 @@ def load_recent_combo_names(data_root, run_date, n=2):
     return set.intersection(*name_sets)
 
 
+def top_tag(p):
+    """项目能力面最高分的标签；同分时取 TAG_RULES 中靠前的标签，保证确定性。"""
+    order = {t: i for i, t in enumerate(TAG_RULES)}
+    return max(p["tags"].items(), key=lambda kv: (kv[1], -order.get(kv[0], 99)))[0]
+
+
+def build_anchor_combo(projects, today_projects, today_ids, blocked_names=None):
+    """固定模板命中不足时，用今日锚点按能力互补直接拼一个全新组合。
+
+    全部组件来自今日日报（新鲜度最高），能力面尽量分散（同一能力面最多两个）；
+    方案名带"今日锚点组合"前缀，用于与固定模板方案区分。
+    """
+    blocked_names = blocked_names or set()
+    anchors = [p for p in today_projects if p["tags"]]
+    if len(anchors) < 2:
+        return None
+    anchors.sort(key=lambda p: p["stars"], reverse=True)
+    picks = {}
+    covered = set()
+    # 第一轮：按 Stars 优先收不同能力面的锚点；第二轮：有空位再补其余锚点
+    for p in anchors:
+        t = top_tag(p)
+        if t not in covered:
+            picks[COMBO_ROLES[t]] = p
+            covered.add(t)
+            if len(picks) >= 5:
+                break
+    if len(picks) < 5:
+        used_ids = {x["id"] for x in picks.values()}
+        for p in anchors:
+            if p["id"] in used_ids:
+                continue
+            t = top_tag(p)
+            role = COMBO_ROLES[t]
+            while role in picks:
+                role += "（二）"
+            picks[role] = p
+            used_ids.add(p["id"])
+            if len(picks) >= 5:
+                break
+    if len(picks) < 2 or len({top_tag(p) for p in picks.values()}) < 2:
+        return None
+    tags = [t for t in TAG_RULES if any(top_tag(p) == t for p in picks.values())]
+    name = "今日锚点组合：{}".format(" × ".join(TAG_CN[t] for t in tags))
+    if name in blocked_names:
+        return None
+    slot_tags = [top_tag(p) for p in picks.values()]
+    supply = {t: sum(1 for p in projects if t in p["tags"]) for t in set(slot_tags)}
+    min_supply = min(supply.values())
+    today_count = len(picks)
+    score, score_parts = combo_score(
+        {"slots": [(t, r) for r, t in zip(picks.keys(), slot_tags)]},
+        picks, today_count, min_supply)
+    roles_text = "、".join("{}（`{}`）".format(r, p["repo"]) for r, p in picks.items())
+    return {
+        "score": score,
+        "score_parts": score_parts,
+        "name": name,
+        "pitch": "把今日新发现的 {} 个项目按能力互补直接拼成可试用的最小原型：{}。".format(
+            len(picks), roles_text),
+        "target": "想第一时间试用今日新发现项目的个人开发者与研究型小团队。",
+        "market": "今日锚点覆盖 {} 方向，池中对应候选 {} 个，组件供给充足；"
+                   "先用小规模试用验证价值，再决定产品化方向。".format(
+                       "、".join(TAG_CN[t] for t in tags), min_supply),
+        "differentiation": "完全由今日新发现驱动，组件全部来自今日日报，新鲜度最高，不依赖固定模板。",
+        "rationale": "今日锚点覆盖 {} 个互补能力面，无需等待模板命中即可拼出组合。".format(len(tags)),
+        "mvp": "先跑通 {} 之间的最小数据流或协作流，再按试用反馈取舍其余组件。".format(
+            "、".join("`{}`".format(p["repo"]) for p in list(picks.values())[:3])),
+        "picks": picks,
+        "slot_supply": supply,
+        "min_supply": min_supply,
+        "total": len(picks),
+        "today_count": today_count,
+        "stars": sum(p["stars"] for p in picks.values()),
+    }
+
+
 def build_combos(projects, today_ids=None, blocked_names=None):
     today_ids = today_ids or set()
     blocked_names = blocked_names or set()
@@ -684,6 +769,8 @@ def render(projects, today_projects, combos, singles, run_date, cutoff,
                 "、".join(sorted(skipped))))
         if fallback_name:
             A("> 保底：{}已连续出现两天，但本轮无其他可用组合，保底保留。".format(fallback_name))
+    if any(c["name"].startswith("今日锚点组合：") for c in combos):
+        A("> 补充说明：固定模板未拼满 3 个方案，已用今日新发现直接拼接'今日锚点组合'（组件全部来自今日日报）。")
     A("")
     A("## 可行性方案")
     A("")
@@ -811,9 +898,17 @@ def main(argv=None):
     # 依据是 run_date 之前已存在的报告文件，同一文件集下结果可复现。
     blocked = load_recent_combo_names(args.data_root, args.date)
     combos = build_combos(projects, today_ids, blocked)
+    # 固定模板命中不足 3 个时，用今日锚点直接拼接全新组合（不重复已有方案）
+    if len(combos) < 3:
+        anchor_combo = build_anchor_combo(projects, today_projects, today_ids, blocked)
+        if anchor_combo and anchor_combo["name"] not in {c["name"] for c in combos}:
+            combos.append(anchor_combo)
+            combos.sort(key=lambda c: (c["today_count"], c["total"], c["stars"]),
+                        reverse=True)
+            combos = combos[:3]
     fallback_name = None
     if not combos and blocked:
-        # 保底：跳过后一个可用组合都不剩时，放行一个被跳过的方案，避免空报告
+        # 兜底：仍无任何可用组合时，放行一个被跳过的方案，避免空报告
         all_combos = build_combos(projects, today_ids)
         if all_combos:
             fallback_name = all_combos[0]["name"]
