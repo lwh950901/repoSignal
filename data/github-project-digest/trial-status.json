@@ -18,11 +18,16 @@
     "2026-08-19 主推荐 4 项、额外发现 2 项；候选账本 19 条且规范化仓库唯一，今日无用户指定候选文件，已安全初始化。",
     "2026-08-20 扫描器成功运行 6 次无缓存分层 Search 调用（其中增长通道重复一次）与 4 个官方组织精确 Search；精确 enrichment 因匿名 GitHub API 限流降级为同轮 GitHub 仓库、README、Release、Commit、Issue/PR 页面核验。",
     "2026-08-20 候选账本 179 条规范化唯一记录；5 个主推荐和 1 个额外发现均未命中 2026-05-22 起的 90 天 history，Trending 证据支持 nautechsystems/nautilus_trader 爆发型位置。",
-    "2026-08-21 候选账本由 9 条无缓存分层 Search 与 GitHub Trending 合并为 145 条规范化唯一记录；初次 TLS 失败后仅一次 --insecure 重试成功，短名单实时 GitHub 页面/Release/提交/Issue/PR 核验成功，未使用缓存冒充事实。"
+    "2026-08-21 候选账本由 9 条无缓存分层 Search 与 GitHub Trending 合并为 145 条规范化唯一记录；初次 TLS 失败后仅一次 --insecure 重试成功，短名单实时 GitHub 页面/Release/提交/Issue/PR 核验成功，未使用缓存冒充事实。",
+    "今日候选文件运行前不存在，已用 Python 标准库临时文件 + os.replace 原子初始化。",
+    "首次扫描沙箱 DNS 失败；联网后按 skill 规则仅一次 --insecure 重试，8 条分层 Search 全部成功。",
+    "精确 enrichment 遇匿名 GitHub API 限流，降级为同轮 Search 与 GitHub 页面事实源。",
+    "GitHub Trending 2026-08-28 实时核验 OpenMontage 约新增 1,284 Stars、God's Eye View 约新增 1,984 Stars；仅 OpenMontage 进入爆发型。",
+    "microsoft/typescript-go 因 README 标为 closed 且计划于 2026 年 9 月归档而排除。"
   ],
   "checks": {
     "fixed_format": true,
-    "primary_count_5": true,
+    "primary_count_4": true,
     "extra_count_1": true,
     "required_fields": true,
     "learning_slot_4": true,
@@ -42,44 +47,37 @@
     "trial_status_updated": true,
     "git_diff_check": true
   },
-  "date": "2026-08-26",
+  "date": "2026-08-28",
   "feedback_entries_read": 7,
   "history_duplicates_in_90_days": [],
-  "history_entries_added_by_this_run": 7,
-  "history_entries_after_append": 278,
-  "history_entries_before_run": 271,
-  "history_entries_detected_before_append": 260,
+  "history_entries_added_by_this_run": 5,
+  "history_entries_after_append": 288,
+  "history_entries_before_run": 283,
+  "history_entries_detected_before_append": 283,
   "latest_daily_run": {
-    "date": "2026-08-26",
-    "run_time": "2026-08-26T05:41:35+08:00",
+    "date": "2026-08-28",
+    "run_time": "2026-08-28T05:41:33+08:00",
     "status": "passed_with_tls_api_rate_limit_and_web_fallback",
     "skill_invoked": true,
-    "skill_files_read": [
-      "/Users/elvis/.codex/skills/find-github-projects/SKILL.md",
-      "/Users/elvis/.codex/skills/find-github-projects/references/scoring-rubric.md",
-      "/Users/elvis/.codex/skills/find-github-projects/references/search-patterns.md",
-      "docs/superpowers/specs/2026-06-29-github-project-digest-design.md"
-    ],
     "scanner_ran": true,
-    "scanner": "10 条 --no-cache 分层 Search 已实际运行；首次 TLS/DNS 失败后按技能规则每条仅一次 --insecure 重试，8 条返回 130 条原始结果、2 条为空；官方组织、新建项目、增长、成熟和学习通道均已覆盖。",
-    "fallback": "精确 Search 前 10 条成功后匿名 GitHub API 触发限流；最终以同轮 Search、GitHub Trending 2026-08-26、仓库页、README、Release、Commit Atom 与 Issue/PR 页面核验，未使用缓存冒充实时事实。",
+    "scanner": "8 条 --no-cache 分层 Search 已实际运行；首次沙箱 DNS 失败，联网后按规则各执行一次 --insecure 重试，全部命令成功。",
+    "fallback": "6 条精确 enrichment 遇匿名 GitHub API 限流；降级为同轮 Search 与 GitHub 仓库、README、Release、Commit、Issue/PR 页面核验，未使用缓存冒充实时事实。",
     "candidate_file_preexisting": false,
     "candidate_file_initialized": true,
-    "candidate_count": 143,
-    "primary_count": 5,
-    "extra_count": 2,
-    "history_entries_before_run": 271,
-    "history_entries_added": 7,
-    "history_entries_after_append": 278,
+    "candidate_count": 150,
+    "primary_count": 4,
+    "extra_count": 1,
+    "history_entries_before_run": 283,
+    "history_entries_added": 5,
+    "history_entries_after_append": 288,
     "history_duplicates_in_90_days": [],
     "feedback_entries_read": 7,
     "user_candidate_processed": true,
     "user_candidate_reverified": false,
-    "user_candidate_note": "本日没有新的用户指定候选；feedback.jsonl 已读取 7 条且未修改，旧 life-kline 请求按既有记录处理。",
     "checks": {
       "fixed_format": true,
-      "primary_count_5": true,
-      "extra_count_2": true,
+      "primary_count_4": true,
+      "extra_count_1": true,
       "required_fields": true,
       "learning_slot_4": true,
       "history_jsonl": true,
@@ -99,16 +97,14 @@
       "git_diff_check": true
     },
     "anomalies": [
-      "今日候选文件运行前不存在，已安全初始化；feedback.jsonl 读取 7 条且没有新的用户指定候选。",
-      "10 条无缓存 scanner 首次 TLS/DNS 失败后按规则每条仅一次 --insecure 重试；8 条返回 130 条原始结果、2 条为空。",
-      "精确 Search 在前 10 条成功后触发匿名 GitHub API 限流；按规则降级为同轮 Search 与 GitHub 页面事实源，未使用缓存冒充实时事实。",
-      "GitHub Trending 2026-08-26 实时核验 16 个候选；claude-obsidian 约新增 810 Stars、awesome-gpt-image-2 约新增 1,698 Stars、ai-engineering-from-scratch 约新增 572 Stars。爆发型仅采用 claude-obsidian，并同时核验质量、许可证和维护证据。",
-      "候选账本 143 条规范化唯一记录；5 个主推荐和 2 个额外发现均未命中 2026-05-28 起的 90 天 history。",
-      "短名单脚本首次使用 zsh 只读变量 status 失败，已改名重跑；错误记录于 .learnings/ERRORS.md，未改变 GitHub 事实或候选结果。"
+      "今日候选文件运行前不存在，已用 Python 标准库临时文件 + os.replace 原子初始化。",
+      "首次扫描沙箱 DNS 失败；联网后按 skill 规则仅一次 --insecure 重试，8 条分层 Search 全部成功。",
+      "精确 enrichment 遇匿名 GitHub API 限流，降级为同轮 Search 与 GitHub 页面事实源。",
+      "GitHub Trending 2026-08-28 实时核验 OpenMontage 约新增 1,284 Stars、God's Eye View 约新增 1,984 Stars；仅 OpenMontage 进入爆发型。",
+      "microsoft/typescript-go 因 README 标为 closed 且计划于 2026 年 9 月归档而排除。"
     ],
-    "history_entries_detected_before_append": 271,
-    "report": "data/github-project-digest/daily/2026-08-26.md",
-    "candidate_ledger": "data/github-project-digest/candidates/2026-08-26.jsonl"
+    "report": "data/github-project-digest/daily/2026-08-28.md",
+    "candidate_ledger": "data/github-project-digest/candidates/2026-08-28.jsonl"
   },
   "latest_backfill": {
     "checked_at": "2026-08-09T01:15:47+0800",
@@ -132,7 +128,7 @@
       "ten_fields_each": true
     }
   },
-  "main_recommendation_count": 5,
+  "main_recommendation_count": 4,
   "runs": [
     {
       "date": "2026-08-18",
@@ -628,36 +624,29 @@
     }
   ],
   "current_run": {
-    "date": "2026-08-26",
-    "run_time": "2026-08-26T05:41:35+08:00",
+    "date": "2026-08-28",
+    "run_time": "2026-08-28T05:41:33+08:00",
     "status": "passed_with_tls_api_rate_limit_and_web_fallback",
     "skill_invoked": true,
-    "skill_files_read": [
-      "/Users/elvis/.codex/skills/find-github-projects/SKILL.md",
-      "/Users/elvis/.codex/skills/find-github-projects/references/scoring-rubric.md",
-      "/Users/elvis/.codex/skills/find-github-projects/references/search-patterns.md",
-      "docs/superpowers/specs/2026-06-29-github-project-digest-design.md"
-    ],
     "scanner_ran": true,
-    "scanner": "10 条 --no-cache 分层 Search 已实际运行；首次 TLS/DNS 失败后按技能规则每条仅一次 --insecure 重试，8 条返回 130 条原始结果、2 条为空；官方组织、新建项目、增长、成熟和学习通道均已覆盖。",
-    "fallback": "精确 Search 前 10 条成功后匿名 GitHub API 触发限流；最终以同轮 Search、GitHub Trending 2026-08-26、仓库页、README、Release、Commit Atom 与 Issue/PR 页面核验，未使用缓存冒充实时事实。",
+    "scanner": "8 条 --no-cache 分层 Search 已实际运行；首次沙箱 DNS 失败，联网后按规则各执行一次 --insecure 重试，全部命令成功。",
+    "fallback": "6 条精确 enrichment 遇匿名 GitHub API 限流；降级为同轮 Search 与 GitHub 仓库、README、Release、Commit、Issue/PR 页面核验，未使用缓存冒充实时事实。",
     "candidate_file_preexisting": false,
     "candidate_file_initialized": true,
-    "candidate_count": 143,
-    "primary_count": 5,
-    "extra_count": 2,
-    "history_entries_before_run": 271,
-    "history_entries_added": 7,
-    "history_entries_after_append": 278,
+    "candidate_count": 150,
+    "primary_count": 4,
+    "extra_count": 1,
+    "history_entries_before_run": 283,
+    "history_entries_added": 5,
+    "history_entries_after_append": 288,
     "history_duplicates_in_90_days": [],
     "feedback_entries_read": 7,
     "user_candidate_processed": true,
     "user_candidate_reverified": false,
-    "user_candidate_note": "本日没有新的用户指定候选；feedback.jsonl 已读取 7 条且未修改，旧 life-kline 请求按既有记录处理。",
     "checks": {
       "fixed_format": true,
-      "primary_count_5": true,
-      "extra_count_2": true,
+      "primary_count_4": true,
+      "extra_count_1": true,
       "required_fields": true,
       "learning_slot_4": true,
       "history_jsonl": true,
@@ -677,16 +666,14 @@
       "git_diff_check": true
     },
     "anomalies": [
-      "今日候选文件运行前不存在，已安全初始化；feedback.jsonl 读取 7 条且没有新的用户指定候选。",
-      "10 条无缓存 scanner 首次 TLS/DNS 失败后按规则每条仅一次 --insecure 重试；8 条返回 130 条原始结果、2 条为空。",
-      "精确 Search 在前 10 条成功后触发匿名 GitHub API 限流；按规则降级为同轮 Search 与 GitHub 页面事实源，未使用缓存冒充实时事实。",
-      "GitHub Trending 2026-08-26 实时核验 16 个候选；claude-obsidian 约新增 810 Stars、awesome-gpt-image-2 约新增 1,698 Stars、ai-engineering-from-scratch 约新增 572 Stars。爆发型仅采用 claude-obsidian，并同时核验质量、许可证和维护证据。",
-      "候选账本 143 条规范化唯一记录；5 个主推荐和 2 个额外发现均未命中 2026-05-28 起的 90 天 history。",
-      "短名单脚本首次使用 zsh 只读变量 status 失败，已改名重跑；错误记录于 .learnings/ERRORS.md，未改变 GitHub 事实或候选结果。"
+      "今日候选文件运行前不存在，已用 Python 标准库临时文件 + os.replace 原子初始化。",
+      "首次扫描沙箱 DNS 失败；联网后按 skill 规则仅一次 --insecure 重试，8 条分层 Search 全部成功。",
+      "精确 enrichment 遇匿名 GitHub API 限流，降级为同轮 Search 与 GitHub 页面事实源。",
+      "GitHub Trending 2026-08-28 实时核验 OpenMontage 约新增 1,284 Stars、God's Eye View 约新增 1,984 Stars；仅 OpenMontage 进入爆发型。",
+      "microsoft/typescript-go 因 README 标为 closed 且计划于 2026 年 9 月归档而排除。"
     ],
-    "history_entries_detected_before_append": 271,
-    "report": "data/github-project-digest/daily/2026-08-26.md",
-    "candidate_ledger": "data/github-project-digest/candidates/2026-08-26.jsonl"
+    "report": "data/github-project-digest/daily/2026-08-28.md",
+    "candidate_ledger": "data/github-project-digest/candidates/2026-08-28.jsonl"
   },
   "status": "passed_with_tls_api_rate_limit_and_web_fallback",
   "timezone": "Asia/Shanghai",
@@ -956,6 +943,7 @@
     "report": "data/github-project-digest/daily/2026-08-27.md",
     "candidate_ledger": "data/github-project-digest/candidates/2026-08-27.jsonl"
   },
-  "candidate_ledger": "data/github-project-digest/candidates/2026-08-27.jsonl",
-  "report": "data/github-project-digest/daily/2026-08-27.md"
+  "candidate_ledger": "data/github-project-digest/candidates/2026-08-28.jsonl",
+  "report": "data/github-project-digest/daily/2026-08-28.md",
+  "candidate_ledger_count": 150
 }
