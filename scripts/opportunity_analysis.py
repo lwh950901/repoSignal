@@ -506,11 +506,40 @@ def pick_best(projects, tag, exclude, today_ids):
     return cands[0]
 
 
-def build_combos(projects, today_ids=None):
+def load_recent_combo_names(data_root, run_date, n=2):
+    """读取 run_date 之前最近 n 份可行性报告，返回其中同时出现的方案名集合。
+
+    用于'同一方案最多连续出现两天'的新鲜度限制：方案名同时出现在最近两份
+    报告里说明已连续出现两天，第三天应跳过。
+    """
+    files = []
+    for f in sorted((data_root / "feasibility").glob("20??-??-??.md"), reverse=True):
+        m = DAILY_FILE_RE.match(f.name)
+        if m and m.group(1) < run_date:
+            files.append(f)
+        if len(files) >= n:
+            break
+    if len(files) < n:
+        return set()
+    name_sets = []
+    for f in files:
+        names = set()
+        for line in f.read_text(encoding="utf-8").splitlines():
+            hm = re.match(r"^### \d+\.\s+(.+?)(（组合|$)", line)
+            if hm:
+                names.add(hm.group(1).strip())
+        name_sets.append(names)
+    return set.intersection(*name_sets)
+
+
+def build_combos(projects, today_ids=None, blocked_names=None):
     today_ids = today_ids or set()
+    blocked_names = blocked_names or set()
     combos = []
     total = len(projects)
     for tpl in TEMPLATES:
+        if tpl["name"] in blocked_names:
+            continue  # 新鲜度规则：同一方案最多连续出现两天，第三天跳过
         picks = {}
         used = set()
         for tag, role in tpl["slots"]:
@@ -627,7 +656,7 @@ def _source_label(p, anchor_date=None):
 
 
 def render(projects, today_projects, combos, singles, run_date, cutoff,
-           anchor_date, n_daily_files, n_weekly_files, llm_text):
+           anchor_date, n_daily_files, n_weekly_files, llm_text, blocked=None):
     n = len(projects)
     today_ids = {p["id"] for p in today_projects}
     L = []
@@ -647,11 +676,18 @@ def render(projects, today_projects, combos, singles, run_date, cutoff,
       "来源多样性 10 · 许可证 5 · 完整度 5；档位：≥85 高，70-84 中，<70 低。")
     A("> 验证路径（固定）：每个组件按来源报告的'上手建议/真实风险'复核"
       "（固定版本、隔离环境、自有数据复测）。")
+    if blocked:
+        A("> 新鲜度规则：以下方案已连续出现两天，本轮跳过（同一方案最多连续两天）：{}。".format(
+            "、".join(sorted(blocked))))
     A("")
     A("## 可行性方案")
     A("")
     if not combos:
-        A("（项目池不足以形成 ≥2 个组件的组合，仅见单点机会。）")
+        if blocked:
+            A("（今日锚点未命中其余组合模板，本轮无组合方案；"
+              "被新鲜度规则跳过：{}。）".format("、".join(sorted(blocked))))
+        else:
+            A("（项目池不足以形成 ≥2 个组件的组合，仅见单点机会。）")
     for i, c in enumerate(combos, 1):
         A("### {}. {}（组合 {} 个项目，今日锚点 {} 个）".format(
             i, c["name"], c["total"], c["today_count"]))
@@ -766,11 +802,16 @@ def main(argv=None):
               f"daily_files={n_daily} weekly_files={n_weekly}")
         return 0
 
-    combos = build_combos(projects, today_ids)
+    # 新鲜度规则仅对当天运行生效：连续出现两天的方案第三天跳过；
+    # 补跑历史日期不启用，保证已生成的历史报告可原样复现。
+    blocked = set()
+    if args.date == date.today().isoformat():
+        blocked = load_recent_combo_names(args.data_root, args.date)
+    combos = build_combos(projects, today_ids, blocked)
     singles = build_single_angles(projects)
     llm_text = llm_enhance(projects, combos, args.no_llm)
     report = render(projects, today_projects, combos, singles, args.date,
-                    cutoff.isoformat(), anchor_date, n_daily, n_weekly, llm_text)
+                    cutoff.isoformat(), anchor_date, n_daily, n_weekly, llm_text, blocked)
 
     out_dir = args.data_root / "feasibility"
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -780,9 +821,10 @@ def main(argv=None):
     runs = out_dir / "runs.log"
     ts = datetime.now().isoformat(timespec="seconds")
     with runs.open("a", encoding="utf-8") as fh:
+        blocked_note = f" blocked={'、'.join(sorted(blocked))}" if blocked else ""
         fh.write(f"{ts} OK anchor={anchor_date} window=90d cutoff={cutoff.isoformat()} "
                  f"daily={n_daily} weekly={n_weekly} projects={len(projects)} "
-                 f"combos={len(combos)} output={out_path.name}\n")
+                 f"combos={len(combos)} output={out_path.name}{blocked_note}\n")
     print(f"OK: {out_path}（项目池 {len(projects)}，组合 {len(combos)}）")
     return 0
 
