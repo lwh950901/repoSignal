@@ -55,6 +55,33 @@
 
 ---
 
+## [LRN-20260827-002] correction
+
+**Logged**: 2026-08-27T20:30:00+08:00
+**Priority**: high
+**Status**: resolved
+**Area**: config
+
+### Summary
+月报中的“真实业务与项目机会”就是可行性方案的月度公开形态，不应另建“本月可行性精选”章节。
+
+### Details
+先前把月度业务机会研究与 feasibility 方案错误地定义为两个独立输出，导致重复信息、重复计数和不必要的数据模型扩展。正确关系是：月度任务从当月 feasibility 数据中去重筛选方案，再补充月度需求证据、竞品调查和组合验证，最终写入现有“真实业务与项目机会”章节。
+
+### Suggested Action
+月度自动任务继续复用现有 MonthlyOpportunity 合同与页面，不新增独立 feasibility 集合或导航；当月有至少三个唯一方案时，公开恰好三个经过月度核实的机会，数据不足时展示全部且不阻塞。
+
+### Metadata
+- Source: user_feedback
+- Related Files: /Users/elvis/.codex/automations/top-5/automation.toml, src/lib/monthly.ts, src/components/MonthlyReportView.astro
+- Tags: monthly, feasibility, opportunity, domain-model
+
+### Resolution
+- **Resolved**: 2026-08-27T20:30:00+08:00
+- **Notes**: 月度任务恢复单一“真实业务与项目机会”章节，feasibility 作为其候选来源和研究底稿。
+
+---
+
 ## [LRN-20260809-004] correction
 
 **Logged**: 2026-08-09T16:08:15+08:00
