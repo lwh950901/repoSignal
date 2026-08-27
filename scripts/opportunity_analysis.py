@@ -583,7 +583,25 @@ def build_anchor_combo(projects, today_projects, today_ids, blocked_names=None):
     if len(picks) < 2 or len({top_tag(p) for p in picks.values()}) < 2:
         return None
     tags = [t for t in TAG_RULES if any(top_tag(p) == t for p in picks.values())]
-    name = "今日锚点组合：{}".format(" × ".join(TAG_CN[t] for t in tags))
+    # 角色用项目真实定位（tagline 首句），避免能力面标签与项目错配；
+    # 方案名用项目短名，保证可读性与唯一性（新鲜度规则按名匹配）。
+    def role_of(p):
+        tagline = (p["fields"].get("tagline") or "").strip()
+        if tagline:
+            role = first_sentence(tagline, 60)
+            if role and role != p["repo"]:
+                return role
+        return COMBO_ROLES.get(top_tag(p), top_tag(p))
+
+    roles = {}
+    for r, p in picks.items():
+        role = role_of(p)
+        while role in roles.values():
+            role += "（二）"
+        roles[r] = role
+    picks = {roles[r]: p for r, p in picks.items()}
+    repo_short = picks[list(picks)[0]]["repo"].split("/")[-1]
+    name = "今日锚点组合：{} 等 {} 个新发现项目".format(repo_short, len(picks))
     if name in blocked_names:
         return None
     slot_tags = [top_tag(p) for p in picks.values()]
@@ -598,15 +616,15 @@ def build_anchor_combo(projects, today_projects, today_ids, blocked_names=None):
         "score": score,
         "score_parts": score_parts,
         "name": name,
-        "pitch": "把今日新发现的 {} 个项目按能力互补直接拼成可试用的最小原型：{}。".format(
+        "pitch": "把今日新发现的 {} 个项目作为组合试用候选：{}。先各自试用、记录产出，再找可打通的组合路径。".format(
             len(picks), roles_text),
         "target": "想第一时间试用今日新发现项目的个人开发者与研究型小团队。",
-        "market": "今日锚点覆盖 {} 方向，池中对应候选 {} 个，组件供给充足；"
+        "market": "今日 {} 个锚点分属 {} 等能力面，池中对应候选 {} 个，组件供给充足；"
                    "先用小规模试用验证价值，再决定产品化方向。".format(
-                       "、".join(TAG_CN[t] for t in tags), min_supply),
+                       len(picks), "、".join(TAG_CN[t] for t in tags), min_supply),
         "differentiation": "完全由今日新发现驱动，组件全部来自今日日报，新鲜度最高，不依赖固定模板。",
-        "rationale": "今日锚点覆盖 {} 个互补能力面，无需等待模板命中即可拼出组合。".format(len(tags)),
-        "mvp": "先跑通 {} 之间的最小数据流或协作流，再按试用反馈取舍其余组件。".format(
+        "rationale": "全部组件来自今日日报，能力面尽量互补（{} 个），无需等待固定模板命中即可拼出组合。".format(len(tags)),
+        "mvp": "先分别试用各组件并记录可用产出，再打通 {} 之间的最小数据流或协作流；其余按试用反馈取舍。".format(
             "、".join("`{}`".format(p["repo"]) for p in list(picks.values())[:3])),
         "picks": picks,
         "slot_supply": supply,
