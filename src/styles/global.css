@@ -162,6 +162,24 @@ kbd { padding: .15rem .45rem; border: 1px solid var(--rule); background: var(--p
 .feasibility-plan__header { display: grid; grid-template-columns: 5rem minmax(0, 1fr); gap: var(--space-5); align-items: start; }
 .feasibility-plan__header > span { padding-top: .35rem; color: var(--moss); font: .68rem var(--font-mono); letter-spacing: .1em; }
 .feasibility-plan__header h2 { max-width: 36ch; margin: 0; font-size: clamp(1.45rem, 2.5vw, 2.15rem); font-weight: 600; letter-spacing: -.035em; line-height: 1.2; text-wrap: pretty; }
+/* 方案评分面板 */
+.feasibility-score { display: grid; grid-template-columns: 10rem minmax(0, 1fr); gap: var(--space-6); align-items: start; margin: var(--space-6) 0 var(--space-7); padding: var(--space-5); border: 1px solid var(--rule); background: var(--white); }
+.feasibility-score__total { display: flex; align-items: baseline; gap: var(--space-3); }
+.feasibility-score__number { font: 600 2.75rem/1 var(--font-mono); letter-spacing: -.04em; }
+.feasibility-score__number small { font-size: .95rem; color: var(--ink-soft); }
+.feasibility-score__number--high { color: var(--moss); }
+.feasibility-score__number--mid { color: var(--ink); }
+.feasibility-score__number--low { color: var(--danger); }
+.feasibility-score__grade { padding: .15rem .55rem; border: 1px solid currentColor; font: .72rem var(--font-mono); letter-spacing: .06em; }
+.feasibility-score__grade--high { color: var(--moss); }
+.feasibility-score__grade--mid { color: var(--ink); }
+.feasibility-score__grade--low { color: var(--danger); }
+.feasibility-score__parts { display: grid; gap: var(--space-2); margin: 0; padding: 0; list-style: none; }
+.feasibility-score__parts li { display: grid; grid-template-columns: 5.5rem minmax(0, 1fr) 3rem; gap: var(--space-3); align-items: center; }
+.feasibility-score__part-name { color: var(--ink-soft); font: .72rem var(--font-mono); }
+.feasibility-score__bar { height: .5rem; background: var(--paper-deep); overflow: hidden; }
+.feasibility-score__bar i { display: block; height: 100%; background: var(--moss); }
+.feasibility-score__part-value { text-align: right; color: var(--ink-soft); font: .72rem var(--font-mono); }
 .feasibility-summary { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); margin: var(--space-6) 0 var(--space-7); border-top: 1px solid var(--ink); border-bottom: 1px solid var(--rule); }
 .feasibility-summary > div { padding: var(--space-4); }
 .feasibility-summary > div:first-child { padding-left: 0; }
@@ -325,6 +343,8 @@ kbd { padding: .15rem .45rem; border: 1px solid var(--rule); background: var(--p
   .feasibility-summary { grid-template-columns: 1fr; }
   .feasibility-summary > div, .feasibility-summary > div:first-child { padding: var(--space-4) 0; }
   .feasibility-summary > div + div { border-top: 1px solid var(--rule); border-left: 0; }
+  .feasibility-score { grid-template-columns: 1fr; gap: var(--space-4); }
+  .feasibility-score__parts li { grid-template-columns: 4.5rem minmax(0, 1fr) 2.75rem; }
   .feasibility-tail { grid-template-columns: 1fr; gap: var(--space-7); }
   .search-palette { margin-top: 1rem; }
   .search-palette__bar { grid-template-columns: 1fr auto; }

@@ -8,6 +8,9 @@ interface Props {
 }
 
 const { report, reports } = Astro.props;
+
+const gradeClass = (grade: string | null) =>
+  ({ 高: "high", 中: "mid", 低: "low" })[grade ?? ""] ?? "none";
 ---
 
 <main id="main-content" class="archive-shell feasibility-shell" data-archive-shell>
@@ -35,6 +38,29 @@ const { report, reports } = Astro.props;
               <span>方案 {String(index + 1).padStart(2, "0")}</span>
               <h2 id={`${plan.id}-title`}>{plan.title}</h2>
             </header>
+            {plan.score != null && (
+              <div class="feasibility-score" aria-label={`方案评分 ${plan.score} 分，档位 ${plan.grade}`}>
+                <div class="feasibility-score__total">
+                  <span class={`feasibility-score__number feasibility-score__number--${gradeClass(plan.grade)}`}>
+                    {plan.score}<small>/100</small>
+                  </span>
+                  <span class={`feasibility-score__grade feasibility-score__grade--${gradeClass(plan.grade)}`}>{plan.grade}</span>
+                </div>
+                {plan.scoreParts.length > 0 && (
+                  <ul class="feasibility-score__parts">
+                    {plan.scoreParts.map((part) => (
+                      <li>
+                        <span class="feasibility-score__part-name">{part.name}</span>
+                        <span class="feasibility-score__bar" aria-hidden="true">
+                          <i style={`width:${Math.round((part.points / part.max) * 100)}%`}></i>
+                        </span>
+                        <span class="feasibility-score__part-value">{part.points}/{part.max}</span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            )}
             <dl class="feasibility-summary">
               <div><dt>业务定位</dt><dd>{plan.positioning || "源报告未单独标注"}</dd></div>
               <div><dt>目标客户</dt><dd>{plan.audience || "源报告未单独标注"}</dd></div>

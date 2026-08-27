@@ -606,3 +606,36 @@ Use task-specific variable names such as `repo_summary` in zsh loops and avoid c
 ### Resolution
 - **Resolved**: 2026-08-26T00:00:00+08:00
 - **Notes**: The rerun uses a non-reserved variable name.
+
+---
+## [ERR-20260827-001] portable_heading_statistics
+
+**Logged**: 2026-08-27T20:00:00+08:00
+**Priority**: low
+**Status**: resolved
+**Area**: docs
+
+### Summary
+A diagnostic heading-statistics pipeline used a BSD `sed` expression with an invalid delimiter form, then used `rg -h` expecting filename suppression even though ripgrep treats it as help.
+
+### Error
+```text
+sed: bad flag in substitute command: '#'
+rg -h printed ripgrep help instead of matched lines
+```
+
+### Context
+- Operation: count repeated feasibility-plan headings across dated Markdown reports.
+- Root cause: mixed assumptions from different command-line implementations.
+- No source report or automation state was modified by either failed pipeline.
+
+### Suggested Fix
+Use `rg --no-filename` and perform prefix removal/counting with a small portable `awk` program.
+
+### Metadata
+- Reproducible: yes
+- Related Files: data/github-project-digest/feasibility/*.md
+
+### Resolution
+- **Resolved**: 2026-08-27T20:00:00+08:00
+- **Notes**: Replaced the pipeline with `rg --no-filename ... | awk ... | sort | uniq -c`.

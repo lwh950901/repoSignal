@@ -24,6 +24,37 @@
 
 ---
 
+## [LRN-20260827-001] correction
+
+**Logged**: 2026-08-27T20:20:00+08:00
+**Priority**: medium
+**Status**: resolved
+**Area**: config
+
+### Summary
+“在开源雷达周刊新增可行性方案”指完整周刊中的完整方案同步，不是独立的精简方案卡预览。
+
+### Details
+先前把测试产物做成了只含三个摘要卡片的预览，并在标题中加入“测试预览”。用户明确要求保持正式周刊标题、交付完整开源雷达周刊数据，并让“本周可行性精选”与来源 feasibility 方案内容同步且无缺漏。
+
+后续又把“至少展示 1 个”实现成没有合格方案就阻塞整个周刊。用户进一步明确：可行性方案是附加内容，任何缺失或质量不足都不能阻塞开源雷达周刊主任务。
+
+### Suggested Action
+自动任务应完整复制入选方案的评分、定位、目标客户、市场机会、可行性依据、组合表、差异化、MVP、全部风险和验证路径，仅转换小节标题以避开项目解析器；全文项目数量校验应按周报项目章节计算，而不是按全部 GitHub 链接计算。有本周可行性数据时展示 1–3 个；数据缺失或无法安全展示时应跳过该章节并照常完成主周刊。
+
+### Metadata
+- Source: user_feedback
+- Related Files: /Users/elvis/.codex/automations/automation/automation.toml, data/github-project-digest/feasibility/*.md, src/lib/radar.ts
+- Tags: radar, feasibility, automation, output-contract
+- Pattern-Key: radar.optional_feasibility.must_not_block
+- Recurrence-Count: 2
+
+### Resolution
+- **Resolved**: 2026-08-27T20:20:00+08:00
+- **Notes**: 后续任务契约按完整方案同步修正，并明确可行性附加内容不得阻塞周刊主任务。
+
+---
+
 ## [LRN-20260809-004] correction
 
 **Logged**: 2026-08-09T16:08:15+08:00

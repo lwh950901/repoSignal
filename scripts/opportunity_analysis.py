@@ -10,7 +10,9 @@
      按 owner/repo 去重；每个项目保留来源（日期/周号）可追溯。
   2. 能力标签聚类（agent/memory/rag/sandbox/observability/gateway/codeintel/
      design/security/document/local/comm），组合模板从全池挑选真实项目，
-     输出"可行性方案"（业务定位 / 目标客户 / 市场机会 / 组合分工 / 风险）。
+     输出"可行性方案"（业务定位 / 目标客户 / 市场机会 / 组合分工 / 风险），
+     并给出 0-100 确定性综合评分（组件可靠度 / 组件供给 / 风险敞口 /
+     今日锚点 / 来源多样性 / 许可证 / 完整度）与高中低档位。
   3. 可选增强：设置 OPPORTUNITY_LLM_API_KEY（或 OPENAI_API_KEY）时调用
      OpenAI 兼容接口补充视角；失败不影响主流程。
   4. 输出 data/github-project-digest/feasibility/YYYY-MM-DD.md，
@@ -93,19 +95,44 @@ TAG_RULES = {
              "telegram", "discord", "whatsapp", "会议"),
 }
 
+# 单点项目的商业化角度：每个标签 3 个变体，报告内按出现顺序轮换，避免同一句式连排。
 TAG_ANGLE = {
-    "agent": "可包装为垂直领域 Agent 托管服务（SaaS/私有化），按任务或席位收费",
-    "memory": "可做'个人/团队长期记忆即服务'，或作为现有 Agent 产品的记忆层插件",
-    "rag": "可做领域知识库产品（法律/医疗/代码），以检索质量与引用溯源为卖点",
-    "sandbox": "可提供'不可信代码执行即服务'，面向 Agent 平台与 CI 的隔离执行层",
-    "observability": "可做 Agent/LLM 成本与质量观测 SaaS，或嵌入现有 DevOps 观测栈",
-    "gateway": "可做模型网关/统一接入层，按用量与路由策略收费",
-    "codeintel": "可做代码理解/审查服务，按仓库或席位订阅",
-    "design": "可做 AI 设计交付服务，按生成量/导出量计费",
-    "security": "可做 Agent 安全审计与红队服务，面向企业内部发布门禁",
-    "document": "可做文档解析/转换 API，按页或文档计费",
-    "local": "可做隐私优先的本地工具商业版（支持/托管/定制）",
-    "comm": "可做团队协作/通知聚合产品，或垂直行业通信自动化",
+    "agent": ["可包装成垂直场景的 Agent 托管/订阅产品",
+              "可拆出可复用的 Agent 编排能力做独立服务",
+              "可做成面向特定岗位的 Agent 工具集"],
+    "memory": ["可做成记忆/会话上下文的独立存储服务",
+                "适合作为 Agent 产品的记忆层插件",
+                "可接入 RAG 或 Agent 产品补足记忆短板"],
+    "rag": ["可做成垂直领域知识库（法律/医疗/代码）",
+            "可包装为检索质量与引用溯源见长的知识产品",
+            "可作为 RAG 管线的检索内核对外服务"],
+    "sandbox": ["可提供不可信代码的隔离执行环境",
+                "适合作为 Agent 平台与 CI 的沙箱层",
+                "可做成安全评估用的隔离运行服务"],
+    "observability": ["可做 Agent/LLM 成本与质量观测",
+                      "可嵌入现有观测栈补 Agent 可观测性",
+                      "可做成评测与回归的独立服务"],
+    "gateway": ["可做模型网关/统一接入层",
+                "适合按用量与路由策略提供接入服务",
+                "可做成多模型切换与成本控制的中转层"],
+    "codeintel": ["可做代码理解/审查服务",
+                  "适合作为仓库级代码分析的独立工具",
+                  "可做成 PR 评审与调用链分析的组件"],
+    "design": ["可做 AI 设计交付服务",
+               "适合按生成量/导出量提供设计工具服务",
+               "可嵌入设计工作流作为素材生成层"],
+    "security": ["可做 Agent 安全审计与红队服务",
+                 "适合作为发布前的安全检查环节",
+                 "可做成 MCP/Skill 供应链审计工具"],
+    "document": ["可做文档解析/转换服务",
+                 "适合作为 RAG 上游的入库清洗组件",
+                 "可做成格式转换 API 或批处理工具"],
+    "local": ["可做隐私优先的本地工具商业版",
+              "适合做自托管/离线场景的订阅产品",
+              "可提供支持与定制服务变现"],
+    "comm": ["可做团队协作/通知聚合产品",
+             "适合接入 IM 做消息自动化",
+             "可做垂直行业通信自动化组件"],
 }
 
 # 组合模板：槽位 (标签, 角色)。只有真实项目 ≥2 个且槽位 ≥2 才输出；
@@ -120,13 +147,12 @@ TEMPLATES = [
             ("sandbox", "执行沙箱"),
             ("observability", "评测与观测"),
         ],
-        "pitch": "用私有化 RAG+Agent 把企业分散文档变成可审批、可溯源、可评测的问答与执行助手。",
+        "pitch": "把散落在各部门的文档接进私有化知识库，员工提问能拿到带出处的答案，需要动手的事由 Agent 在人工审批后执行。",
         "target": "数据敏感的中大型企业（法律/金融/制造/医疗），对数据出境和合规有硬性要求。",
-        "market": "企业知识管理与 GenAI 预算持续增长，私有化部署的合规需求明确；90 天池内供给组件（编排/检索/记忆/沙箱/评测）齐全。",
-        "differentiation": "相对单点 RAG 或 Agent 框架，交付'合规私有化 + 人工审批 + 评测门禁'的一体化闭环。",
-        "rationale": "编排、检索/知识库、记忆、沙箱与评测组件在 90 天池中同时可用，"
-                     "'知识问答 + Agent 执行'的最小闭环已能用自托管组件拼出。",
-        "mvp": "固定 agent+rag+observability 三件套做部门级问答闭环：一个文档集、一条评测集、一个需审批的工具动作；记忆与沙箱作为二期。",
+        "market": "企业愿意为'数据不出境 + 答案可追溯'付费；近 90 天池里编排、检索、记忆、沙箱、评测组件都已齐备。",
+        "differentiation": "相比单点 RAG 或 Agent 框架，它把'数据私有化 + 人工审批 + 效果评测'一起交付，不用客户自己拼。",
+        "rationale": "池中编排、检索、记忆、沙箱、评测组件都能找到，'问答 + 审批执行'的最小闭环可以全部自托管。",
+        "mvp": "先固定 agent + rag + 评测三件套：接入一个部门的文档集，配一条评测集，Agent 只能执行一个需要审批的动作；记忆和沙箱二期再加。",
     },
     {
         "name": "可审计的 Agent 开发/交付平台（CI 化 Agent 流水线）",
@@ -137,12 +163,11 @@ TEMPLATES = [
             ("agent", "Agent 编排"),
             ("gateway", "模型网关/成本"),
         ],
-        "pitch": "把沙箱、观测、安全审计与模型网关拼成 CI 化的 Agent 交付流水线，让 Agent 产出可回放、可验收。",
+        "pitch": "让 Agent 任务像 CI 一样跑：进沙箱执行、全程留痕、出审计报告，人工批准后才允许写仓库。",
         "target": "已在使用 coding agent（Codex/Claude Code/Cursor）的研发团队与平台工程组。",
-        "market": "Agent 进入生产后，失败恢复、成本与合规缺口成为刚需；90 天池内隔离执行与观测组件密集出现。",
-        "differentiation": "相对单个 harness 或观测工具，提供'隔离执行 + trace 评测 + 审计门禁'的端到端流水线。",
-        "rationale": "长任务 Agent 的失败恢复、可观测与安全执行是 90 天池中反复出现的主题，"
-                     "组件供给成熟，适合拼成 CI/交付流水线。",
+        "market": "Agent 开始真正干活后，'跑挂了怎么恢复、花了多少钱、有没有越权'成为刚需；近 90 天池里隔离执行和观测组件明显变多。",
+        "differentiation": "相比单个 harness 或观测工具，它把隔离执行、trace 评测和审计报告串成一条流水线。",
+        "rationale": "长任务 Agent 的失败恢复、可观测、安全执行是池里反复出现的主题，组件已成熟，适合拼成 CI 流水线。",
         "mvp": "受限流水线：沙箱内跑一次任务、记录 trace、输出审计报告，人工审批后才允许写仓库；成本与多 Agent 编排后置。",
     },
     {
@@ -156,11 +181,10 @@ TEMPLATES = [
         ],
         "pitch": "数据全部留在本机、模型可自由切换、记忆可导出的个人 AI 工作台。",
         "target": "重视隐私的个人开发者、知识工作者与小型团队。",
-        "market": "本地优先与自托管在 90 天池中多次出现（记忆/桌面/网关组件密集），个人知识管理付费意愿在上升。",
-        "differentiation": "相对云端工作台，主打数据所有权与模型中立；相对单点记忆工具，提供完整工作台闭环。",
-        "rationale": "本地优先、隐私与自托管是 90 天池中的稳定主题，"
-                     "本地记忆+模型网关+Agent 编排可以拼成个人知识工作台产品。",
-        "mvp": "两个组件先跑通'本地记忆写入→Agent 读取→输出压缩'闭环，再决定桌面端与多渠道接入。",
+        "market": "池里本地优先、自托管类项目反复出现（记忆/桌面/网关），个人为'数据不离开本机'付费的趋势在上升。",
+        "differentiation": "对比云端工作台，卖点是无云依赖和数据所有权；对比单点记忆工具，卖点是一整套工作台。",
+        "rationale": "本地记忆、模型网关、Agent 编排在池里都能找到，拼起来就是个人知识工作台。",
+        "mvp": "先用两个组件跑通'本地记忆写入→Agent 读取→输出压缩'，再决定桌面端与多渠道接入。",
     },
     {
         "name": "多 Agent 协作控制面（团队级）",
@@ -171,12 +195,11 @@ TEMPLATES = [
             ("gateway", "模型路由/成本"),
             ("memory", "共享记忆"),
         ],
-        "pitch": "统一会话、审批、成本与审计的多 Agent 协作控制面，把零散 Agent 变成可管理的团队资产。",
+        "pitch": "给团队一个统一面板：所有 Agent 的会话、审批、花费和审计记录都在一处，散落的 Agent 变成可管理的资产。",
         "target": "已在使用多个 coding agent 工具、或计划让 Agent 参与团队流程的团队。",
-        "market": "多 Agent 工具碎片化是真实痛点；90 天池中编排、协作入口与成本观测组件同时成熟。",
-        "differentiation": "相对单 Agent 工具，提供'多 Agent 会话 + 审批 + 审计 + 成本'的统一控制面。",
-        "rationale": "多 Agent 编排、协作入口与成本观测组件在 90 天池中齐全，"
-                     "面向团队提供控制面产品的时机成熟。",
+        "market": "团队里 Agent 工具越用越杂是真实痛点；池中编排、协作入口、成本观测组件刚好都成熟了。",
+        "differentiation": "对比单 Agent 工具，它把多 Agent 的会话、审批、审计、成本收到一个控制面里。",
+        "rationale": "编排、协作入口、成本观测组件在池中都齐，面向团队做控制面的条件具备了。",
         "mvp": "接一个 Agent 宿主 + 一个协作渠道 + 审计日志，验证审批、打断、失败恢复三个动作，再扩展多 Agent。",
     },
     {
@@ -189,10 +212,9 @@ TEMPLATES = [
         ],
         "pitch": "入库前解析→转换→质检的知识处理管道，解决 RAG 上游脏数据导致的召回与引用质量问题。",
         "target": "RAG/搜索/文档产品团队，以及自建知识库的企业。",
-        "market": "RAG 效果瓶颈普遍在上游解析与清洗；90 天池中解析/转换与检索组件成熟且可组合。",
-        "differentiation": "相对单点解析库或向量库，提供'解析 + 转换 + 质量门禁'的完整管道。",
-        "rationale": "文档解析/转换与检索、评测组件可以拼成'入库前处理 + 质量门禁'的管道，"
-                     "解决 RAG 上游脏数据这一常见瓶颈。",
+        "market": "RAG 效果差，问题大多出在入库前的解析和清洗；池里解析/转换与检索组件都已成熟。",
+        "differentiation": "对比单点解析库或向量库，它把解析、转换、质检串成一条管道，不用工程师自己拼。",
+        "rationale": "解析/转换、检索、评测组件都能拼成'入库前处理 + 质检'管道，正好打 RAG 上游脏数据这个常见瓶颈。",
         "mvp": "固定管道：文档→Markdown→索引→评测报告，用自有样本对比接入前后的召回与引用质量。",
     },
     {
@@ -204,13 +226,12 @@ TEMPLATES = [
             ("codeintel", "代码理解"),
             ("observability", "证据与报告"),
         ],
-        "pitch": "把 Agent 扫描→修复→验证变成带证据链、可人工审批的发布门禁与红队预检服务。",
+        "pitch": "让安全扫描由 Agent 自动跑：扫出问题、给出修复建议、独立验证是否修好，每一步留证据，由人审批放行。",
         "target": "企业安全团队、DevSecOps 平台组。",
-        "market": "Agent 相关攻击面快速扩大（Skill/MCP/供应链），安全供给在 90 天池中密集出现（红队/审计/沙箱）。",
-        "differentiation": "相对传统 SAST，提供'Agent 驱动扫描 + 修复 + 独立验证'的证据链闭环。",
-        "rationale": "安全审计、沙箱与代码理解组件在 90 天池中可拼成'扫描→修复→验证'的 "
-                     "Agent 安全流水线，面向发布门禁与红队预检。",
-        "mvp": "在授权靶场跑'扫描→修复建议→独立验证'三步，保留证据链与人工审批，再评估接入正式仓库。",
+        "market": "Agent 带来新的攻击面（Skill/MCP/供应链），池里安全类项目（红队/审计/沙箱）也在密集出现。",
+        "differentiation": "对比传统 SAST 只报问题，它把'扫描 + 修复建议 + 独立验证'做成完整流程，且每一步有证据。",
+        "rationale": "池里的安全审计、沙箱、代码理解组件正好能拼出'扫描→修复→验证'这条线。",
+        "mvp": "在授权靶场跑'扫描→修复建议→独立验证'三步，保留证据与人工审批，再评估接入正式仓库。",
     },
 ]
 
@@ -220,6 +241,22 @@ CLIP = 64
 def clip(text, n=CLIP):
     text = re.sub(r"\s+", " ", (text or "")).strip()
     return text if len(text) <= n else text[: n - 1].rstrip() + "…"
+
+
+def first_sentence(text, limit=96):
+    """取第一句完整句子；超限时在最近的逗号/空格处截断，避免机器式省略号连篇。"""
+    text = re.sub(r"\s+", " ", (text or "")).strip()
+    if not text:
+        return ""
+    m = re.match(r"^(.+?[。！？!?])", text)
+    sent = m.group(1) if m else text
+    if len(sent) <= limit:
+        return sent
+    head = sent[:limit].rstrip()
+    cut = max(head.rfind("，"), head.rfind(","), head.rfind("；"), head.rfind(" "))
+    if cut >= limit // 2:
+        head = head[:cut]
+    return head.rstrip("，,；; ") + "…"
 
 
 def esc(text):
@@ -324,6 +361,7 @@ def load_project_pool(data_root, run_date):
     pool_projects：最近 90 天窗口内全部唯一项目（含 today 项目），每项带 source_date。
     """
     cutoff = date.fromisoformat(run_date) - timedelta(days=90)
+    run_d = date.fromisoformat(run_date)
     # 锚点日报：当天优先，否则取 <= run_date 的最近一份
     anchor_date = None
     for f in sorted((data_root / "daily").glob("*.md"), reverse=True):
@@ -340,7 +378,9 @@ def load_project_pool(data_root, run_date):
     weekly_files = 0
     for f in sorted((data_root / "daily").glob("*.md")):
         m = DAILY_FILE_RE.match(f.name)
-        if not m or date.fromisoformat(m.group(1)) < cutoff:
+        # 窗口下限 cutoff，上限 run_date：补跑历史日期时不得混入 run_date 之后的日报
+        if not m or date.fromisoformat(m.group(1)) < cutoff \
+                or date.fromisoformat(m.group(1)) > run_d:
             continue
         daily_files += 1
         for e in parse_daily(f):
@@ -359,7 +399,7 @@ def load_project_pool(data_root, run_date):
         if not m:
             continue
         week_start = date.fromisocalendar(int(m.group(1)), int(m.group(2)), 1)
-        if week_start < cutoff:
+        if week_start < cutoff or week_start > run_d:
             continue
         weekly_files += 1
         for e in parse_weekly(f):
@@ -392,6 +432,66 @@ def _clean_evidence(s):
 
 
 TODAY_BONUS = 3  # 今日锚点项目在选槽时的加权
+
+# 方案综合评分：分项 (名称, 满分)，总分 100；全部为确定性规则，可复现。
+# 语义：可行性 = 组件可靠度 + 供给 + 风险敞口 + 今日新颖度 + 来源多样性 + 许可证 + 完整度。
+SCORE_PARTS = [
+    ("组件可靠度", 35),  # 组件来源评分，短板(min)主导；维护滞后组件每个 -5
+    ("组件供给", 15),    # 最稀缺槽位的池内候选数（分段计分，避免饱和）
+    ("风险敞口", 15),    # 无高风险提示（越狱/凭据/合规/未验证/不可信/alpha/beta/快速迭代）组件占比
+    ("今日锚点", 15),    # 组合中今日新发现项目：1 个 5 分 / 2 个 10 / ≥3 个 15
+    ("来源多样性", 10),  # 组件来源日期去重数占比（来源分散 → 信号独立）
+    ("许可证", 5),       # 宽松许可证（MIT/Apache/BSD/MPL）组件占比
+    ("完整度", 5),       # 组合槽位填满比例
+]
+NEUTRAL_QUALITY = 70  # 来源报告无评分时的中性基线
+PERMISSIVE_LICENSES = ("MIT", "Apache-2.0", "BSD-", "MPL-2.0")
+HIGH_RISK_WORDS = ("越狱", "jailbreak", "凭据", "credential", "合规",
+                   "未验证", "不可信", "alpha", "beta", "快速迭代")
+
+
+def _license_is_permissive(p):
+    m = re.search(r"(MIT|Apache-2\.0|AGPL-3\.0|GPL-3\.0|MPL-2\.0|BSD-[0-9]-Clause)",
+                  p["fields"].get("metrics", ""))
+    return bool(m and m.group(1).startswith(PERMISSIVE_LICENSES))
+
+
+def _supply_points(min_supply):
+    """最稀缺槽位候选数分段计分：>=100 满分；50-99 得 12-14；20-49 得 6-11；<20 线性 0-6。"""
+    if min_supply >= 100:
+        return 15
+    if min_supply >= 50:
+        return 12 + round(3 * (min_supply - 50) / 50)
+    if min_supply >= 20:
+        return 6 + round(6 * (min_supply - 20) / 30)
+    return round(6 * min_supply / 20)
+
+
+def combo_score(tpl, picks, today_count, min_supply):
+    """按确定性规则计算方案综合评分，返回 (总分, 分项明细)。"""
+    n = len(picks)
+    scores = [p["score"] for p in picks.values() if p.get("score")]
+    quality = (sum(scores) / len(scores)) if scores else NEUTRAL_QUALITY
+    stalled = sum(1 for p in picks.values() if _maintenance_flag(p))
+    # 可靠度短板主导：min 占 5/7、均值占 2/7；维护滞后组件每个再扣 5 分（下限 0）
+    reliable = round(35 * (5 * min(scores) + 2 * quality) / (7 * 100)) if scores \
+        else round(35 * quality / 100)
+    reliable = max(0, reliable - 5 * stalled)
+    high_risk = sum(1 for p in picks.values()
+                    if any(w in (p["fields"].get("risks") or "").lower()
+                           for w in HIGH_RISK_WORDS))
+    src_days = len({p["source_date"] for p in picks.values()})
+    permissive = sum(1 for p in picks.values() if _license_is_permissive(p))
+    parts = [
+        ("组件可靠度", reliable, 35),
+        ("组件供给", _supply_points(min_supply), 15),
+        ("风险敞口", round(15 * (1 - high_risk / n)), 15),
+        ("今日锚点", min(15, 5 * today_count), 15),
+        ("来源多样性", round(10 * src_days / n), 10),
+        ("许可证", round(5 * permissive / n), 5),
+        ("完整度", round(5 * n / len(tpl["slots"])), 5),
+    ]
+    return sum(v for _, v, _ in parts), parts
 
 
 def pick_best(projects, tag, exclude, today_ids):
@@ -429,7 +529,11 @@ def build_combos(projects, today_ids=None):
         today_count = sum(1 for p in picks.values() if p["id"] in today_ids)
         if today_count == 0:
             continue  # 以今日发现为主：组合必须包含至少一个今日锚点项目
+        # 综合评分：分项按确定性规则计算，总分 = 分项之和，保证明细可加总。
+        score, score_parts = combo_score(tpl, picks, today_count, min_supply)
         combos.append({
+            "score": score,
+            "score_parts": score_parts,
             "name": tpl["name"],
             "pitch": tpl["pitch"],
             "target": tpl["target"],
@@ -444,7 +548,8 @@ def build_combos(projects, today_ids=None):
             "today_count": today_count,
             "stars": sum(p["stars"] for p in picks.values()),
         })
-    # 今日锚点多者优先，其次组件数与 Stars
+    # 保持历史可复现：组合排序维持原规则（今日锚点多者优先，其次组件数与 Stars）；
+    # 评分不参与排序，仅作展示与行动建议的推荐依据。
     combos.sort(key=lambda c: (c["today_count"], c["total"], c["stars"]), reverse=True)
     return combos[:3]
 
@@ -529,12 +634,19 @@ def render(projects, today_projects, combos, singles, run_date, cutoff,
     A = L.append
     A(f"# GitHub 项目组合可行性方案｜{run_date}")
     A("")
-    A("> 由定时任务自动生成（`scripts/opportunity_analysis.py`），属于可行性研究草稿，"
-      "不包含代码，不是公开结论；落地前需逐个组件复核。")
-    A("> 今日锚点：`daily/{}.md`（{} 个项目）；组合池：最近 90 天（{} ~ {}）"
-      "{} 个唯一项目（日报 {} 份 / 周报 {} 份）。".format(
+    A("> 由定时任务自动生成（`scripts/opportunity_analysis.py`）：以今日日报项目为锚点、"
+      "结合最近 90 天项目池拼出的多项目组合可行性研究草稿；不包含代码，不是公开结论，"
+      "落地前需逐个组件复核。")
+    A("> 输入：今日锚点 `daily/{}.md`（{} 个项目）；组合池：最近 90 天（{} ~ {}）"
+      "{} 个唯一项目（日报 {} 份 / 周报 {} 份）。方案 1-3 个，"
+      "取决于当日锚点能命中几个组合模板。".format(
           anchor_date, len(today_projects), cutoff, run_date,
           n, n_daily_files, n_weekly_files))
+    A("> 评分（0-100，确定性规则，用于方案横向比较，不代表商业结论）："
+      "组件可靠度 35 · 组件供给 15 · 风险敞口 15 · 今日锚点 15 · "
+      "来源多样性 10 · 许可证 5 · 完整度 5；档位：≥85 高，70-84 中，<70 低。")
+    A("> 验证路径（固定）：每个组件按来源报告的'上手建议/真实风险'复核"
+      "（固定版本、隔离环境、自有数据复测）。")
     A("")
     A("## 可行性方案")
     A("")
@@ -543,6 +655,10 @@ def render(projects, today_projects, combos, singles, run_date, cutoff,
     for i, c in enumerate(combos, 1):
         A("### {}. {}（组合 {} 个项目，今日锚点 {} 个）".format(
             i, c["name"], c["total"], c["today_count"]))
+        A("")
+        parts_str = " · ".join("{} {}/{}".format(k, v, w) for k, v, w in c["score_parts"])
+        grade = "高" if c["score"] >= 85 else ("中" if c["score"] >= 70 else "低")
+        A("**方案评分**：**{}/100（{}）**（{}）".format(c["score"], grade, parts_str))
         A("")
         A("**业务定位**：{}".format(c["pitch"]))
         A("")
@@ -554,7 +670,7 @@ def render(projects, today_projects, combos, singles, run_date, cutoff,
                        if p["id"] in today_ids]
         supply_str = " · ".join("{} {}".format(t, c2)
                                  for t, c2 in c["slot_supply"].items())
-        A("**为什么现在可行**：{} 本组合含今日发现项目 {} 个（{}）；"
+        A("**可行性依据**：{} 本组合含今日发现项目 {} 个（{}）；"
           "池中各能力面候选充足（{}），最稀缺槽位也有 {} 个候选。".format(
               c["rationale"], c["today_count"], "、".join(today_picks),
               supply_str, c["min_supply"]))
@@ -572,7 +688,7 @@ def render(projects, today_projects, combos, singles, run_date, cutoff,
             A("| {} | [`{}`]({}) | {} | {} | {} |".format(
                 role, p["repo"], p["url"], _source_label(p, anchor_date),
                 m.group(1) if m else "（见仓库）",
-                esc(clip(_clean_evidence(basis), 72))))
+                esc(first_sentence(_clean_evidence(basis), 72))))
         A("")
         A("**差异化**：{}".format(c["differentiation"]))
         A("")
@@ -582,27 +698,29 @@ def render(projects, today_projects, combos, singles, run_date, cutoff,
         for role, p in c["picks"].items():
             r = (p["fields"].get("risks") or "").strip()
             if r:
-                risks.append("- `{}`（{}）：{}".format(p["repo"], role, clip(r, 100)))
+                risks.append("- `{}`（{}）：{}".format(p["repo"], role, first_sentence(r, 100)))
         if risks:
             A("**主要风险（来源报告）**：")
             A("")
             A("\n".join(risks))
         A("")
-        A("**验证路径**：每个组件按来源报告的'上手建议/真实风险'复核（固定版本、"
-          "隔离环境、自有数据复测）；本方案为可行性研究，不包含代码。")
-        A("")
     A("## 单点项目机会（供参考）")
     A("")
+    angle_count: dict[str, int] = {}
     for p, top, evidence in singles:
+        idx = angle_count.get(top, 0)
+        angle_count[top] = idx + 1
+        variants = TAG_ANGLE[top]
+        angle = variants[idx % len(variants)] if isinstance(variants, list) else variants
         A("- `{}`（`#{}`）→ {}。依据：{}".format(
-            p["repo"], top, TAG_ANGLE[top], clip(evidence, 100)))
+            p["repo"], top, angle, first_sentence(evidence, 100)))
     A("")
     A("## 行动建议")
     A("")
     if combos:
-        top = combos[0]
-        A("1. 优先推进今日锚点最多的组合：「{}」（{} 组件，今日锚点 {} 个）。".format(
-            top["name"], top["total"], top["today_count"]))
+        top = max(combos, key=lambda c: c["score"])
+        A("1. 优先推进评分最高的组合：「{}」（{} / 100，{} 组件，今日锚点 {} 个）。".format(
+            top["name"], top["score"], top["total"], top["today_count"]))
     A("2. 每个组合先核验 2-3 个核心组件：许可证、维护状态、来源报告中的真实风险。")
     A("3. 投入开发前，先用目标客户访谈或小范围试用验证需求假设，再决定组合取舍。")
     A("4. 本方案由定时任务自动生成并保留历史；每周新增周报与日报后重跑，信号会自动更新。")

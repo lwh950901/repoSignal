@@ -1,11 +1,20 @@
 import { marked } from "marked";
 
+export interface ScorePart {
+  name: string;
+  points: number;
+  max: number;
+}
+
 export interface FeasibilityPlan {
   id: string;
   title: string;
   positioning: string;
   audience: string;
   marketOpportunity: string;
+  score: number | null;
+  grade: string | null;
+  scoreParts: ScorePart[];
   markdown: string;
   bodyHtml: string;
 }
@@ -48,13 +57,29 @@ function getSummaryField(markdown: string, label: string): string {
 }
 
 function removeSummaryFields(markdown: string): string {
-  const labels = ["业务定位", "目标客户", "市场机会"];
+  const labels = ["业务定位", "目标客户", "市场机会", "方案评分"];
   return markdown
     .split("\n")
     .filter((line) => !labels.some((label) => line.startsWith(`**${label}**：`)))
     .join("\n")
     .replace(/\n{3,}/gu, "\n\n")
     .trim();
+}
+
+// 方案评分行：**方案评分**：**79/100（中）**（组件可靠度 30/35 · 组件供给 14/15 · ...）
+const SCORE_LINE_RE = /^\*\*方案评分\*\*：\*\*(\d+)\/100（([高中低])）\*\*（(.+)）$/mu;
+
+function parsePlanScore(markdown: string): { score: number; grade: string; scoreParts: ScorePart[] } | null {
+  const match = markdown.match(SCORE_LINE_RE);
+  if (!match) return null;
+  const scoreParts = match[3]
+    .split("·")
+    .map((item) => {
+      const part = item.trim().match(/^(.+?)\s+(\d+)\/(\d+)$/u);
+      return part ? { name: part[1], points: Number(part[2]), max: Number(part[3]) } : null;
+    })
+    .filter((part): part is ScorePart => part !== null);
+  return { score: Number(match[1]), grade: match[2], scoreParts };
 }
 
 function parsePlans(markdown: string): FeasibilityPlan[] {
@@ -65,6 +90,7 @@ function parsePlans(markdown: string): FeasibilityPlan[] {
     const start = (heading.index ?? 0) + heading[0].length;
     const end = headings[index + 1]?.index ?? section.length;
     const body = section.slice(start, end).trim();
+    const parsedScore = parsePlanScore(body);
     const bodyMarkdown = removeSummaryFields(body);
 
     return {
@@ -73,6 +99,9 @@ function parsePlans(markdown: string): FeasibilityPlan[] {
       positioning: getSummaryField(body, "业务定位"),
       audience: getSummaryField(body, "目标客户"),
       marketOpportunity: getSummaryField(body, "市场机会"),
+      score: parsedScore?.score ?? null,
+      grade: parsedScore?.grade ?? null,
+      scoreParts: parsedScore?.scoreParts ?? [],
       markdown: body,
       bodyHtml: marked.parse(bodyMarkdown) as string,
     };
