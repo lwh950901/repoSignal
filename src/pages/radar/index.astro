@@ -2,16 +2,18 @@
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import { createSearchIndex, loadDailyReports, loadWeeklyReports } from "../../lib/digests";
 import { createMonthlySearchIndex, loadMonthlyReports } from "../../lib/monthly";
+import { loadFeasibilityReports } from "../../lib/feasibility";
 import { resolvePeriodLinks } from "../../lib/periods";
 import { loadRadarReports } from "../../lib/radar";
 
 const monthlyReports = loadMonthlyReports();
 const weeklyReports = loadWeeklyReports();
 const dailyReports = loadDailyReports();
+const feasibilityReports = loadFeasibilityReports();
 const radarReports = loadRadarReports();
 const latest = radarReports[0];
 const searchItems = [...createMonthlySearchIndex(monthlyReports), ...createSearchIndex([...weeklyReports, ...dailyReports])];
-const periodLinks = resolvePeriodLinks("radar", latest?.slug ?? "", monthlyReports.map((item) => item.slug), weeklyReports.map((item) => item.slug), dailyReports.map((item) => item.slug), radarReports.map((item) => item.slug));
+const periodLinks = resolvePeriodLinks("radar", latest?.slug ?? "", monthlyReports.map((item) => item.slug), weeklyReports.map((item) => item.slug), dailyReports.map((item) => item.slug), feasibilityReports.map((item) => item.slug), radarReports.map((item) => item.slug));
 ---
 
 <BaseLayout title="开源雷达周刊归档｜RepoSignal" description="每周整理值得使用、学习和二次开发的开源项目。" canonical="/radar/" searchItems={searchItems} activePeriod="radar" periodLinks={periodLinks}>

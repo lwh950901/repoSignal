@@ -1,0 +1,28 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import FeasibilityReportView from "../../components/FeasibilityReportView.astro";
+import { createSearchIndex, loadDailyReports, loadWeeklyReports } from "../../lib/digests";
+import { loadFeasibilityReports, type FeasibilityReport } from "../../lib/feasibility";
+import { createMonthlySearchIndex, loadMonthlyReports } from "../../lib/monthly";
+import { resolvePeriodLinks } from "../../lib/periods";
+import { loadRadarReports } from "../../lib/radar";
+
+export function getStaticPaths() {
+  return loadFeasibilityReports().map((report) => ({ params: { date: report.slug }, props: { report } }));
+}
+
+interface Props { report: FeasibilityReport }
+const { report } = Astro.props;
+const monthlyReports = loadMonthlyReports();
+const weeklyReports = loadWeeklyReports();
+const dailyReports = loadDailyReports();
+const feasibilityReports = loadFeasibilityReports();
+const radarReports = loadRadarReports();
+const searchItems = [...createMonthlySearchIndex(monthlyReports), ...createSearchIndex([...weeklyReports, ...dailyReports])];
+const periodLinks = resolvePeriodLinks("feasibility", report.slug, monthlyReports.map((item) => item.slug), weeklyReports.map((item) => item.slug), dailyReports.map((item) => item.slug), feasibilityReports.map((item) => item.slug), radarReports.map((item) => item.slug));
+const description = report.plans[0]?.positioning || "基于近期 GitHub 项目发现生成的每日组合可行性研究草稿。";
+---
+
+<BaseLayout title={`${report.date} 每日可行性方案｜RepoSignal`} description={description} canonical={`/feasibility/${report.slug}/`} searchItems={searchItems} activePeriod="feasibility" periodLinks={periodLinks}>
+  <FeasibilityReportView report={report} reports={feasibilityReports} />
+</BaseLayout>

@@ -19,17 +19,63 @@ describe("navigation layout contract", () => {
     expect(searchScript).toContain("dialog.showModal()");
   });
 
-  test("adds the full radar weekly tab as the fourth report period", async () => {
+  test("adds daily feasibility as the fourth tab and keeps radar as the fifth", async () => {
     const switcher = await readFile(new URL("./PeriodSwitcher.astro", import.meta.url), "utf8");
     const periods = await readFile(new URL("../lib/periods.ts", import.meta.url), "utf8");
 
-    expect(periods).toContain('"monthly" | "weekly" | "daily" | "radar"');
+    expect(periods).toContain('"monthly" | "weekly" | "daily" | "feasibility" | "radar"');
     expect(switcher).toContain('monthly: "月度洞察"');
     expect(switcher).toContain('weekly: "每周精选"');
     expect(switcher).toContain('daily: "每日发现"');
+    expect(switcher).toContain('feasibility: "每日可行性方案"');
     expect(switcher).toContain('radar: "开源雷达周刊"');
-    expect(switcher).toContain('["monthly", "weekly", "daily", "radar"]');
+    expect(switcher).toContain('["monthly", "weekly", "daily", "feasibility", "radar"]');
     expect(switcher).toContain('aria-current={active === period ? "true" : undefined}');
+  });
+
+  test("reuses the date archive for daily feasibility reports", async () => {
+    const rail = await readFile(new URL("./DateRail.astro", import.meta.url), "utf8");
+
+    expect(rail).toContain('period: "weekly" | "daily" | "feasibility" | "radar"');
+    expect(rail).toContain('feasibility: { archiveLabel: "可行性方案", eyebrow: "FEASIBILITY"');
+    expect(rail).toContain('period === "daily" || period === "feasibility"');
+  });
+
+  test("defines feasibility index and dated routes without expanding project search", async () => {
+    const issuePage = await readFile(new URL("../pages/feasibility/[date].astro", import.meta.url), "utf8");
+    const indexPage = await readFile(new URL("../pages/feasibility/index.astro", import.meta.url), "utf8");
+
+    expect(issuePage).toContain("getStaticPaths");
+    expect(issuePage).toContain('canonical={`/feasibility/${report.slug}/`}');
+    expect(issuePage).toContain('activePeriod="feasibility"');
+    expect(issuePage).toContain("<FeasibilityReportView");
+    expect(indexPage).toContain("打开最新方案");
+    expect(indexPage).toContain("暂时没有每日可行性方案");
+    expect(issuePage).not.toContain("createFeasibilitySearchIndex");
+    expect(indexPage).not.toContain("createFeasibilitySearchIndex");
+  });
+
+  test("renders feasibility reports as decision summaries with preserved prose", async () => {
+    const view = await readFile(new URL("./FeasibilityReportView.astro", import.meta.url), "utf8");
+    const styles = await readFile(new URL("../styles/global.css", import.meta.url), "utf8");
+
+    expect(view).toContain('class="archive-shell feasibility-shell"');
+    expect(view).toContain('period="feasibility"');
+    expect(view).toContain('class="feasibility-summary"');
+    expect(view).toContain("业务定位");
+    expect(view).toContain("目标客户");
+    expect(view).toContain("市场机会");
+    expect(view).toContain('class="feasibility-plan__body prose"');
+    expect(view).toContain('class="feasibility-tail"');
+    expect(styles).toMatch(/\.feasibility-summary\s*\{[^}]*grid-template-columns:\s*repeat\(3,/s);
+    expect(styles).toMatch(/\.feasibility-plan__body table\s*\{[^}]*display:\s*block[^}]*overflow-x:\s*auto/s);
+  });
+
+  test("keeps the five-tab navigation on one scrollable mobile row", async () => {
+    const styles = await readFile(new URL("../styles/global.css", import.meta.url), "utf8");
+
+    expect(styles).toMatch(/@media \(max-width: 768px\)[\s\S]*\.site-period-navigation\s*\{[^}]*overflow-x:\s*auto/s);
+    expect(styles).toMatch(/@media \(max-width: 768px\)[\s\S]*\.period-switcher\s*\{[^}]*width:\s*max-content[^}]*justify-content:\s*flex-start/s);
   });
 
   test("places the period switcher in the header center column", async () => {
@@ -99,7 +145,7 @@ describe("navigation layout contract", () => {
     const rail = await readFile(new URL("./DateRail.astro", import.meta.url), "utf8");
     const view = await readFile(new URL("./RadarReportView.astro", import.meta.url), "utf8");
 
-    expect(rail).toContain('period: "weekly" | "daily" | "radar"');
+    expect(rail).toContain('period: "weekly" | "daily" | "feasibility" | "radar"');
     expect(rail).toContain('radar: { archiveLabel: "开源雷达周刊", eyebrow: "RADAR"');
     expect(rail).toContain('`${report.slug} 开源雷达周刊`');
     expect(rail).toContain("<ArchiveTimeline items={archiveItems} />");

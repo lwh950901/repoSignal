@@ -3,6 +3,7 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
 import ReportView from "../../components/ReportView.astro";
 import { createSearchIndex, loadDailyReports, loadWeeklyReports, type DigestReport } from "../../lib/digests";
 import { createMonthlySearchIndex, loadMonthlyReports } from "../../lib/monthly";
+import { loadFeasibilityReports } from "../../lib/feasibility";
 import { resolvePeriodLinks } from "../../lib/periods";
 import { loadRadarReports } from "../../lib/radar";
 
@@ -15,9 +16,10 @@ const { report } = Astro.props;
 const dailyReports = loadDailyReports();
 const weeklyReports = loadWeeklyReports();
 const monthlyReports = loadMonthlyReports();
+const feasibilityReports = loadFeasibilityReports();
 const radarReports = loadRadarReports();
 const searchItems = [...createMonthlySearchIndex(monthlyReports), ...createSearchIndex([...weeklyReports, ...dailyReports])];
-const periodLinks = resolvePeriodLinks("daily", report.slug, monthlyReports.map((item) => item.slug), weeklyReports.map((item) => item.slug), dailyReports.map((item) => item.slug), radarReports.map((item) => item.slug));
+const periodLinks = resolvePeriodLinks("daily", report.slug, monthlyReports.map((item) => item.slug), weeklyReports.map((item) => item.slug), dailyReports.map((item) => item.slug), feasibilityReports.map((item) => item.slug), radarReports.map((item) => item.slug));
 ---
 
 <BaseLayout title={`${report.date}｜RepoSignal`} description={report.theme} searchItems={searchItems} activePeriod="daily" periodLinks={periodLinks}>

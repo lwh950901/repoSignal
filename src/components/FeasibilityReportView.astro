@@ -1,0 +1,71 @@
+---
+import type { FeasibilityReport } from "../lib/feasibility";
+import DateRail from "./DateRail.astro";
+
+interface Props {
+  report: FeasibilityReport;
+  reports: FeasibilityReport[];
+}
+
+const { report, reports } = Astro.props;
+---
+
+<main id="main-content" class="archive-shell feasibility-shell" data-archive-shell>
+  <DateRail reports={reports} period="feasibility" currentSlug={report.slug} />
+  <article class="feasibility-report">
+    <header class="feasibility-hero">
+      <div class="report-kicker">
+        <span>FEASIBILITY STUDY</span>
+        <time datetime={report.date}>{report.date}</time>
+      </div>
+      <h1>每日可行性方案</h1>
+      {report.noticeHtml && <div class="feasibility-notice prose" set:html={report.noticeHtml}></div>}
+      <div class="report-ledger" aria-label="本期摘要">
+        <span><strong>{report.plans.length}</strong> 个组合方案</span>
+        <span>研究草稿 · 落地前需复核</span>
+        <span>更新于 <strong>{report.date}</strong></span>
+      </div>
+    </header>
+
+    {report.plans.length ? (
+      <div class="feasibility-plans">
+        {report.plans.map((plan, index) => (
+          <section class="feasibility-plan" id={plan.id} aria-labelledby={`${plan.id}-title`}>
+            <header class="feasibility-plan__header">
+              <span>方案 {String(index + 1).padStart(2, "0")}</span>
+              <h2 id={`${plan.id}-title`}>{plan.title}</h2>
+            </header>
+            <dl class="feasibility-summary">
+              <div><dt>业务定位</dt><dd>{plan.positioning || "源报告未单独标注"}</dd></div>
+              <div><dt>目标客户</dt><dd>{plan.audience || "源报告未单独标注"}</dd></div>
+              <div><dt>市场机会</dt><dd>{plan.marketOpportunity || "源报告未单独标注"}</dd></div>
+            </dl>
+            <div class="feasibility-plan__body prose" set:html={plan.bodyHtml}></div>
+          </section>
+        ))}
+      </div>
+    ) : (
+      <div class="empty-state">
+        <p>这期报告没有可结构化展示的组合方案，以下为原始内容。</p>
+        <div class="prose" set:html={report.html}></div>
+      </div>
+    )}
+
+    {(report.opportunitiesHtml || report.actionsHtml) && (
+      <div class="feasibility-tail">
+        {report.opportunitiesHtml && (
+          <section aria-labelledby="feasibility-opportunities">
+            <h2 id="feasibility-opportunities">单点项目机会</h2>
+            <div class="prose" set:html={report.opportunitiesHtml}></div>
+          </section>
+        )}
+        {report.actionsHtml && (
+          <section aria-labelledby="feasibility-actions">
+            <h2 id="feasibility-actions">行动建议</h2>
+            <div class="prose" set:html={report.actionsHtml}></div>
+          </section>
+        )}
+      </div>
+    )}
+  </article>
+</main>

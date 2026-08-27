@@ -4,7 +4,7 @@ import ArchiveTimeline from "./ArchiveTimeline.astro";
 interface ArchiveReport { slug: string; date: string }
 interface Props {
   reports: ArchiveReport[];
-  period: "weekly" | "daily" | "radar";
+  period: "weekly" | "daily" | "feasibility" | "radar";
   currentSlug: string;
 }
 
@@ -12,12 +12,13 @@ const { reports, period, currentSlug } = Astro.props;
 const periodMeta = {
   weekly: { archiveLabel: "周报", eyebrow: "WEEKLY" },
   daily: { archiveLabel: "日报", eyebrow: "DAILY" },
+  feasibility: { archiveLabel: "可行性方案", eyebrow: "FEASIBILITY" },
   radar: { archiveLabel: "开源雷达周刊", eyebrow: "RADAR" },
 } as const;
 const { archiveLabel, eyebrow } = periodMeta[period];
 const href = (slug: string) => `/${period}/${slug}/`;
 const archiveItems = reports.map((report) => ({
-  label: period === "daily" ? report.date : report.slug,
+  label: period === "daily" || period === "feasibility" ? report.date : report.slug,
   href: href(report.slug),
   current: report.slug === currentSlug,
 }));
@@ -45,5 +46,5 @@ const optionLabel = (report: ArchiveReport) => period === "weekly"
     </select>
   </label>
   <ArchiveTimeline items={archiveItems} />
-  <noscript><div class="archive-links">{reports.map((report) => <a href={href(report.slug)}>{period === "daily" ? report.date : report.slug}</a>)}</div></noscript>
+  <noscript><div class="archive-links">{reports.map((report) => <a href={href(report.slug)}>{period === "daily" || period === "feasibility" ? report.date : report.slug}</a>)}</div></noscript>
 </aside>

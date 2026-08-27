@@ -2,15 +2,21 @@
 
 ## Purpose
 定义所有报告页面共享的月、周、日周期导航契约，使当前周期具有明确的可访问状态，并在跨周期切换时依据当前报告时间锚点选择最近且不晚于锚点的内容；目标周期缺失时必须安全回退到可读的索引页而非产生失效链接。
-
 ## Requirements
-
 ### Requirement: Site header provides month week and day navigation
-系统 SHALL 在所有报告页面顶部按“月 / 周 / 日”顺序展示周期导航，并用 `aria-current` 与视觉状态标明当前周期。
+系统 SHALL 在所有报告页面顶部按“月度洞察 / 每周精选 / 每日发现 / 每日可行性方案 / 开源雷达周刊”顺序展示周期导航，并用 `aria-current` 与视觉状态标明当前周期。
 
 #### Scenario: Reader views a monthly report
 - **WHEN** 当前页面为月报
-- **THEN** “月”导航项处于激活状态，“周”和“日”为可访问的普通链接
+- **THEN** “月度洞察”导航项处于激活状态，其余周期为可访问的普通链接
+
+#### Scenario: Reader views a feasibility report
+- **WHEN** 当前页面为每日可行性方案
+- **THEN** “每日可行性方案”导航项处于激活状态，其余周期为可访问的普通链接
+
+#### Scenario: Reader uses navigation on a narrow screen
+- **WHEN** 五个导航项宽于可用视口
+- **THEN** 导航保持单行并可横向滚动，每个标签仍可点击和获得键盘焦点
 
 ### Requirement: Period switching preserves time context
 系统 MUST 使用当前报告的时间锚点解析目标链接：月报使用月末、周报使用 ISO 周末、日报使用报告日期，并选择不晚于锚点的最近目标报告。
