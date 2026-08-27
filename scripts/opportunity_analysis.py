@@ -656,7 +656,8 @@ def _source_label(p, anchor_date=None):
 
 
 def render(projects, today_projects, combos, singles, run_date, cutoff,
-           anchor_date, n_daily_files, n_weekly_files, llm_text, blocked=None):
+           anchor_date, n_daily_files, n_weekly_files, llm_text, blocked=None,
+           fallback_name=None):
     n = len(projects)
     today_ids = {p["id"] for p in today_projects}
     L = []
@@ -677,8 +678,12 @@ def render(projects, today_projects, combos, singles, run_date, cutoff,
     A("> 验证路径（固定）：每个组件按来源报告的'上手建议/真实风险'复核"
       "（固定版本、隔离环境、自有数据复测）。")
     if blocked:
-        A("> 新鲜度规则：以下方案已连续出现两天，本轮跳过（同一方案最多连续两天）：{}。".format(
-            "、".join(sorted(blocked))))
+        skipped = {n for n in blocked if n != fallback_name}
+        if skipped:
+            A("> 新鲜度规则：以下方案已连续出现两天，本轮跳过（同一方案最多连续两天）：{}。".format(
+                "、".join(sorted(skipped))))
+        if fallback_name:
+            A("> 保底：{}已连续出现两天，但本轮无其他可用组合，保底保留。".format(fallback_name))
     A("")
     A("## 可行性方案")
     A("")
@@ -806,10 +811,18 @@ def main(argv=None):
     # 依据是 run_date 之前已存在的报告文件，同一文件集下结果可复现。
     blocked = load_recent_combo_names(args.data_root, args.date)
     combos = build_combos(projects, today_ids, blocked)
+    fallback_name = None
+    if not combos and blocked:
+        # 保底：跳过后一个可用组合都不剩时，放行一个被跳过的方案，避免空报告
+        all_combos = build_combos(projects, today_ids)
+        if all_combos:
+            fallback_name = all_combos[0]["name"]
+            combos = [all_combos[0]]
     singles = build_single_angles(projects)
     llm_text = llm_enhance(projects, combos, args.no_llm)
     report = render(projects, today_projects, combos, singles, args.date,
-                    cutoff.isoformat(), anchor_date, n_daily, n_weekly, llm_text, blocked)
+                    cutoff.isoformat(), anchor_date, n_daily, n_weekly, llm_text,
+                    blocked, fallback_name)
 
     out_dir = args.data_root / "feasibility"
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -820,9 +833,10 @@ def main(argv=None):
     ts = datetime.now().isoformat(timespec="seconds")
     with runs.open("a", encoding="utf-8") as fh:
         blocked_note = f" blocked={'、'.join(sorted(blocked))}" if blocked else ""
+        fallback_note = f" fallback={fallback_name}" if fallback_name else ""
         fh.write(f"{ts} OK anchor={anchor_date} window=90d cutoff={cutoff.isoformat()} "
                  f"daily={n_daily} weekly={n_weekly} projects={len(projects)} "
-                 f"combos={len(combos)} output={out_path.name}{blocked_note}\n")
+                 f"combos={len(combos)} output={out_path.name}{blocked_note}{fallback_note}\n")
     print(f"OK: {out_path}（项目池 {len(projects)}，组合 {len(combos)}）")
     return 0
 
