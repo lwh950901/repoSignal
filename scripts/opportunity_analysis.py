@@ -802,11 +802,9 @@ def main(argv=None):
               f"daily_files={n_daily} weekly_files={n_weekly}")
         return 0
 
-    # 新鲜度规则仅对当天运行生效：连续出现两天的方案第三天跳过；
-    # 补跑历史日期不启用，保证已生成的历史报告可原样复现。
-    blocked = set()
-    if args.date == date.today().isoformat():
-        blocked = load_recent_combo_names(args.data_root, args.date)
+    # 新鲜度规则对所有运行生效（含补跑历史日期）：连续出现两天的方案第三天跳过。
+    # 依据是 run_date 之前已存在的报告文件，同一文件集下结果可复现。
+    blocked = load_recent_combo_names(args.data_root, args.date)
     combos = build_combos(projects, today_ids, blocked)
     singles = build_single_angles(projects)
     llm_text = llm_enhance(projects, combos, args.no_llm)
