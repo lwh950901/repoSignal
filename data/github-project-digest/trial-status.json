@@ -943,7 +943,69 @@
     "report": "data/github-project-digest/daily/2026-08-27.md",
     "candidate_ledger": "data/github-project-digest/candidates/2026-08-27.jsonl"
   },
-  "candidate_ledger": "data/github-project-digest/candidates/2026-08-28.jsonl",
-  "report": "data/github-project-digest/daily/2026-08-28.md",
-  "candidate_ledger_count": 150
+  "daily_run_2026-08-29": {
+    "date": "2026-08-29",
+    "run_time": "2026-08-29T05:36:14+08:00",
+    "status": "passed_with_tls_api_and_trending_fallback",
+    "skill_invoked": true,
+    "skill_files_read": [
+      "/Users/elvis/.codex/skills/find-github-projects/SKILL.md",
+      "/Users/elvis/.codex/skills/find-github-projects/references/scoring-rubric.md",
+      "/Users/elvis/.codex/skills/find-github-projects/references/search-patterns.md",
+      "docs/superpowers/specs/2026-06-29-github-project-digest-design.md"
+    ],
+    "scanner_ran": true,
+    "scanner": "7 条 --no-cache 分层 GitHub Search 已实际运行；首次 TLS 证书链失败后按规则各执行唯一一次 --insecure 重试并得到 Search 结果。",
+    "fallback": "6 个精确 --enrich 查询遇匿名 GitHub API 限流；降级为同轮 Search 快照 + GitHub Trending、仓库、README、Release、Commit、Issue/PR 页面核验；未使用缓存冒充实时事实。",
+    "candidate_file_preexisting": false,
+    "candidate_file_initialized": true,
+    "candidate_count": 63,
+    "primary_count": 5,
+    "extra_count": 0,
+    "history_entries_before_run": 287,
+    "history_entries_added": 5,
+    "history_entries_after_append": 292,
+    "history_duplicates_in_90_days": [
+      "deepseek-ai/deepseek-harness"
+    ],
+    "feedback_entries_read": 7,
+    "user_candidate_processed": true,
+    "user_candidate_reverified": false,
+    "user_candidate_note": "今日候选文件运行前不存在，没有新的用户指定候选；旧 life-kline 请求按既有记录不重复占位。",
+    "checks": {
+      "fixed_format": true,
+      "primary_count_5": true,
+      "extra_count_0": true,
+      "required_fields": true,
+      "learning_slot_4": true,
+      "history_jsonl": true,
+      "history_append_readback_verified": true,
+      "candidate_jsonl": true,
+      "candidate_ledger_check": true,
+      "dedupe_90d": true,
+      "feedback_read": true,
+      "user_candidate_processed": true,
+      "github_fact_source": true,
+      "trending_checked": true,
+      "time_lane_coverage": true,
+      "skill_invoked": true,
+      "scanner_ran": true,
+      "links_and_metrics_verified_live": true,
+      "trial_status_updated": true,
+      "git_diff_check": true
+    },
+    "anomalies": [
+      "今日候选文件运行前不存在，已用候选账本原子初始化；feedback.jsonl 读取 7 条且未修改。",
+      "7 条无缓存 Search 首次均遇本机 TLS 证书链错误，按技能规则仅一次 --insecure 重试；精确 enrichment 随后遇匿名 API 限流，按规则降级为同轮 GitHub 网页事实源。",
+      "GitHub Trending 2026-08-29 核验当日 stars today；DeepSeek Harness 的爆发型依据还包含 2026-08-15 与 2026-08-17 实时快照和 GitTrend 2026-08 月度增长数据。",
+      "DeepSeek Harness 命中近 90 天 history，但因显著增长事件序列触发重复例外；其余 4 个正式推荐未命中近 90 天去重。",
+      "GitHub 网页对部分 Stars/Forks 以 k 展示，日报按约值标注；未将许可证不明的 GitNexus 升为推荐。"
+    ],
+    "report": "data/github-project-digest/daily/2026-08-29.md",
+    "candidate_ledger": "data/github-project-digest/candidates/2026-08-29.jsonl",
+    "candidate_ledger_count": 63
+  },
+  "candidate_ledger": "data/github-project-digest/candidates/2026-08-29.jsonl",
+  "report": "data/github-project-digest/daily/2026-08-29.md",
+  "candidate_ledger_count": 63
 }
