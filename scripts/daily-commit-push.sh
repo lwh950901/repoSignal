@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# 每天 07:00 由 launchd 触发：暂存仓库全部改动并推送到 origin。
+# 每天 07:30 由 launchd 触发：暂存仓库全部改动并推送到 origin。
 # 无改动时跳过；结果写入日志。日志：data/.daily-commit-push.log
 set -euo pipefail
 
