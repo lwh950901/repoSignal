@@ -107,7 +107,12 @@ describe("radar discovery", () => {
       [...reports.map((report) => report.slug)].sort().reverse(),
     );
     for (const report of reports) {
-      const projectLinks = new Set(report.markdown.match(/https:\/\/github\.com\/[^)\s]+/gu) ?? []);
+      const projectSections = report.markdown
+        .split(/^###\s+/gmu)
+        .filter((section) => /^\d+\./u.test(section));
+      const projectLinks = new Set(
+        projectSections.flatMap((section) => section.match(/https:\/\/github\.com\/[^)\s]+/gu) ?? []),
+      );
       expect(projectLinks.size, `${report.slug} project links`).toBe(10);
       expect(report.coverAlt, `${report.slug} cover alt`).toContain("开源雷达周刊");
       expect(report.markdown.match(/^###\s+\d+\./gmu)?.length, `${report.slug} project headings`).toBe(10);
