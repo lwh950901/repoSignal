@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import {
   createMonthlySearchIndex,
@@ -305,6 +306,66 @@ describe("monthly discovery and search conversion", () => {
     expect(july?.topProjects).toHaveLength(5);
     expect(july?.opportunities.length).toBeLessThanOrEqual(3);
     expect(july?.topProjects.every((project) => project.sources.length > 0)).toBe(true);
+  });
+
+  it("publishes the August Top 5 and exactly three traced feasibility opportunities", () => {
+    const reports = loadMonthlyReports();
+    const august = reports.find((report) => report.slug === "2026-08");
+    const research = readFileSync(
+      new URL("../../data/github-project-digest/monthly-research/2026-08/feasibility-selection.md", import.meta.url),
+      "utf8",
+    );
+    const optimization = readFileSync(
+      new URL("../../data/github-project-digest/monthly-research/2026-08/business-optimization.md", import.meta.url),
+      "utf8",
+    );
+
+    expect(august?.topProjects).toHaveLength(5);
+    expect(august?.opportunities).toHaveLength(3);
+    expect(august?.markdown).not.toContain("本月可行性精选");
+    expect(august?.markdown).toContain("原始可行性评分");
+    expect(august?.markdown).toContain("为什么现在可行");
+    expect(august?.markdown).toContain("原始入选理由");
+    expect(august?.markdown).toContain("停止条件");
+    expect(research).toContain("原始方案数：22");
+    expect(research).toContain("去重后方案数：7");
+    expect(research).toContain("阶段 A 入选数：3");
+    expect(research).toContain("2026-08-24");
+    expect(research).toContain("2026-08-30");
+    for (const field of [
+      "方案评分与档位",
+      "业务定位",
+      "目标客户",
+      "市场机会",
+      "为什么现在可行",
+      "原组合仓库、角色、许可证、理由",
+      "差异化",
+      "MVP 范围",
+      "全部主要风险",
+      "验证路径",
+    ]) {
+      expect(optimization).toContain(field);
+    }
+  });
+
+  it("accepts every available opportunity when fewer than three are supplied", () => {
+    const report = parseMonthlyReport(
+      monthlyDocument([
+        businessOpportunity("Acme/Alpha"),
+        businessOpportunity("Acme/Beta"),
+      ]),
+      "2026-07.md",
+    );
+
+    expect(report.topProjects).toHaveLength(5);
+    expect(report.opportunities).toHaveLength(2);
+  });
+
+  it("accepts no opportunity when feasibility inputs are unavailable", () => {
+    const report = parseMonthlyReport(monthlyDocument([]), "2026-07.md");
+
+    expect(report.topProjects).toHaveLength(5);
+    expect(report.opportunities).toHaveLength(0);
   });
 
   it("loads by basename, sorts newest first and accepts an empty file map", () => {

@@ -639,3 +639,35 @@ Use `rg --no-filename` and perform prefix removal/counting with a small portable
 ### Resolution
 - **Resolved**: 2026-08-27T20:00:00+08:00
 - **Notes**: Replaced the pipeline with `rg --no-filename ... | awk ... | sort | uniq -c`.
+
+---
+## [ERR-20260902-001] automation_memory_patch_context
+
+**Logged**: 2026-09-02T06:00:00+08:00
+**Priority**: low
+**Status**: resolved
+**Area**: docs
+
+### Summary
+An automation-memory append patch used stale surrounding text and failed verification before changing any file.
+
+### Error
+```text
+apply_patch verification failed: Failed to find expected lines in /Users/elvis/.codex/automations/github/memory.md
+```
+
+### Context
+- Operation: append the 2026-09-02 GitHub digest run to the automation memory file.
+- Root cause: the patch context was copied from an earlier truncated memory view rather than the exact current tail.
+- No target digest file was modified by the failed patch.
+
+### Suggested Fix
+Read the exact file tail immediately before patching and use a minimal append context.
+
+### Metadata
+- Reproducible: yes
+- Related Files: /Users/elvis/.codex/automations/github/memory.md
+
+### Resolution
+- **Resolved**: 2026-09-02T06:00:00+08:00
+- **Notes**: Re-read the memory tail; the correct append is pending in the next operation.
