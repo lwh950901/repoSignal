@@ -4,6 +4,9 @@
 
 用法: digest-to-html.py <input.md> [output.html]   (默认输出到 stdout)
 样式规范: 见 skill 的 references/wechat-style-guide.md（方案 A 雷达屏，左对齐）
+
+正文文字保持逐字一致；md 表格（组合方案）转成竖向卡片，
+`- ` 风险条目保留 "-" 字形但改样式，校验脚本会把 `|`、表格分隔行等 md 语法忽略。
 """
 import re
 import sys
@@ -27,6 +30,31 @@ BADGE = ('<span style="display:inline-block;width:26px;height:26px;line-height:2
 NAME_SPAN = '<span style="color:#0b3d66;">{}</span>'
 
 CODE = '<code style="font-family:Menlo,Consolas,monospace;background:#eef3f7;border-radius:3px;padding:1px 5px;font-size:15px;">{}</code>'
+
+# ---- 本周可行性精选：方案标题、评分、表格卡片、风险条目 ----
+FEAS_H3 = ('<h3 style="font-size:17px;font-weight:bold;color:#0b3d66;border-left:4px solid #ff7a1a;'
+           'padding-left:10px;margin:26px 0 10px;">{}</h3>')
+SCORE_P = '<p style="margin:10px 0 6px;"><strong>方案评分</strong>：{}</p>'
+SCORE_VAL = ('<strong style="color:#fff;background:#0b3d66;border-radius:999px;padding:2px 12px;'
+             'font-size:15px;">{}</strong>')
+RISK_ITEM = ('<p style="margin:8px 0;font-size:15px;color:#1c2733;">'
+             '<span style="color:#ff7a1a;font-weight:bold;margin-right:8px;">-</span>{}</p>')
+TBL_LEGEND = '<p style="font-size:12px;color:#aab6c2;margin:8px 0 4px;">{}</p>'
+ROW_CARD_OPEN = ('<section style="border:1px solid #e9eef4;border-left:3px solid #ff7a1a;'
+                 'border-radius:8px;background:#fbfcfe;padding:10px 12px;margin:10px 0;">')
+ROW_HEAD = '<p style="margin:0 0 6px;">'
+ROW_ROLE_CHIP = ('<span style="display:inline-block;background:#ff7a1a;color:#fff;font-size:12px;'
+                 'line-height:1;border-radius:999px;padding:3px 8px;margin-right:8px;'
+                 'vertical-align:middle;">{}</span>')
+ROW_NAME = ('<span style="display:inline-block;font-size:16px;font-weight:bold;color:#0b3d66;'
+            'font-family:Menlo,Consolas,monospace;word-break:break-all;'
+            'vertical-align:middle;">{}</span>')
+ROW_META = '<p style="margin:0 0 6px;font-size:13px;color:#8a95a1;">{}</p>'
+LIC_CHIP = ('<span style="display:inline-block;border:1px solid #d9e1ea;color:#5c6b7a;'
+            'font-size:12px;line-height:1;border-radius:4px;padding:2px 6px;margin-left:6px;'
+            'vertical-align:middle;">{}</span>')
+ROW_REASON = '<p style="margin:0;font-size:15px;color:#1c2733;">{}</p>'
+ROW_CARD_CLOSE = '</section>'
 
 COPY_BUTTON = ('<button id="copyArticleBtn" style="position:fixed;right:20px;bottom:24px;z-index:9999;'
                'font-family:-apple-system,\'PingFang SC\',\'Microsoft YaHei\',sans-serif;font-size:14px;'
@@ -109,6 +137,8 @@ def inline(s):
 
 
 def make_h3(body):
+    if body.startswith('可行性方案'):
+        return FEAS_H3.format(inline(body))
     m = re.match(r'(\d+)\.\s*(.*)', body)
     if not m:
         return '<h3 style="font-size:17px;font-weight:bold;color:#1c2733;margin:22px 0 4px;">{}</h3>'.format(inline(body))
@@ -124,6 +154,52 @@ def make_h3(body):
     if title:
         parts.append('：' + inline(title))
     return '<h3 style="font-size:17px;font-weight:bold;color:#1c2733;margin:22px 0 4px;">' + ''.join(parts) + '</h3>'
+
+
+def split_row(line):
+    """md 表格行 -> 单元格列表（去掉首尾管道符后按 | 切分并 trim）"""
+    return [c.strip() for c in line.strip().strip('|').split('|')]
+
+
+def is_sep_row(cells):
+    """表格分隔行（如 |---|---|）：单元格只由 - 与可选 : 组成"""
+    return bool(cells) and all(re.fullmatch(r':?-+:?', c) for c in cells)
+
+
+def emit_table(out, rows):
+    """md 表格 -> 竖向卡片：首行做灰色字段说明，数据行每行一张卡片（角色/项目/来源与许可证/理由）"""
+    if not rows:
+        return
+    header, data_rows = rows[0], rows[1:]
+    legend = ' '.join(header)
+    out.append(TBL_LEGEND.format(inline(legend)))
+    for cells in data_rows:
+        if not cells:
+            continue
+        role = cells[0]
+        name = cells[1] if len(cells) > 1 else ''
+        cols = cells[2:-1]  # 5 列时 = [来源, 许可证]
+        src = ' '.join(cols[:-1]) if cols else ''
+        lic = cols[-1] if cols else ''
+        reason = cells[-1] if len(cells) > 2 else ''
+        head = []
+        if role:
+            head.append(ROW_ROLE_CHIP.format(role.replace('`', '')))
+        if name:
+            head.append(ROW_NAME.format(name.replace('`', '')))
+        # chip 与项目名同为 inline-block、中间一个空格：放不下时项目名整体换到下一行
+        head_html = ' '.join(head)
+        parts = [ROW_CARD_OPEN, ROW_HEAD + head_html + '</p>']
+        meta = src.replace('`', '')
+        if lic:
+            meta += LIC_CHIP.format(lic.replace('`', ''))
+        if meta:
+            parts.append(ROW_META.format(meta))
+        if reason:
+            parts.append(ROW_REASON.format(inline(reason)))
+        parts.append(ROW_CARD_CLOSE)
+        out.append('\n'.join(parts))
+    out.append('')
 
 
 def main():
@@ -145,6 +221,7 @@ def main():
     in_card = False
     seen_h1 = False
     intro_left = 0
+    feas_intro = False  # “本周可行性精选”标题后的段落当作小节引言
 
     def close_card():
         nonlocal in_card
@@ -152,46 +229,95 @@ def main():
             out.append(CARD_CLOSE)
             in_card = False
 
-    for raw in md.splitlines():
+    lines = md.splitlines()
+    i = 0
+    n = len(lines)
+    while i < n:
+        raw = lines[i]
         line = raw.strip()
         if not line:
+            i += 1
             continue
+        if line.startswith('|'):
+            # 连续表格行一次性消费；分隔行（|---|---|）为 md 语法，直接丢弃
+            rows = []
+            while i < n:
+                r = lines[i].strip()
+                if not r.startswith('|'):
+                    break
+                cells = split_row(r)
+                if not is_sep_row(cells):
+                    rows.append(cells)
+                i += 1
+            close_card()
+            feas_intro = False
+            emit_table(out, rows)
+            continue
+        i += 1
         if line.startswith('# '):
             close_card()
             out.append(H1.format(inline(line[2:])))
             seen_h1 = True
             intro_left = 2
+            feas_intro = False
         elif line.startswith('### '):
             close_card()
             out.append(make_h3(line[4:]))
+            feas_intro = False
         elif line.startswith('## '):
             close_card()
-            out.append(H2.format(inline(line[3:])))
+            text = line[3:]
+            out.append(H2.format(inline(text)))
+            feas_intro = (text == '本周可行性精选')
+            intro_left = 0
         elif line.startswith('---'):
             close_card()
             out.append(HR)
+            feas_intro = False
         elif line.startswith('**关于仓库雷达**'):
             out.append(CARD_OPEN)
             out.append(CARD_TITLE.format('关于仓库雷达'))
             in_card = True
+            feas_intro = False
         elif line.startswith('**阅读全文：**'):
             close_card()
             out.append(READMORE.format(inline(line[len('**阅读全文：**'):].lstrip())))
+            feas_intro = False
         elif line.startswith('**注意：**'):
             close_card()
             out.append(NOTE.format(inline(line[len('**注意：**'):].lstrip())))
+            feas_intro = False
         elif line.startswith('**介绍：**'):
             close_card()
             out.append(P.format('<strong>介绍：</strong> ' + inline(line[len('**介绍：**'):].lstrip())))
+            feas_intro = False
         elif line.startswith('**推荐依据：**'):
             close_card()
             out.append(P.format('<strong>推荐依据：</strong> ' + inline(line[len('**推荐依据：**'):].lstrip())))
+            feas_intro = False
         elif line.startswith('**适合：**'):
             close_card()
             out.append(P.format('<strong>适合：</strong> ' + inline(line[len('**适合：**'):].lstrip())))
+            feas_intro = False
+        elif line.startswith('**方案评分**'):
+            # **方案评分**：**83/100（中）** -> 值高亮为徽章样式
+            close_card()
+            val = line[len('**方案评分**'):].lstrip().lstrip('：').lstrip()
+            m = re.fullmatch(r'\*\*(.+)\*\*', val)
+            body = SCORE_VAL.format(m.group(1)) if m else inline(val)
+            out.append(SCORE_P.format(body))
+            feas_intro = False
+        elif line.startswith('- '):
+            # 风险条目：保留 "-" 字形（橙色），行首空格由 margin 承担，正文不变
+            close_card()
+            out.append(RISK_ITEM.format(inline(line[2:].lstrip())))
+            feas_intro = False
         else:
             if in_card:
                 out.append(CARD_P.format(inline(line)))
+            elif feas_intro:
+                out.append(INTRO.format(inline(line)))
+                feas_intro = False
             elif seen_h1 and intro_left > 0:
                 out.append(INTRO.format(inline(line)))
                 intro_left -= 1

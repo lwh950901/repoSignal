@@ -30,8 +30,8 @@ sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//' "$md" \
 # 2. md -> 微信 HTML（雷达屏样式 + 一键复制按钮）
 python3 "$REPO/scripts/digest-to-html.py" "$out_md" "$out_html"
 
-# 3. 校验正文与原版逐字一致（过滤链接/图片/标记/注释/占位框/按钮/脚本）
-if diff <(sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//' "$md" | grep -v '^!\[' | grep -v '^---$' | sed -e 's/\[\([^]]*\)\]([^)]*)/\1/g' -e 's/[#*`]//g' -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//' | grep -v '^$') <(sed -e '/<head>/,/<\/head>/d' -e '/<script>/,/<\/script>/d' "$out_html" | grep -v -e '<!--' -e '-->' -e '【发布前删除】' -e '大封面 900' -e '一键复制全文' | sed -e 's/<[^>]*>//g' -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//' | grep -v '^$') >> "$LOG" 2>&1; then
+# 3. 校验正文与原版逐字一致（过滤链接/图片/标记/表格管道与分隔行/注释/占位框/按钮/脚本；忽略空白差异）
+if diff <(sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//' "$md" | grep -v '^!\[' | grep -v '^---$' | grep -vE '^\|[|: -]*$' | sed -e 's/\[\([^]]*\)\]([^)]*)/\1/g' -e 's/[#*`|]//g' -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//' | grep -v '^$' | tr -d '[:space:]') <(sed -e '/<head>/,/<\/head>/d' -e '/<script>/,/<\/script>/d' "$out_html" | grep -v -e '<!--' -e '-->' -e '【发布前删除】' -e '大封面 900' -e '一键复制全文' | sed -e 's/<[^>]*>//g' -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//' | grep -v '^$' | tr -d '[:space:]') >> "$LOG" 2>&1; then
   echo "$(date '+%F %T') OK: $week -> data/weixin/$week.html" >> "$LOG"
 else
   echo "$(date '+%F %T') FAIL: $week 文案验证未通过，需人工处理" >> "$LOG"
