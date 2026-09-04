@@ -5,7 +5,7 @@
 用法: digest-to-html.py <input.md> [output.html]   (默认输出到 stdout)
 样式规范: 见 skill 的 references/wechat-style-guide.md（方案 A 雷达屏，左对齐）
 
-正文文字保持逐字一致；md 表格（组合方案）转成竖向卡片，
+正文文字保持逐字一致；md 表格（组合方案）转成微信表格，
 `- ` 风险条目保留 "-" 字形但改样式，校验脚本会把 `|`、表格分隔行等 md 语法忽略。
 """
 import re
@@ -39,22 +39,23 @@ SCORE_VAL = ('<strong style="color:#fff;background:#0b3d66;border-radius:999px;p
              'font-size:15px;">{}</strong>')
 RISK_ITEM = ('<p style="margin:8px 0;font-size:15px;color:#1c2733;">'
              '<span style="color:#ff7a1a;font-weight:bold;margin-right:8px;">-</span>{}</p>')
-TBL_LEGEND = '<p style="font-size:12px;color:#aab6c2;margin:8px 0 4px;">{}</p>'
-ROW_CARD_OPEN = ('<section style="border:1px solid #e9eef4;border-left:3px solid #ff7a1a;'
-                 'border-radius:8px;background:#fbfcfe;padding:10px 12px;margin:10px 0;">')
-ROW_HEAD = '<p style="margin:0 0 6px;">'
-ROW_ROLE_CHIP = ('<span style="display:inline-block;background:#ff7a1a;color:#fff;font-size:12px;'
-                 'line-height:1;border-radius:999px;padding:3px 8px;margin-right:8px;'
-                 'vertical-align:middle;">{}</span>')
-ROW_NAME = ('<span style="display:inline-block;font-size:16px;font-weight:bold;color:#0b3d66;'
-            'font-family:Menlo,Consolas,monospace;word-break:break-all;'
-            'vertical-align:middle;">{}</span>')
-ROW_META = '<p style="margin:0 0 6px;font-size:13px;color:#8a95a1;">{}</p>'
+TBL = ('<table style="width:100%;border-collapse:collapse;font-size:13px;color:#1c2733;margin:10px 0;"'
+       ' cellpadding="0" cellspacing="0">')
+COL_W = {'role': '13%', 'name': '20%', 'src': '15%', 'lic': '10%'}  # 语义列宽；理由列拿剩余宽度
+TBL_TH = ('<th style="{w}background:#0b3d66;color:#fff;font-size:13px;font-weight:bold;text-align:left;'
+          'padding:5px 6px;border:1px solid #0b3d66;word-break:break-all;">{c}</th>')
+TD_ROLE = ('<td style="{w}padding:5px 6px;border:1px solid #e9eef4;vertical-align:top;'
+           'font-size:13px;font-weight:bold;color:#ff7a1a;word-break:break-all;">{c}</td>')
+TD_NAME = ('<td style="{w}padding:5px 6px;border:1px solid #e9eef4;vertical-align:top;'
+           'font-family:Menlo,Consolas,monospace;font-size:13px;color:#0b3d66;'
+           'word-break:break-all;">{c}</td>')
+TD_SRC = ('<td style="{w}padding:5px 6px;border:1px solid #e9eef4;vertical-align:top;'
+          'font-size:12px;color:#8a95a1;word-break:break-all;">{c}</td>')
+TD_LIC = ('<td style="{w}padding:5px 6px;border:1px solid #e9eef4;vertical-align:top;">{c}</td>')
+TD_REASON = ('<td style="{w}padding:5px 6px;border:1px solid #e9eef4;vertical-align:top;'
+             'font-size:13px;color:#1c2733;">{c}</td>')
 LIC_CHIP = ('<span style="display:inline-block;border:1px solid #d9e1ea;color:#5c6b7a;'
-            'font-size:12px;line-height:1;border-radius:4px;padding:2px 6px;margin-left:6px;'
-            'vertical-align:middle;">{}</span>')
-ROW_REASON = '<p style="margin:0;font-size:15px;color:#1c2733;">{}</p>'
-ROW_CARD_CLOSE = '</section>'
+            'font-size:12px;line-height:1;border-radius:4px;padding:2px 6px;">{}</span>')
 
 COPY_BUTTON = ('<button id="copyArticleBtn" style="position:fixed;right:20px;bottom:24px;z-index:9999;'
                'font-family:-apple-system,\'PingFang SC\',\'Microsoft YaHei\',sans-serif;font-size:14px;'
@@ -166,39 +167,70 @@ def is_sep_row(cells):
     return bool(cells) and all(re.fullmatch(r':?-+:?', c) for c in cells)
 
 
+def col_plan(header):
+    """按表头文字推断每列语义与宽度：role/name/src/lic 取固定宽，理由列拿剩余宽度
+    （兼容 5 列完整表和已精简的 3 列/4 列表）"""
+    plan = []
+    used = 0
+    for h in header:
+        if h == '角色':
+            plan.append('role')
+            used += 13
+        elif h == '项目':
+            plan.append('name')
+            used += 20
+        elif h == '来源':
+            plan.append('src')
+            used += 15
+        elif h == '许可证':
+            plan.append('lic')
+            used += 10
+        else:
+            plan.append('reason')
+    reason_n = sum(1 for k in plan if k == 'reason')
+    rw = max(20, 100 - used) // max(reason_n, 1)
+    widths = []
+    for k in plan:
+        if k == 'reason':
+            widths.append('{0}%'.format(rw))
+        else:
+            widths.append(COL_W[k])
+    return plan, widths
+
+
 def emit_table(out, rows):
-    """md 表格 -> 竖向卡片：首行做灰色字段说明，数据行每行一张卡片（角色/项目/来源与许可证/理由）"""
+    """md 表格 -> 微信表格：首行为深蓝表头；数据行按表头语义着色（角色/项目/来源/许可证/理由）"""
     if not rows:
         return
     header, data_rows = rows[0], rows[1:]
-    legend = ' '.join(header)
-    out.append(TBL_LEGEND.format(inline(legend)))
+    plan, widths = col_plan([h for h in header if h])
+    out.append(TBL)
+    ths = ''.join(
+        TBL_TH.format(w='width:{0};'.format(widths[j]), c=c.replace('`', ''))
+        for j, c in enumerate(header) if c)
+    out.append('<tr>' + ths + '</tr>')
     for cells in data_rows:
         if not cells:
             continue
-        role = cells[0]
-        name = cells[1] if len(cells) > 1 else ''
-        cols = cells[2:-1]  # 5 列时 = [来源, 许可证]
-        src = ' '.join(cols[:-1]) if cols else ''
-        lic = cols[-1] if cols else ''
-        reason = cells[-1] if len(cells) > 2 else ''
-        head = []
-        if role:
-            head.append(ROW_ROLE_CHIP.format(role.replace('`', '')))
-        if name:
-            head.append(ROW_NAME.format(name.replace('`', '')))
-        # chip 与项目名同为 inline-block、中间一个空格：放不下时项目名整体换到下一行
-        head_html = ' '.join(head)
-        parts = [ROW_CARD_OPEN, ROW_HEAD + head_html + '</p>']
-        meta = src.replace('`', '')
-        if lic:
-            meta += LIC_CHIP.format(lic.replace('`', ''))
-        if meta:
-            parts.append(ROW_META.format(meta))
-        if reason:
-            parts.append(ROW_REASON.format(inline(reason)))
-        parts.append(ROW_CARD_CLOSE)
-        out.append('\n'.join(parts))
+        tds = []
+        for j, c in enumerate(cells):
+            if j >= len(plan):
+                tds.append(TD_REASON.format(w='', c=inline(c)))
+                continue
+            kind = plan[j]
+            w = 'width:{0};'.format(widths[j])
+            if kind == 'role':
+                tds.append(TD_ROLE.format(w=w, c=c.replace('`', '')))
+            elif kind == 'name':
+                tds.append(TD_NAME.format(w=w, c=c.replace('`', '')))
+            elif kind == 'src':
+                tds.append(TD_SRC.format(w=w, c=c.replace('`', '')))
+            elif kind == 'lic':
+                tds.append(TD_LIC.format(w=w, c=LIC_CHIP.format(c.replace('`', ''))))
+            else:
+                tds.append(TD_REASON.format(w=w, c=inline(c)))
+        out.append('<tr>' + ''.join(tds) + '</tr>')
+    out.append('</table>')
     out.append('')
 
 

@@ -114,13 +114,13 @@
 **可行性依据**：池里的安全审计、沙箱、代码理解组件正好能拼出'扫描→修复→验证'这条线。 本组合含今日发现项目 2 个（`microsoft/agent-governance-toolkit`、`truefoundry/trueforge`）；池中各能力面候选充足（security 85 · sandbox 113 · agent 236 · codeintel 83 · observability 100），最稀缺槽位也有 83 个候选。
 
 **组合方案**：
-| 角色 | 项目 | 来源 | 许可证 | 入选理由 |
-|---|---|---|---|---|
-| 安全审计/扫描 | [`microsoft/agent-governance-toolkit`](https://github.com/microsoft/agent-governance-toolkit) | 2026-08-26 日报（今日） | MIT | 它是今天最容易从“能运行”推进到“能解释、能追责”的项目，安装路径和多语言集成已经足够直接，风险边界也写得清楚。 |
-| 隔离执行 | [`truefoundry/trueforge`](https://github.com/truefoundry/trueforge) | 2026-08-26 日报（今日） | MIT | 它的差异化不是又一个 Agent SDK，而是把“运行 Agent 所需的状态、审批、工具和 UI”集中到一条可迁移的执行层… |
-| Agent 编排 | [`ruvnet/ruflo`](https://github.com/ruvnet/ruflo) | 2026-08-24 日报 | MIT | 今日唯一按硬规则成立的爆发型候选，且不只是热度项目；它把 Agent 执行、记忆、路由和安全护栏都暴露为可拆解的工程组件。 |
-| 代码理解 | [`tirth8205/code-review-graph`](https://github.com/tirth8205/code-review-graph) | 2026-08-07 日报 | MIT | 今日 Trending 增长、持续工程活动、可复现评测和多宿主集成同时成立，且它解决的是 Agent 进入大型代码库后的真实瓶颈… |
-| 证据与报告 | [`comet-ml/opik`](https://github.com/comet-ml/opik) | 2026-08-18 日报 | Apache-2.0 | Apache-2.0、自托管、安装入口、测试与持续 Release 同时成立，能直接补齐 Agent 项目最容易缺失的可观测和评测闭环。 |
+| 角色 | 项目 | 入选理由 |
+|---|---|---|
+| 安全审计/扫描 | [`microsoft/agent-governance-toolkit`](https://github.com/microsoft/agent-governance-toolkit) | 它是今天最容易从“能运行”推进到“能解释、能追责”的项目，安装路径和多语言集成已经足够直接，风险边界也写得清楚。 |
+| 隔离执行 | [`truefoundry/trueforge`](https://github.com/truefoundry/trueforge) | 它的差异化不是又一个 Agent SDK，而是把“运行 Agent 所需的状态、审批、工具和 UI”集中到一条可迁移的执行层… |
+| Agent 编排 | [`ruvnet/ruflo`](https://github.com/ruvnet/ruflo) | 今日唯一按硬规则成立的爆发型候选，且不只是热度项目；它把 Agent 执行、记忆、路由和安全护栏都暴露为可拆解的工程组件。 |
+| 代码理解 | [`tirth8205/code-review-graph`](https://github.com/tirth8205/code-review-graph) | 今日 Trending 增长、持续工程活动、可复现评测和多宿主集成同时成立，且它解决的是 Agent 进入大型代码库后的真实瓶颈… |
+| 证据与报告 | [`comet-ml/opik`](https://github.com/comet-ml/opik) | Apache-2.0、自托管、安装入口、测试与持续 Release 同时成立，能直接补齐 Agent 项目最容易缺失的可观测和评测闭环。 |
 
 **差异化**：对比传统 SAST 只报问题，它把'扫描 + 修复建议 + 独立验证'做成完整流程，且每一步有证据。
 
@@ -147,13 +147,13 @@
 **可行性依据**：长任务 Agent 的失败恢复、可观测、安全执行是池里反复出现的主题，组件已成熟，适合拼成 CI 流水线。 本组合含今日发现项目 2 个（`truefoundry/trueforge`、`microsoft/agent-governance-toolkit`）；池中各能力面候选充足（sandbox 113 · observability 100 · security 85 · agent 236 · gateway 134），最稀缺槽位也有 85 个候选。
 
 **组合方案**：
-| 角色 | 项目 | 来源 | 许可证 | 入选理由 |
-|---|---|---|---|---|
-| 执行沙箱/隔离 | [`truefoundry/trueforge`](https://github.com/truefoundry/trueforge) | 2026-08-26 日报（今日） | MIT | 它的差异化不是又一个 Agent SDK，而是把“运行 Agent 所需的状态、审批、工具和 UI”集中到一条可迁移的执行层… |
-| 可观测与评测 | [`comet-ml/opik`](https://github.com/comet-ml/opik) | 2026-08-18 日报 | Apache-2.0 | Apache-2.0、自托管、安装入口、测试与持续 Release 同时成立，能直接补齐 Agent 项目最容易缺失的可观测和评测闭环。 |
-| 安全审计 | [`microsoft/agent-governance-toolkit`](https://github.com/microsoft/agent-governance-toolkit) | 2026-08-26 日报（今日） | MIT | 它是今天最容易从“能运行”推进到“能解释、能追责”的项目，安装路径和多语言集成已经足够直接，风险边界也写得清楚。 |
-| Agent 编排 | [`ruvnet/ruflo`](https://github.com/ruvnet/ruflo) | 2026-08-24 日报 | MIT | 今日唯一按硬规则成立的爆发型候选，且不只是热度项目；它把 Agent 执行、记忆、路由和安全护栏都暴露为可拆解的工程组件。 |
-| 模型网关/成本 | [`google/adk-python`](https://github.com/google/adk-python) | 2026-08-20 日报 | Apache-2.0 | 安装、样例、CI、完整文档、稳定 Release 和近期维护至少同时满足三项实用型门槛，适合今天就搭一个可运行 Agent workflow。 |
+| 角色 | 项目 | 入选理由 |
+|---|---|---|
+| 执行沙箱/隔离 | [`truefoundry/trueforge`](https://github.com/truefoundry/trueforge) | 它的差异化不是又一个 Agent SDK，而是把“运行 Agent 所需的状态、审批、工具和 UI”集中到一条可迁移的执行层… |
+| 可观测与评测 | [`comet-ml/opik`](https://github.com/comet-ml/opik) | Apache-2.0、自托管、安装入口、测试与持续 Release 同时成立，能直接补齐 Agent 项目最容易缺失的可观测和评测闭环。 |
+| 安全审计 | [`microsoft/agent-governance-toolkit`](https://github.com/microsoft/agent-governance-toolkit) | 它是今天最容易从“能运行”推进到“能解释、能追责”的项目，安装路径和多语言集成已经足够直接，风险边界也写得清楚。 |
+| Agent 编排 | [`ruvnet/ruflo`](https://github.com/ruvnet/ruflo) | 今日唯一按硬规则成立的爆发型候选，且不只是热度项目；它把 Agent 执行、记忆、路由和安全护栏都暴露为可拆解的工程组件。 |
+| 模型网关/成本 | [`google/adk-python`](https://github.com/google/adk-python) | 安装、样例、CI、完整文档、稳定 Release 和近期维护至少同时满足三项实用型门槛，适合今天就搭一个可运行 Agent workflow。 |
 
 **差异化**：相比单个 harness 或观测工具，它把隔离执行、trace 评测和审计报告串成一条流水线。
 
@@ -180,13 +180,13 @@
 **可行性依据**：本地记忆、模型网关、Agent 编排在池里都能找到，拼起来就是个人知识工作台。 本组合含今日发现项目 2 个（`tashfeenahmed/freellmapi`、`google/adk-go`）；池中各能力面候选充足（local 144 · agent 249 · memory 72 · gateway 141 · rag 79），最稀缺槽位也有 72 个候选。
 
 **组合方案**：
-| 角色 | 项目 | 来源 | 许可证 | 入选理由 |
-|---|---|---|---|---|
-| 本地优先/桌面形态 | [`tashfeenahmed/freellmapi`](https://github.com/tashfeenahmed/freellmapi) | 2026-08-29 日报（今日） | MIT | 综合评分 90/100；它把多 provider 的切换、限额和兼容性摩擦压缩为一次可运行的本地部署，作为第 5 个实用型复用位置… |
-| Agent 编排 | [`google/adk-go`](https://github.com/google/adk-go) | 2026-08-29 日报（今日） | Apache-2.0 | 综合评分 92/100；它在安装、示例、文档、CI、Release 和近期维护上同时具备强信号，是今天最接近“拉下来就能开始做”的工程入口。 |
-| 长期记忆 | [`lyellr88/marm-memory`](https://github.com/Lyellr88/marm-memory) | 2026-07-21 日报 | Apache-2.0 | 虽然不是大明星项目，但它正好解决 Agent 长期记忆里“语义召回与精确配置检索混用”的真实痛点，近期维护质量明显高于普通 demo。 |
-| 模型接入/网关 | [`google/adk-python`](https://github.com/google/adk-python) | 2026-08-20 日报 | Apache-2.0 | 安装、样例、CI、完整文档、稳定 Release 和近期维护至少同时满足三项实用型门槛，适合今天就搭一个可运行 Agent workflow。 |
-| 本地知识检索 | [`topoteretes/cognee`](https://github.com/topoteretes/cognee) | 2026-07-28 日报 | Apache-2.0 | 它把 Agent 长期记忆、图谱检索、MCP 和本地/云部署放在同一个可试用平台里，社区信号强但推荐主要依据是近期实质维护与工程完整度。 |
+| 角色 | 项目 | 入选理由 |
+|---|---|---|
+| 本地优先/桌面形态 | [`tashfeenahmed/freellmapi`](https://github.com/tashfeenahmed/freellmapi) | 综合评分 90/100；它把多 provider 的切换、限额和兼容性摩擦压缩为一次可运行的本地部署，作为第 5 个实用型复用位置… |
+| Agent 编排 | [`google/adk-go`](https://github.com/google/adk-go) | 综合评分 92/100；它在安装、示例、文档、CI、Release 和近期维护上同时具备强信号，是今天最接近“拉下来就能开始做”的工程入口。 |
+| 长期记忆 | [`lyellr88/marm-memory`](https://github.com/Lyellr88/marm-memory) | 虽然不是大明星项目，但它正好解决 Agent 长期记忆里“语义召回与精确配置检索混用”的真实痛点，近期维护质量明显高于普通 demo。 |
+| 模型接入/网关 | [`google/adk-python`](https://github.com/google/adk-python) | 安装、样例、CI、完整文档、稳定 Release 和近期维护至少同时满足三项实用型门槛，适合今天就搭一个可运行 Agent workflow。 |
+| 本地知识检索 | [`topoteretes/cognee`](https://github.com/topoteretes/cognee) | 它把 Agent 长期记忆、图谱检索、MCP 和本地/云部署放在同一个可试用平台里，社区信号强但推荐主要依据是近期实质维护与工程完整度。 |
 
 **差异化**：对比云端工作台，卖点是无云依赖和数据所有权；对比单点记忆工具，卖点是一整套工作台。
 
