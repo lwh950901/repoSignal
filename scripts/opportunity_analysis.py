@@ -22,6 +22,7 @@
 """
 
 import argparse
+import hashlib
 import json
 import os
 import re
@@ -39,6 +40,9 @@ DAILY_FILE_RE = re.compile(r"^(\d{4}-\d{2}-\d{2})\.md$")
 DATE_RE = re.compile(r"^(\d{4})-(\d{2})-(\d{2})$")
 GITHUB_URL_RE = re.compile(
     r"https?://github\.com/([^/\s)\]#]+)/([^/\s)\]#]+)", re.IGNORECASE
+)
+PLAN_IDENTITY_RE = re.compile(
+    r"\*\*方案身份\*\*[：:]\s*`plan_family=([^`]+)`\s*·\s*`variant=([^`]+)`"
 )
 
 REPO_LINE_RE = re.compile(
@@ -280,6 +284,75 @@ def normalize_repo(raw):
     return repo if re.fullmatch(r"[^/\s]+/[^/\s]+", repo) else None
 
 
+PLAN_FAMILIES = {
+    "企业内部知识助手（私有化 RAG × Agent）": "private-enterprise-rag-agent",
+    "可审计的 Agent 开发/交付平台（CI 化 Agent 流水线）": "auditable-agent-delivery",
+    "本地优先个人 AI 工作台": "local-first-personal-ai-workbench",
+    "多 Agent 协作控制面（团队级）": "multi-agent-control-plane",
+    "文档/知识处理管线（入库前处理）": "document-ingestion-pipeline",
+    "安全 Agent 平台（扫描-修复-验证）": "secure-agent-platform",
+}
+
+
+def normalize_plan_name(name):
+    """Return the stable business-plan name without issue-local numbering/details."""
+    value = re.sub(r"^可行性方案\s+\d+[：:]\s*", "", (name or "").strip())
+    value = re.sub(r"^\d+\.\s*", "", value)
+    return re.sub(r"（组合\s+\d+\s+个项目.*$", "", value).strip()
+
+
+def _stable_digest(value):
+    return hashlib.sha256(value.encode("utf-8")).hexdigest()[:12]
+
+
+def plan_family(name):
+    """Identify a business plan independently from its current components."""
+    normalized = normalize_plan_name(name)
+    return PLAN_FAMILIES.get(normalized, "custom-" + _stable_digest(normalized))
+
+
+def plan_variant(repositories):
+    """Identify one unordered, case-insensitive component set."""
+    normalized = sorted({repo for raw in repositories if (repo := normalize_repo(raw))})
+    return _stable_digest("\n".join(normalized))
+
+
+def parse_plan_identities(markdown):
+    """Parse plan identities from current or legacy feasibility/radar Markdown."""
+    source = markdown or ""
+    for marker in ("## 本周可行性精选", "## 可行性方案"):
+        start = source.find(marker)
+        if start >= 0:
+            start = source.find("\n", start)
+            source = source[start + 1:] if start >= 0 else ""
+            next_section = re.search(r"^##\s+", source, re.MULTILINE)
+            if next_section:
+                source = source[:next_section.start()]
+            break
+    heading_re = re.compile(
+        r"^###\s+(?:可行性方案\s+\d+[：:]\s*|\d+\.\s+)(.+)$",
+        re.MULTILINE,
+    )
+    matches = list(heading_re.finditer(source))
+    identities = []
+    for index, match in enumerate(matches):
+        end = matches[index + 1].start() if index + 1 < len(matches) else len(source)
+        block = source[match.start():end]
+        repositories = sorted({
+            repo for owner, name in GITHUB_URL_RE.findall(block)
+            if (repo := normalize_repo(f"{owner}/{name}"))
+        })
+        name = normalize_plan_name(match.group(1))
+        explicit = PLAN_IDENTITY_RE.search(block)
+        identities.append({
+            "name": name,
+            "family": explicit.group(1) if explicit else plan_family(name),
+            "variant": explicit.group(2) if explicit else plan_variant(repositories),
+            "repositories": repositories,
+        })
+    return identities
+
+
 def parse_section_entries(lines, section_re, source):
     entries = []
     current = None
@@ -440,6 +513,9 @@ def _clean_evidence(s):
 
 
 TODAY_BONUS = 3  # 今日锚点项目在选槽时的加权
+RECENT_COMPONENT_REUSE_PENALTY = 2
+PORTFOLIO_OVERLAP_PENALTY = 8
+MIN_COMBO_SCORE = 70
 
 # 方案综合评分：分项 (名称, 满分)，总分 100；全部为确定性规则，可复现。
 # 语义：可行性 = 组件可靠度 + 供给 + 风险敞口 + 今日新颖度 + 来源多样性 + 许可证 + 完整度。
@@ -502,16 +578,62 @@ def combo_score(tpl, picks, today_count, min_supply):
     return sum(v for _, v, _ in parts), parts
 
 
-def pick_best(projects, tag, exclude, today_ids):
+def pick_best(projects, tag, exclude, today_ids, reuse_counts=None):
+    reuse_counts = reuse_counts or {}
     cands = [p for p in projects if p["id"] not in exclude and p["tags"].get(tag, 0) > 0]
     if not cands:
         return None
-    # 维护滞后项目整体排在健康项目之后；今日锚点项目加权优先；同组按标签分、Stars
+    # 维护滞后项目整体排在健康项目之后；近期反复入选的组件逐次扣分，
+    # 但仍保留今日锚点加权与 Stars 作为稳定的同分决胜项。
     cands.sort(key=lambda p: (
         _maintenance_flag(p),
-        -(p["tags"][tag] + (TODAY_BONUS if p["id"] in today_ids else 0)),
+        -(p["tags"][tag]
+          + (TODAY_BONUS if p["id"] in today_ids else 0)
+          - RECENT_COMPONENT_REUSE_PENALTY * reuse_counts.get(p["id"], 0)),
         -p["stars"]))
     return cands[0]
+
+
+def load_recent_component_counts(data_root, run_date, days=7):
+    """Count component appearances in recent feasibility reports before run_date."""
+    start = date.fromisoformat(run_date) - timedelta(days=days)
+    counts = {}
+    for path in sorted((data_root / "feasibility").glob("20??-??-??.md")):
+        match = DAILY_FILE_RE.match(path.name)
+        if not match:
+            continue
+        source_date = date.fromisoformat(match.group(1))
+        if not start <= source_date < date.fromisoformat(run_date):
+            continue
+        for identity in parse_plan_identities(path.read_text(encoding="utf-8")):
+            for repo in identity["repositories"]:
+                counts[repo] = counts.get(repo, 0) + 1
+    return counts
+
+
+def select_combo_portfolio(combos, max_count=3, min_score=MIN_COMBO_SCORE):
+    """Greedily select a non-padded portfolio with component-overlap penalties."""
+    remaining = list(combos)
+    selected = []
+    used_repositories = set()
+    while remaining and len(selected) < max_count:
+        ranked = []
+        for combo in remaining:
+            repositories = {p["id"] for p in combo["picks"].values()}
+            overlap = len(repositories & used_repositories)
+            adjusted_score = combo["score"] - PORTFOLIO_OVERLAP_PENALTY * overlap
+            ranked.append((adjusted_score, combo["today_count"], combo["total"],
+                           combo["stars"], combo, repositories))
+        adjusted_score, _, _, _, best, repositories = max(
+            ranked, key=lambda row: row[:4])
+        if adjusted_score < min_score:
+            break
+        chosen = dict(best)
+        chosen["selection_score"] = adjusted_score
+        selected.append(chosen)
+        used_repositories.update(repositories)
+        remaining.remove(best)
+    return selected
 
 
 def load_recent_combo_names(data_root, run_date, n=2):
@@ -612,7 +734,7 @@ def build_anchor_combo(projects, today_projects, today_ids, blocked_names=None):
         {"slots": [(t, r) for r, t in zip(picks.keys(), slot_tags)]},
         picks, today_count, min_supply)
     roles_text = "、".join("{}（`{}`）".format(r, p["repo"]) for r, p in picks.items())
-    return {
+    combo = {
         "score": score,
         "score_parts": score_parts,
         "name": name,
@@ -633,11 +755,16 @@ def build_anchor_combo(projects, today_projects, today_ids, blocked_names=None):
         "today_count": today_count,
         "stars": sum(p["stars"] for p in picks.values()),
     }
+    repositories = [p["id"] for p in picks.values()]
+    combo["plan_family"] = plan_family(name)
+    combo["variant"] = plan_variant(repositories)
+    return combo
 
 
-def build_combos(projects, today_ids=None, blocked_names=None):
+def build_combos(projects, today_ids=None, blocked_names=None, reuse_counts=None):
     today_ids = today_ids or set()
     blocked_names = blocked_names or set()
+    reuse_counts = reuse_counts or {}
     combos = []
     total = len(projects)
     for tpl in TEMPLATES:
@@ -646,7 +773,7 @@ def build_combos(projects, today_ids=None, blocked_names=None):
         picks = {}
         used = set()
         for tag, role in tpl["slots"]:
-            p = pick_best(projects, tag, used, today_ids)
+            p = pick_best(projects, tag, used, today_ids, reuse_counts)
             if p is None:
                 continue
             picks[role] = p
@@ -663,7 +790,7 @@ def build_combos(projects, today_ids=None, blocked_names=None):
             continue  # 以今日发现为主：组合必须包含至少一个今日锚点项目
         # 综合评分：分项按确定性规则计算，总分 = 分项之和，保证明细可加总。
         score, score_parts = combo_score(tpl, picks, today_count, min_supply)
-        combos.append({
+        combo = {
             "score": score,
             "score_parts": score_parts,
             "name": tpl["name"],
@@ -679,11 +806,15 @@ def build_combos(projects, today_ids=None, blocked_names=None):
             "total": len(picks),
             "today_count": today_count,
             "stars": sum(p["stars"] for p in picks.values()),
-        })
+        }
+        repositories = [p["id"] for p in picks.values()]
+        combo["plan_family"] = plan_family(tpl["name"])
+        combo["variant"] = plan_variant(repositories)
+        combos.append(combo)
     # 保持历史可复现：组合排序维持原规则（今日锚点多者优先，其次组件数与 Stars）；
     # 评分不参与排序，仅作展示与行动建议的推荐依据。
     combos.sort(key=lambda c: (c["today_count"], c["total"], c["stars"]), reverse=True)
-    return combos[:3]
+    return combos
 
 
 def build_single_angles(projects):
@@ -759,8 +890,7 @@ def _source_label(p, anchor_date=None):
 
 
 def render(projects, today_projects, combos, singles, run_date, cutoff,
-           anchor_date, n_daily_files, n_weekly_files, llm_text, blocked=None,
-           fallback_name=None):
+           anchor_date, n_daily_files, n_weekly_files, llm_text, blocked=None):
     n = len(projects)
     today_ids = {p["id"] for p in today_projects}
     L = []
@@ -781,12 +911,8 @@ def render(projects, today_projects, combos, singles, run_date, cutoff,
     A("> 验证路径（固定）：每个组件按来源报告的'上手建议/真实风险'复核"
       "（固定版本、隔离环境、自有数据复测）。")
     if blocked:
-        skipped = {n for n in blocked if n != fallback_name}
-        if skipped:
-            A("> 新鲜度规则：以下方案已连续出现两天，本轮跳过（同一方案最多连续两天）：{}。".format(
-                "、".join(sorted(skipped))))
-        if fallback_name:
-            A("> 保底：{}已连续出现两天，但本轮无其他可用组合，保底保留。".format(fallback_name))
+        A("> 新鲜度规则：以下方案已连续出现两天，本轮跳过（同一方案最多连续两天）：{}。".format(
+            "、".join(sorted(blocked))))
     if any(c["name"].startswith("今日锚点组合：") for c in combos):
         A("> 补充说明：固定模板未拼满 3 个方案，已用今日新发现直接拼接'今日锚点组合'（组件全部来自今日日报）。")
     A("")
@@ -805,6 +931,9 @@ def render(projects, today_projects, combos, singles, run_date, cutoff,
         parts_str = " · ".join("{} {}/{}".format(k, v, w) for k, v, w in c["score_parts"])
         grade = "高" if c["score"] >= 85 else ("中" if c["score"] >= 70 else "低")
         A("**方案评分**：**{}/100（{}）**（{}）".format(c["score"], grade, parts_str))
+        A("")
+        A("**方案身份**：`plan_family={}` · `variant={}`".format(
+            c["plan_family"], c["variant"]))
         A("")
         A("**业务定位**：{}".format(c["pitch"]))
         A("")
@@ -915,27 +1044,19 @@ def main(argv=None):
     # 新鲜度规则对所有运行生效（含补跑历史日期）：连续出现两天的方案第三天跳过。
     # 依据是 run_date 之前已存在的报告文件，同一文件集下结果可复现。
     blocked = load_recent_combo_names(args.data_root, args.date)
-    combos = build_combos(projects, today_ids, blocked)
+    reuse_counts = load_recent_component_counts(args.data_root, args.date)
+    combo_candidates = build_combos(projects, today_ids, blocked, reuse_counts)
     # 固定模板命中不足 3 个时，用今日锚点直接拼接全新组合（不重复已有方案）
-    if len(combos) < 3:
+    if len(combo_candidates) < 3:
         anchor_combo = build_anchor_combo(projects, today_projects, today_ids, blocked)
-        if anchor_combo and anchor_combo["name"] not in {c["name"] for c in combos}:
-            combos.append(anchor_combo)
-            combos.sort(key=lambda c: (c["today_count"], c["total"], c["stars"]),
-                        reverse=True)
-            combos = combos[:3]
-    fallback_name = None
-    if not combos and blocked:
-        # 兜底：仍无任何可用组合时，放行一个被跳过的方案，避免空报告
-        all_combos = build_combos(projects, today_ids)
-        if all_combos:
-            fallback_name = all_combos[0]["name"]
-            combos = [all_combos[0]]
+        if anchor_combo and anchor_combo["name"] not in {c["name"] for c in combo_candidates}:
+            combo_candidates.append(anchor_combo)
+    combos = select_combo_portfolio(combo_candidates)
     singles = build_single_angles(projects)
     llm_text = llm_enhance(projects, combos, args.no_llm)
     report = render(projects, today_projects, combos, singles, args.date,
                     cutoff.isoformat(), anchor_date, n_daily, n_weekly, llm_text,
-                    blocked, fallback_name)
+                    blocked)
 
     out_dir = args.data_root / "feasibility"
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -946,10 +1067,10 @@ def main(argv=None):
     ts = datetime.now().isoformat(timespec="seconds")
     with runs.open("a", encoding="utf-8") as fh:
         blocked_note = f" blocked={'、'.join(sorted(blocked))}" if blocked else ""
-        fallback_note = f" fallback={fallback_name}" if fallback_name else ""
         fh.write(f"{ts} OK anchor={anchor_date} window=90d cutoff={cutoff.isoformat()} "
                  f"daily={n_daily} weekly={n_weekly} projects={len(projects)} "
-                 f"combos={len(combos)} output={out_path.name}{blocked_note}{fallback_note}\n")
+                 f"candidates={len(combo_candidates)} combos={len(combos)} "
+                 f"output={out_path.name}{blocked_note}\n")
     print(f"OK: {out_path}（项目池 {len(projects)}，组合 {len(combos)}）")
     return 0
 

@@ -8,6 +8,7 @@
     "build": "ASTRO_TELEMETRY_DISABLED=1 astro build",
     "preview": "ASTRO_TELEMETRY_DISABLED=1 astro preview",
     "test": "vitest run",
+    "check:weekly-feasibility": "python3 scripts/weekly_feasibility_selector.py",
     "check:monthly-generator": "python3 scripts/generate_monthly_digest.py --check",
     "check:monthly-history": "python3 scripts/sync_monthly_history.py --check",
     "check:radar-build": "node scripts/check_radar_build.mjs",

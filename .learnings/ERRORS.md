@@ -671,3 +671,102 @@ Read the exact file tail immediately before patching and use a minimal append co
 ### Resolution
 - **Resolved**: 2026-09-02T06:00:00+08:00
 - **Notes**: Re-read the memory tail; the correct append is pending in the next operation.
+
+---
+
+## [ERR-20260906-001] daily-feasibility-overlap-analysis
+
+**Logged**: 2026-09-06T06:14:00+08:00
+**Priority**: low
+**Status**: resolved
+**Area**: docs
+
+### Summary
+The read-only overlap-analysis script had an unclosed template interpolation.
+
+### Error
+```text
+Unexpected token `ident`. Expected `}`
+```
+
+### Context
+- Operation: compare daily feasibility-plan titles and component sets for 2026-W35 and 2026-W36.
+- Cause: `p.title` in a JavaScript template literal lacked its closing brace.
+- No repository content was read or changed by the failed script beyond attempting to parse local files.
+
+### Suggested Fix
+Use a corrected template literal and validate the script before relying on its counts.
+
+### Metadata
+- Reproducible: yes
+- Related Files: data/github-project-digest/feasibility/*.md
+
+### Resolution
+- **Resolved**: 2026-09-06T06:14:00+08:00
+- **Notes**: Corrected the interpolation before rerunning the analysis.
+
+---
+
+## [ERR-20260906-002] daily-feasibility-overlap-analysis
+
+**Logged**: 2026-09-06T06:15:00+08:00
+**Priority**: low
+**Status**: resolved
+**Area**: docs
+
+### Summary
+The corrected script completed but matched zero plans because the shell-embedded regular expression was over-escaped.
+
+### Error
+```text
+planCounts: W35=0, W36=0
+```
+
+### Context
+- Operation: parse local feasibility Markdown headings in a Node one-liner.
+- Cause: regex escaping crossed JavaScript-string, shell and regex layers incorrectly.
+- The empty result was rejected before any reporting or file change.
+
+### Suggested Fix
+For shell-embedded one-off analysis, parse Markdown lines with string operations instead of layered regular-expression escaping.
+
+### Metadata
+- Reproducible: yes
+- Related Files: data/github-project-digest/feasibility/*.md
+
+### Resolution
+- **Resolved**: 2026-09-06T06:15:00+08:00
+- **Notes**: Replaced the regex parser with explicit heading and URL string parsing.
+
+---
+
+## [ERR-20260907-001] daily-github-digest-format-check
+
+**Logged**: 2026-09-07T05:42:00+08:00
+**Priority**: low
+**Status**: resolved
+**Area**: tests
+
+### Summary
+The first fixed-format self-check rejected a valid report because its heading regex omitted the space after the numbered slot marker.
+
+### Error
+```text
+AssertionError: []
+```
+
+### Context
+- Operation: validate the generated 2026-09-07 GitHub digest headings and required fields.
+- Cause: the check expected `### 1.爆发型` while the required report format is `### 1. 爆发型`.
+- No generated digest file was changed by the failed check.
+
+### Suggested Fix
+Keep the checker regex aligned with the literal fixed format, including the space after the numeric period; rerun the complete validation before proceeding.
+
+### Metadata
+- Reproducible: yes
+- Related Files: /Users/elvis/Desktop/repo-signal/data/github-project-digest/daily/2026-09-07.md
+
+### Resolution
+- **Resolved**: 2026-09-07T05:42:30+08:00
+- **Notes**: Corrected the validation expression and reran the checks.

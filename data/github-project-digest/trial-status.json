@@ -1126,9 +1126,9 @@
     "candidate_ledger": "data/github-project-digest/candidates/2026-08-31.jsonl",
     "candidate_ledger_count": 21
   },
-  "candidate_ledger": "data/github-project-digest/candidates/2026-09-04.jsonl",
-  "report": "data/github-project-digest/daily/2026-09-04.md",
-  "candidate_ledger_count": 24,
+  "candidate_ledger": "data/github-project-digest/candidates/2026-09-07.jsonl",
+  "report": "data/github-project-digest/daily/2026-09-07.md",
+  "candidate_ledger_count": 174,
   "primary_count": 4,
   "extra_count": 1,
   "latest_run_status": "passed_with_tls_api_rate_limit_and_web_fallback",
@@ -1307,5 +1307,93 @@
     ],
     "report": "data/github-project-digest/daily/2026-09-05.md",
     "candidate_ledger": "data/github-project-digest/candidates/2026-09-05.jsonl"
+  },
+  "daily_run_2026-09-07": {
+    "date": "2026-09-07",
+    "run_time": "2026-09-07T05:41:24+08:00",
+    "status": "passed_with_tls_api_rate_limit_and_web_fallback",
+    "skill_invoked": true,
+    "skill_files_read": [
+      "/Users/elvis/.codex/skills/find-github-projects/SKILL.md",
+      "/Users/elvis/.codex/skills/find-github-projects/references/scoring-rubric.md",
+      "/Users/elvis/.codex/skills/find-github-projects/references/search-patterns.md",
+      "docs/superpowers/specs/2026-06-29-github-project-digest-design.md"
+    ],
+    "scanner_ran": true,
+    "scanner": "8 条无缓存分层 Search 实际运行；首轮沙箱 DNS 失败，联网后按技能规则仅一次 --insecure 重试成功；4 条官方组织精确 Search 也完成。",
+    "fallback": "精确 enrichment 触发匿名 GitHub API 限流后停止 API 扩展，使用同轮 Search/Trending、GitHub 仓库、README、Release、Commit、Issue/PR 页面核验入选项目；未使用缓存冒充实时事实。",
+    "candidate_file_preexisting": false,
+    "candidate_file_initialized": true,
+    "candidate_count": 174,
+    "primary_count": 4,
+    "extra_count": 1,
+    "history_entries_before_run": 331,
+    "history_entries_added": 5,
+    "history_entries_after_append": 336,
+    "history_duplicates_in_90_days": [],
+    "feedback_entries_read": 7,
+    "user_candidate_processed": true,
+    "user_candidate_reverified": false,
+    "user_candidate_note": "当日 candidates 文件运行前不存在，没有新的用户指定候选；feedback.jsonl 中的旧 life-kline 请求不在本轮候选账本中，未重复占位。",
+    "checks": {
+      "fixed_format": true,
+      "primary_count_4": true,
+      "extra_count_1": true,
+      "required_fields": true,
+      "learning_slot_4": true,
+      "history_jsonl": true,
+      "history_append_readback_verified": true,
+      "candidate_jsonl": true,
+      "candidate_ledger_check": true,
+      "dedupe_90d": true,
+      "feedback_read": true,
+      "user_candidate_processed": true,
+      "github_fact_source": true,
+      "trending_checked": true,
+      "time_lane_coverage": true,
+      "skill_invoked": true,
+      "scanner_ran": true,
+      "links_and_metrics_verified_live": true,
+      "trial_status_updated": true,
+      "git_diff_check": true
+    },
+    "anomalies": [
+      "首轮扫描因沙箱 DNS 无法解析 GitHub；联网后按技能规则仅一次 --insecure 重试，未循环重试。",
+      "精确 enrichment 遇匿名 GitHub API 限流；按规则停止 API 扩展，降级为同轮 Search/Trending 与 GitHub 页面事实源。",
+      "OpenWhispr/openwhispr 以 2026-09-07 GitHub Trending 约新增 225 Stars 作为爆发型加速证据；未使用总 Stars、pushed_at 或无日期标签单独判定。",
+      "今日候选文件运行前不存在，已用 Python 标准库临时文件 + os.replace 原子初始化；feedback.jsonl 读取且未修改。",
+      "工作区已有其他未提交改动；本轮未触碰这些文件，也未覆盖当日 feasibility 文件（运行前不存在）。"
+    ],
+    "report": "data/github-project-digest/daily/2026-09-07.md",
+    "candidate_ledger": "data/github-project-digest/candidates/2026-09-07.jsonl",
+    "feasibility": {
+      "command": "python3 scripts/opportunity_analysis.py --date 2026-09-07 --no-llm",
+      "status": "success",
+      "output": "data/github-project-digest/feasibility/2026-09-07.md",
+      "plan_count": 2,
+      "plans": [
+        {
+          "name": "今日锚点组合：openwhispr 等 5 个新发现项目",
+          "plan_family": "custom-a57b388c6d1a",
+          "variant": "ef9f5c96114d"
+        },
+        {
+          "name": "本地优先个人 AI 工作台",
+          "plan_family": "local-first-personal-ai-workbench",
+          "variant": "b6eaf1530eb0"
+        }
+      ],
+      "overlap_modification_blocked": false,
+      "zero_plan": false,
+      "component_reuse_deprioritized": true,
+      "boundary_notes": "运行前当日 feasibility 文件不存在；脚本因近期重复跳过“可审计的 Agent 开发/交付平台”，未手工补位或恢复淘汰候选。",
+      "validation": {
+        "non_empty": true,
+        "title_date": true,
+        "plan_count_0_to_3": true,
+        "identities_exactly_one_per_plan": true,
+        "unittest": "passed"
+      }
+    }
   }
 }
