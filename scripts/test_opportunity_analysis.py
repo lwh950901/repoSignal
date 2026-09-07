@@ -123,5 +123,57 @@ class ReuseAwareSelectionTests(unittest.TestCase):
         self.assertEqual(analysis.select_combo_portfolio([combo]), [])
 
 
+class FeasibilityRenderingTests(unittest.TestCase):
+    def test_combo_table_only_exposes_role_project_and_reason(self):
+        project = {
+            "id": "owner/tool",
+            "repo": "owner/tool",
+            "url": "https://github.com/owner/tool",
+            "score": 85,
+            "stars": 100,
+            "tags": {"agent": 5},
+            "source": "daily",
+            "source_date": "2026-09-07",
+            "fields": {
+                "value": "完成最小任务闭环。",
+                "risks": "需先在隔离环境验证。",
+                "quality": "",
+                "activity": "",
+                "metrics": "MIT",
+            },
+        }
+        combo = {
+            "name": "test plan",
+            "score": 80,
+            "score_parts": [("组件可靠度", 30, 35)],
+            "plan_family": "test-family",
+            "variant": "test-variant",
+            "pitch": "test pitch",
+            "target": "test audience",
+            "market": "test market",
+            "rationale": "test rationale",
+            "picks": {"Agent 编排": project},
+            "slot_supply": {"agent": 1},
+            "min_supply": 1,
+            "total": 1,
+            "today_count": 1,
+            "stars": 100,
+            "differentiation": "test differentiation",
+            "mvp": "test mvp",
+        }
+
+        report = analysis.render(
+            [project], [project], [combo], [], "2026-09-07", "2026-06-09",
+            "2026-09-07", 1, 0, None,
+        )
+
+        self.assertIn("| 角色 | 项目 | 入选理由 |", report)
+        self.assertNotIn("| 角色 | 项目 | 来源 | 许可证 | 入选理由 |", report)
+        self.assertIn(
+            "| Agent 编排 | [`owner/tool`](https://github.com/owner/tool) | 完成最小任务闭环。 |",
+            report,
+        )
+
+
 if __name__ == "__main__":
     unittest.main()

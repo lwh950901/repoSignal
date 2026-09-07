@@ -1,4 +1,6 @@
-# RepoSignal
+# RepoSignal（开源雷达）
+
+一个持续追踪、筛选并归档优质 GitHub 开源项目的研究平台。
 
 将 `data/github-project-digest` 中持续生成的月报、日报与周报发布为静态项目档案库。网站使用 Astro 在构建阶段读取 Markdown，不需要数据库或服务端运行时。
 

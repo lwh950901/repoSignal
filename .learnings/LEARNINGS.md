@@ -24,6 +24,61 @@
 
 ---
 
+## [LRN-20260907-002] correction
+
+**Logged**: 2026-09-07T15:52:00+08:00
+**Priority**: medium
+**Status**: resolved
+**Area**: config
+
+### Summary
+在雷达周刊格式讨论中，“本周内容”指最新一期已生成的 radar 周刊，不是当日 feasibility 文件。
+
+### Details
+用户要求删除组合表中的来源和许可证后，后续追问“没更新本周的内容吗”。误将日期所在的新 ISO 周理解为目标，修改了当日 feasibility；用户实际指的是最新已生成的 `radar/2026-W36.md` 及对应工作稿。
+
+### Suggested Action
+在周刊语境中先同时查看当前 ISO 周和最新已生成 radar 期号；用户说“本周周刊”时，优先将最新已生成的 radar 与 distribution draft 视为成对修改目标。
+
+### Metadata
+- Source: user_feedback
+- Related Files: data/github-project-digest/radar/2026-W36.md, data/github-project-digest/distribution-drafts/2026-W36-wechat.md
+- Tags: radar-weekly, scope-resolution, paired-artifacts, correction
+- See Also: LRN-20260907-001
+
+### Resolution
+- **Resolved**: 2026-09-07T15:52:00+08:00
+- **Notes**: 已将 W36 雷达周刊和微信工作稿中的三张组合表同步改为三列。
+
+---
+
+## [LRN-20260907-001] correction
+
+**Logged**: 2026-09-07T00:00:00+08:00
+**Priority**: medium
+**Status**: resolved
+**Area**: config
+
+### Summary
+可行性方案的“组合方案”表应只展示角色、项目和入选理由，不展示来源与许可证列。
+
+### Details
+生成器将内部溯源和许可证核验信息直接放入公开组合表，造成不同日期的方案结构不一致。用户明确指出这两列不需要。来源和许可证仍可用于内部评分、风险判断和可追溯性，但不应成为组合表的公开字段。
+
+### Suggested Action
+统一生成器表头为“角色 | 项目 | 入选理由”，增加回归测试，并在每日自动化中约束表格结构；不批量改写历史冻结文件。
+
+### Metadata
+- Source: user_feedback
+- Related Files: scripts/opportunity_analysis.py, scripts/test_opportunity_analysis.py, /Users/elvis/.codex/automations/github/automation.toml
+- Tags: feasibility, markdown-contract, table-schema, correction
+
+### Resolution
+- **Resolved**: 2026-09-07T15:41:00+08:00
+- **Notes**: 生成器和回归测试已统一为“角色 | 项目 | 入选理由”三列；每日与周刊自动化也已同步禁止来源和许可证列。
+
+---
+
 ## [LRN-20260827-001] correction
 
 **Logged**: 2026-08-27T20:20:00+08:00
@@ -383,5 +438,32 @@ GitHub 项目推荐中，用户反馈标注只能辅助微调，发现真正高�
 - Recurrence-Count: 2
 - First-Seen: 2026-08-14T18:41:18+08:00
 - Last-Seen: 2026-08-14T18:44:11+08:00
+
+---
+
+## [LRN-20260907-003] correction
+
+**Logged**: 2026-09-07T17:30:00+08:00
+**Priority**: low
+**Status**: resolved
+**Area**: docs
+
+### Summary
+RepoSignal 的 Logo 应是无文字的独立图形标，并从项目简介图右侧的雷达图案提炼视觉语言。
+
+### Details
+先前交付的 Logo 带有英文和中文名称，且符号造型与简介图中的雷达圆盘不够统一。用户明确要求去掉所有文字，并参考简介图右侧的雷达圆盘、扫描扇区和信号节点。
+
+### Suggested Action
+后续 RepoSignal 品牌资产统一使用无文字雷达图形标；横版场景需要品牌名称时，由版式层单独排字，不把文字固化进 Logo。
+
+### Metadata
+- Source: user_feedback
+- Related Files: public/brand/reposignal-logo.svg, public/brand/reposignal-intro.png
+- Tags: brand, logo, visual-consistency
+
+### Resolution
+- **Resolved**: 2026-09-07T17:30:00+08:00
+- **Notes**: 按简介图雷达图案重新生成无文字 Logo。
 
 ---

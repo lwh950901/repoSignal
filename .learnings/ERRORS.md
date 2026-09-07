@@ -770,3 +770,168 @@ Keep the checker regex aligned with the literal fixed format, including the spac
 ### Resolution
 - **Resolved**: 2026-09-07T05:42:30+08:00
 - **Notes**: Corrected the validation expression and reran the checks.
+
+---
+
+## [ERR-20260907-002] apply_patch
+
+**Logged**: 2026-09-07T15:50:00+08:00
+**Priority**: low
+**Status**: resolved
+**Area**: docs
+
+### Summary
+One generated patch declared two update operations for the same radar file, so `apply_patch` rejected the entire patch.
+
+### Error
+```text
+apply_patch verification failed: invalid patch: multiple operations target data/github-project-digest/radar/2026-W36.md
+```
+
+### Context
+- Operation: mechanically reduce three five-column feasibility tables in both W36 radar artifacts to three columns and normalize the final newline.
+- Cause: table hunks and the trailing-newline hunk were emitted as separate `Update File` operations for the same path.
+- The failed patch was atomic and did not alter either W36 file.
+
+### Suggested Fix
+Emit one `Update File` operation per path and place all hunks for that path inside it.
+
+### Metadata
+- Reproducible: yes
+- Related Files: data/github-project-digest/radar/2026-W36.md, data/github-project-digest/distribution-drafts/2026-W36-wechat.md
+
+### Resolution
+- **Resolved**: 2026-09-07T15:51:00+08:00
+- **Notes**: Regenerated the patch with one operation per file; it applied successfully.
+
+---
+
+## [ERR-20260907-003] apply_patch
+
+**Logged**: 2026-09-07T16:03:00+08:00
+**Priority**: low
+**Status**: resolved
+**Area**: docs
+
+### Summary
+`apply_patch` rejected a reverse Git diff because its hunk headers contained line-number ranges.
+
+### Error
+```text
+apply_patch verification failed: Failed to find context '-25,13 +25,13 @@'
+```
+
+### Context
+- Operation: restore an unintended feasibility-file edit using a reverse Git diff while still applying the change through `apply_patch`.
+- Cause: standard Git hunk headers such as `@@ -25,13 +25,13 @@` are not accepted by this patch wrapper.
+- The failed patch did not change the file.
+
+### Suggested Fix
+Normalize numbered Git hunk headers to plain `@@` before passing the reverse diff to `apply_patch`.
+
+### Metadata
+- Reproducible: yes
+- Related Files: data/github-project-digest/feasibility/2026-09-07.md
+
+### Resolution
+- **Resolved**: 2026-09-07T16:04:00+08:00
+- **Notes**: Removed line-number ranges from the hunk headers; the reverse patch restored the content, then the missing trailing blank line was restored separately to make the file byte-identical to HEAD.
+
+---
+
+## [ERR-20260907-004] qlmanage-svg-preview
+
+**Logged**: 2026-09-07T17:20:00+08:00
+**Priority**: low
+**Status**: resolved
+**Area**: docs
+
+### Summary
+Quick Look could not render the generated SVG inside the managed filesystem sandbox.
+
+### Error
+```text
+sandbox initialization failed: invalid data type of path filter; expected pattern, got boolean
+```
+
+### Context
+- Operation: render `public/brand/reposignal-logo.svg` to a temporary PNG for visual inspection.
+- A follow-up attempt with the built-in image viewer also reported `invalid or unsupported image data` because it does not accept SVG input.
+- An in-app browser attempt was blocked because its URL policy does not allow local `file://` URLs.
+- The SVG source and generated project assets were not modified by the failed preview command.
+
+### Suggested Fix
+Use an in-app browser for visual SVG previews; use the image viewer only for supported raster formats.
+
+### Metadata
+- Reproducible: yes
+- Related Files: public/brand/reposignal-logo.svg
+
+### Resolution
+- **Resolved**: 2026-09-07T17:20:30+08:00
+- **Notes**: Re-ran Quick Look with the required filesystem approval, produced a temporary PNG successfully, and visually inspected the rendered logo. The SVG remains the canonical asset.
+
+---
+
+## [ERR-20260907-005] apply_patch
+
+**Logged**: 2026-09-07T17:32:00+08:00
+**Priority**: low
+**Status**: resolved
+**Area**: docs
+
+### Summary
+An SVG replacement patch repeated the known unsupported delete-and-add operation for one path.
+
+### Error
+```text
+apply_patch verification failed: invalid patch: multiple operations target /Users/elvis/Desktop/repo-signal/public/brand/reposignal-logo.svg
+```
+
+### Context
+- Operation: replace the text-bearing RepoSignal SVG with a mark-only SVG.
+- The failed patch was atomic and left the existing SVG unchanged.
+
+### Suggested Fix
+Use a single `Update File` operation when replacing all content at an existing path.
+
+### Metadata
+- Reproducible: yes
+- Related Files: public/brand/reposignal-logo.svg
+- See Also: ERR-20260907-002
+
+### Resolution
+- **Resolved**: 2026-09-07T17:32:30+08:00
+- **Notes**: Reissued the replacement as one `Update File` operation; it applied successfully.
+
+---
+
+## [ERR-20260907-006] svg-no-text-check
+
+**Logged**: 2026-09-07T17:34:00+08:00
+**Priority**: low
+**Status**: resolved
+**Area**: tests
+
+### Summary
+The first no-visible-text SVG check incorrectly matched accessible metadata.
+
+### Error
+```text
+2:  <title id="title">RepoSignal 开源雷达图形标</title>
+```
+
+### Context
+- Operation: verify that the final Logo has no visible text.
+- Cause: the check searched for brand words in the entire XML instead of checking only for rendered `<text>` elements.
+
+### Suggested Fix
+Check for SVG `<text>` elements while allowing accessible `<title>` and `<desc>` metadata.
+
+### Metadata
+- Reproducible: yes
+- Related Files: public/brand/reposignal-logo.svg
+
+### Resolution
+- **Resolved**: 2026-09-07T17:34:30+08:00
+- **Notes**: Narrowed the verification to rendered `<text>` elements and reran the complete asset checks.

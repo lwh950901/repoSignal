@@ -882,13 +882,6 @@ def llm_enhance(projects, combos, no_llm):
         return None
 
 
-def _source_label(p, anchor_date=None):
-    base = f"{p['source_date']} {'日报' if p['source'] == 'daily' else '周报'}"
-    if anchor_date and p["source_date"] == anchor_date and p["source"] == "daily":
-        base += "（今日）"
-    return base
-
-
 def render(projects, today_projects, combos, singles, run_date, cutoff,
            anchor_date, n_daily_files, n_weekly_files, llm_text, blocked=None):
     n = len(projects)
@@ -952,17 +945,13 @@ def render(projects, today_projects, combos, singles, run_date, cutoff,
         A("")
         A("**组合方案**：")
         A("")
-        A("| 角色 | 项目 | 来源 | 许可证 | 入选理由 |")
-        A("|---|---|---|---|---|")
+        A("| 角色 | 项目 | 入选理由 |")
+        A("|---|---|---|")
         for role, p in c["picks"].items():
             basis = (p["fields"].get("value") or p["fields"].get("reason")
                      or p["fields"].get("tagline") or "")
-            lic = p["fields"].get("metrics", "")
-            m = re.search(r"(MIT|Apache-2\.0|AGPL-3\.0|GPL-3\.0|MPL-2\.0|BSD-[0-9]-Clause)",
-                          lic)
-            A("| {} | [`{}`]({}) | {} | {} | {} |".format(
-                role, p["repo"], p["url"], _source_label(p, anchor_date),
-                m.group(1) if m else "（见仓库）",
+            A("| {} | [`{}`]({}) | {} |".format(
+                role, p["repo"], p["url"],
                 esc(first_sentence(_clean_evidence(basis), 72))))
         A("")
         A("**差异化**：{}".format(c["differentiation"]))

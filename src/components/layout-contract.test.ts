@@ -2,6 +2,17 @@ import { readFile } from "node:fs/promises";
 import { describe, expect, test } from "vitest";
 
 describe("navigation layout contract", () => {
+  test("uses the text-free radar mark for the favicon and header brand", async () => {
+    const layout = await readFile(new URL("../layouts/BaseLayout.astro", import.meta.url), "utf8");
+    const logo = await readFile(new URL("../../public/brand/reposignal-logo.svg", import.meta.url), "utf8");
+
+    expect(layout).toContain('<link rel="icon" type="image/svg+xml" href="/brand/reposignal-logo.svg" />');
+    expect(layout).toContain('<img class="brand-mark" src="/brand/reposignal-logo.svg" alt=""');
+    expect(layout).not.toContain('data:image/svg+xml');
+    expect(layout).not.toContain('aria-hidden="true">⌁</span>');
+    expect(logo).not.toMatch(/<text(?:\s|>)/);
+  });
+
   test("serves interactive behavior from same-origin scripts allowed by the production CSP", async () => {
     const layout = await readFile(new URL("../layouts/BaseLayout.astro", import.meta.url), "utf8");
     const palette = await readFile(new URL("./SearchPalette.astro", import.meta.url), "utf8");
