@@ -935,3 +935,164 @@ Check for SVG `<text>` elements while allowing accessible `<title>` and `<desc>`
 ### Resolution
 - **Resolved**: 2026-09-07T17:34:30+08:00
 - **Notes**: Narrowed the verification to rendered `<text>` elements and reran the complete asset checks.
+
+---
+
+## [ERR-20260910-001] exec-command-workdir-typo
+
+**Logged**: 2026-09-10T21:20:00+08:00
+**Priority**: low
+**Status**: resolved
+**Area**: infra
+
+### Summary
+An exact GitHub scan failed before launch because the workspace path was mistyped.
+
+### Error
+```text
+Failed to create unified exec process: No such file or directory (os error 2)
+```
+
+### Context
+- Operation: run `github_project_scan.py` for the `teamai-cli` shortlist candidate.
+- The command used `/Users/elvis1/Desktop/repo-signal` instead of `/Users/elvis/Desktop/repo-signal`.
+- No process started and no files were changed.
+
+### Suggested Fix
+Reuse the environment-provided workspace path exactly and validate `workdir` before launching external scans.
+
+### Metadata
+- Reproducible: yes
+- Related Files: none
+
+### Resolution
+- **Resolved**: 2026-09-10T21:20:30+08:00
+- **Notes**: Corrected the working directory for subsequent commands.
+
+---
+
+## [ERR-20260910-002] candidate-ledger-manual-entry
+
+**Logged**: 2026-09-10T21:30:00+08:00
+**Priority**: medium
+**Status**: resolved
+**Area**: docs
+
+### Summary
+Manual candidate-ledger authoring introduced one invalid JSON object and several misspelled fields or URLs.
+
+### Error
+```text
+jq: parse error: ':' not as part of an object at line 4, column 205
+```
+
+### Context
+- Operation: add backfill ledgers for 2026-09-08 through 2026-09-10.
+- Root cause: several records were typed manually without validating each JSONL line before moving on.
+
+### Suggested Fix
+Run `jq -c .` and a schema-key check immediately after every JSONL patch; prefer the existing candidate-ledger utility when importing larger scan results.
+
+### Metadata
+- Reproducible: yes
+- Related Files: data/github-project-digest/candidates/2026-09-09.jsonl, data/github-project-digest/candidates/2026-09-10.jsonl
+
+### Resolution
+- **Resolved**: 2026-09-10T21:31:00+08:00
+- **Notes**: Corrected the malformed license field, fork key, repository URLs, and textual typos; queued full JSONL and schema verification.
+
+---
+
+## [ERR-20260910-003] verification-shell-quoting
+
+**Logged**: 2026-09-10T21:36:00+08:00
+**Priority**: low
+**Status**: resolved
+**Area**: tests
+
+### Summary
+The first combined verification command did not start because an `rg` pattern contained an unmatched shell quote.
+
+### Error
+```text
+zsh:4: unmatched '
+```
+
+### Context
+- A stray quoted fragment was appended after the typo-detection regex.
+- No validation result was produced and no files were changed.
+
+### Suggested Fix
+Keep the regex in one balanced single-quoted argument and list paths separately.
+
+### Metadata
+- Reproducible: yes
+- Related Files: data/github-project-digest
+
+### Resolution
+- **Resolved**: 2026-09-10T21:36:30+08:00
+- **Notes**: Reissued the verification command with balanced quoting.
+
+---
+
+## [ERR-20260910-004] verification-jq-expression
+
+**Logged**: 2026-09-10T21:42:00+08:00
+**Priority**: low
+**Status**: resolved
+**Area**: tests
+
+### Summary
+The final history summary check used an unbalanced jq object expression.
+
+### Error
+```text
+jq: error: syntax error, unexpected INVALID_CHARACTER
+```
+
+### Context
+- One closing parenthesis was missing in the `dates` value expression.
+- Earlier checks in the same shell ran, but the command exited before diff and status checks.
+
+### Suggested Fix
+Split dense jq summaries into smaller expressions and validate them independently.
+
+### Metadata
+- Reproducible: yes
+- Related Files: data/github-project-digest/history.jsonl
+
+### Resolution
+- **Resolved**: 2026-09-10T21:42:30+08:00
+- **Notes**: Replaced the dense expression with a simpler valid jq summary and reran the full verification.
+
+---
+
+## [ERR-20260911-001] shell-quote-check
+
+**Logged**: 2026-09-11T00:00:00+08:00
+**Priority**: low
+**Status**: resolved
+**Area**: automation
+
+### Summary
+The first read-only history deduplication loop used an unmatched shell quote.
+
+### Error
+```text
+zsh:1: unmatched '
+```
+
+### Context
+- The loop embedded a quoted repository variable inside a single-quoted `rg` expression.
+- No files were changed; the check was rerun with a simpler argument form.
+
+### Suggested Fix
+Prefer `rg -F -- "$repo"` or pass structured values through a small script instead of nested shell quoting.
+
+### Metadata
+- Reproducible: yes
+- Related Files: data/github-project-digest/history.jsonl
+
+### Resolution
+- **Resolved**: 2026-09-11T00:01:00+08:00
+- **Notes**: Reissued the check using fixed-string matching and explicit arguments.

@@ -1126,11 +1126,11 @@
     "candidate_ledger": "data/github-project-digest/candidates/2026-08-31.jsonl",
     "candidate_ledger_count": 21
   },
-  "candidate_ledger": "data/github-project-digest/candidates/2026-09-07.jsonl",
-  "report": "data/github-project-digest/daily/2026-09-07.md",
-  "candidate_ledger_count": 174,
+  "candidate_ledger": "data/github-project-digest/candidates/2026-09-10.jsonl",
+  "report": "data/github-project-digest/daily/2026-09-10.md",
+  "candidate_ledger_count": 6,
   "primary_count": 4,
-  "extra_count": 1,
+  "extra_count": 0,
   "latest_run_status": "passed_with_tls_api_rate_limit_and_web_fallback",
   "daily_run_2026-09-03": {
     "date": "2026-09-03",
@@ -1395,5 +1395,54 @@
         "unittest": "passed"
       }
     }
+  },
+  "daily_run_2026-09-08": {
+    "date": "2026-09-08",
+    "run_time": "2026-09-10T21:30:00+08:00",
+    "status": "backfilled_with_live_2026-09-10_evidence",
+    "skill_invoked": true,
+    "scanner_ran": true,
+    "candidate_count": 6,
+    "primary_count": 4,
+    "extra_count": 0,
+    "history_entries_added": 4,
+    "history_duplicates_in_90_days": [],
+    "feedback_entries_read": 7,
+    "report": "data/github-project-digest/daily/2026-09-08.md",
+    "candidate_ledger": "data/github-project-digest/candidates/2026-09-08.jsonl",
+    "boundary_notes": "历史日期补录；Stars、Forks、维护状态和 Trending 增量均使用 2026-09-10 实时核验值，报告未将其表述为 2026-09-08 当日快照。"
+  },
+  "daily_run_2026-09-09": {
+    "date": "2026-09-09",
+    "run_time": "2026-09-10T21:30:00+08:00",
+    "status": "backfilled_with_live_2026-09-10_evidence",
+    "skill_invoked": true,
+    "scanner_ran": true,
+    "candidate_count": 6,
+    "primary_count": 4,
+    "extra_count": 0,
+    "history_entries_added": 4,
+    "history_duplicates_in_90_days": [],
+    "feedback_entries_read": 7,
+    "report": "data/github-project-digest/daily/2026-09-09.md",
+    "candidate_ledger": "data/github-project-digest/candidates/2026-09-09.jsonl",
+    "boundary_notes": "历史日期补录；所有实时事实均按 2026-09-10 快照标注。"
+  },
+  "daily_run_2026-09-10": {
+    "date": "2026-09-10",
+    "run_time": "2026-09-10T21:30:00+08:00",
+    "status": "passed_with_tls_api_rate_limit_and_web_fallback",
+    "skill_invoked": true,
+    "scanner_ran": true,
+    "candidate_count": 6,
+    "primary_count": 4,
+    "extra_count": 0,
+    "history_entries_added": 4,
+    "history_entries_after_append": 348,
+    "history_duplicates_in_90_days": [],
+    "feedback_entries_read": 7,
+    "report": "data/github-project-digest/daily/2026-09-10.md",
+    "candidate_ledger": "data/github-project-digest/candidates/2026-09-10.jsonl",
+    "fallback": "扫描器首次 TLS 失败后仅一次 --insecure 重试成功；精确 enrichment 遇匿名 API 限流，改用 GitHub Trending、仓库、README 与 Release 页面核验。"
   }
 }
