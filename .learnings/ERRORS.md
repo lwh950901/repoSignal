@@ -1096,3 +1096,97 @@ Prefer `rg -F -- "$repo"` or pass structured values through a small script inste
 ### Resolution
 - **Resolved**: 2026-09-11T00:01:00+08:00
 - **Notes**: Reissued the check using fixed-string matching and explicit arguments.
+
+---
+
+## [ERR-20260911-002] session-json-extractor
+
+**Logged**: 2026-09-11T14:10:00+08:00
+**Priority**: low
+**Status**: resolved
+**Area**: tests
+
+### Summary
+An ad-hoc Node.js command for extracting prior automation evidence omitted a closing brace.
+
+### Error
+```text
+SyntaxError: Unexpected end of input
+```
+
+### Context
+- The command only read a local Codex session JSONL file.
+- No project artifact was changed.
+
+### Suggested Fix
+Use a smaller parser with a single output path and validate its brace structure before execution.
+
+### Metadata
+- Reproducible: yes
+- Related Files: /Users/elvis/.codex/sessions/2026/09/11/rollout-2026-09-11T05-32-02-01a08d3c-1fb1-7263-b694-378b7ca82f0a.jsonl
+
+### Resolution
+- **Resolved**: 2026-09-11T14:10:00+08:00
+- **Notes**: Switched to a simpler parser that extracts only the required repository fields.
+
+---
+
+## [ERR-20260911-003] session-output-shape
+
+**Logged**: 2026-09-11T14:12:00+08:00
+**Priority**: low
+**Status**: resolved
+**Area**: tests
+
+### Summary
+An ad-hoc session parser assumed a tool-output block was iterable when its payload used a different shape.
+
+### Error
+```text
+TypeError: x.payload.output is not iterable
+```
+
+### Context
+- The failed command was read-only and did not alter project files.
+
+### Suggested Fix
+Inspect one event's payload shape before iterating, or use live GitHub evidence when it is already required.
+
+### Metadata
+- Reproducible: yes
+- Related Files: /Users/elvis/.codex/sessions/2026/09/11/rollout-2026-09-11T05-32-02-01a08d3c-1fb1-7263-b694-378b7ca82f0a.jsonl
+
+### Resolution
+- **Resolved**: 2026-09-11T14:12:00+08:00
+- **Notes**: Avoided the session-output path and continued with a narrow live Trending query.
+
+---
+
+## [ERR-20260911-004] web-batch-syntax
+
+**Logged**: 2026-09-11T14:14:00+08:00
+**Priority**: low
+**Status**: resolved
+**Area**: tests
+
+### Summary
+A combined GitHub page click and text-find request was rejected by the web tool parser.
+
+### Error
+```text
+SyntaxError: Unexpected string
+```
+
+### Context
+- The request was read-only and no project artifact changed.
+
+### Suggested Fix
+Use a single direct raw-file request for the required license evidence instead of mixing independent web operations.
+
+### Metadata
+- Reproducible: unknown
+- Related Files: data/github-project-digest/daily/2026-09-11.md
+
+### Resolution
+- **Resolved**: 2026-09-11T14:14:00+08:00
+- **Notes**: Switched to direct raw GitHub license retrieval.

@@ -1444,5 +1444,82 @@
     "report": "data/github-project-digest/daily/2026-09-10.md",
     "candidate_ledger": "data/github-project-digest/candidates/2026-09-10.jsonl",
     "fallback": "扫描器首次 TLS 失败后仅一次 --insecure 重试成功；精确 enrichment 遇匿名 API 限流，改用 GitHub Trending、仓库、README 与 Release 页面核验。"
+  },
+  "daily_run_2026-09-12": {
+    "date": "2026-09-12",
+    "run_time": "2026-09-12T05:45:00+08:00",
+    "status": "passed_with_tls_api_rate_limit_and_feasibility_overlap_block",
+    "skill_invoked": true,
+    "skill_files_read": [
+      "/Users/elvis/.codex/skills/find-github-projects/SKILL.md",
+      "/Users/elvis/.codex/skills/find-github-projects/references/scoring-rubric.md",
+      "/Users/elvis/.codex/skills/find-github-projects/references/search-patterns.md",
+      "docs/superpowers/specs/2026-06-29-github-project-digest-design.md"
+    ],
+    "scanner_ran": true,
+    "scanner": "已实际运行无缓存 GitHub Search；首次 TLS 证书链失败后仅一次 --insecure 重试成功，获得增长、Agent/RAG、开发工具、新建项目、Trending、官方组织和用户指定候选通道的实时结果。",
+    "fallback": "精确 enrichment 遇匿名 GitHub API 限流；停止 API 扩展，使用同轮 GitHub Trending 2026-09-12、仓库页、README、Release 与 Commit Atom 页面核验入选项目，未使用缓存冒充实时事实。",
+    "candidate_file_preexisting": false,
+    "candidate_file_initialized": true,
+    "candidate_count": 18,
+    "primary_count": 4,
+    "extra_count": 1,
+    "history_entries_before_run": 352,
+    "history_entries_added": 5,
+    "history_entries_after_append": 357,
+    "history_duplicates_in_90_days": ["ayghri/i-have-adhd (repeat_exception=true; quantified growth + Trending)"],
+    "feedback_entries_read": 7,
+    "feedback_modified": false,
+    "user_candidate_processed": true,
+    "user_candidate_reverified": true,
+    "user_candidate_note": "life-kline 已重新由 GitHub Search/仓库页核验为 386 Stars、114 Forks、Apache-2.0，最近代码推送为 2025-12-22；命中 2026-08-08 history，按 90 天去重拒绝今日占位。",
+    "report": "data/github-project-digest/daily/2026-09-12.md",
+    "candidate_ledger": "data/github-project-digest/candidates/2026-09-12.jsonl",
+    "feasibility": {
+      "command": "python3 scripts/opportunity_analysis.py --date 2026-09-12 --no-llm",
+      "status": "blocked_before_run",
+      "output": "data/github-project-digest/feasibility/2026-09-12.md",
+      "plan_count": null,
+      "plans": [],
+      "overlap_modification_blocked": true,
+      "zero_plan": null,
+      "component_reuse_deprioritized": null,
+      "boundary_notes": "运行前当日 feasibility 文件已存在且为未提交生成物，内容锚定 2026-09-11 日报项目，与本轮输入重叠；按规则不覆盖、不运行脚本，因此无法报告方案数量或名称。",
+      "validation": {
+        "preexisting_file_checked": true,
+        "non_empty": true,
+        "title_date": true,
+        "overlap_preserved": true,
+        "unittest": "not_run_due_to_overlap_block"
+      }
+    },
+    "checks": {
+      "fixed_format": true,
+      "primary_count_4": true,
+      "extra_count_1": true,
+      "required_fields": true,
+      "learning_slot_4": true,
+      "history_jsonl": true,
+      "history_append_readback_verified": true,
+      "candidate_jsonl": true,
+      "candidate_ledger_check": true,
+      "dedupe_90d": true,
+      "feedback_read": true,
+      "user_candidate_processed": true,
+      "github_fact_source": true,
+      "trending_checked": true,
+      "time_lane_coverage": true,
+      "skill_invoked": true,
+      "scanner_ran": true,
+      "links_and_metrics_verified_live": true,
+      "trial_status_updated": true,
+      "git_diff_check": true,
+      "feasibility_overlap_blocked": true
+    },
+    "anomalies": [
+      "本机 Python TLS 证书链失败后仅一次 --insecure 重试成功；匿名 GitHub API enrichment 随后限流，按规则降级为同轮 GitHub 网页事实源。",
+      "GitHub Trending 2026-09-12 核验 ayghri/i-have-adhd 约新增 3,440 Stars、nashsu/llm_wiki 约新增 640 Stars、alsk1992/CloddsBot 约新增 627 Stars；仅 ayghri 以 5,000+ Stars、量化增长和 Trending 加速证据进入爆发型。",
+      "当日 feasibility 文件运行前已存在且含其他任务生成内容，未覆盖、未运行每日方案脚本；日报与 history 不受影响。"
+    ]
   }
 }
