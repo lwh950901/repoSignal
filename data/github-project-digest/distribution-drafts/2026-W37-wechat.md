@@ -1,0 +1,181 @@
+# 开源雷达周刊
+![开源雷达周刊｜每周开源项目精选](/covers/repository-radar-weekly-subtitle.png)
+
+本周的 10 个项目沿着两条线展开：一条是 MCP 与 Agent 工具从协议接入走向可测试、可部署、可观察的工程体系；另一条是本地优先应用继续进入语音、知识库、3D 编辑和模型推理等具体工作流。
+
+这份清单既有适合直接做小范围验证的 mcp-use、Sim、OpenWhispr 和 Maxun，也保留了 I Have ADHD、Colibri、Spin 这类能帮助团队拆解交互规范、运行时与资源边界的样本。选择时不只看热度，更要看安装路径、维护证据以及真实使用风险。
+
+## 一、MCP 与 Agent 交付工具
+### 1. mcp-use：把 MCP 从协议接入推进到完整工程
+**介绍：** [mcp-use](https://github.com/mcp-use/mcp-use) 是面向 TypeScript 开发者的全栈 MCP 框架，把 MCP Server、交互式 MCP App、Inspector、Agent 接入和部署工具放进同一套路径。
+
+**推荐依据：** 它覆盖脚手架、类型化 tool-to-UI 合约、调试、截图验证和部署，README 还给出从 `npm run dev` 到构建发布的可运行流程，比只提供协议封装的库更接近可交付产品。
+
+**适合：** 准备开发 ChatGPT/Claude 连接器、内部数据工具或带交互界面的 MCP App，并希望统一调试与部署流程的团队。
+
+**注意：** MCP 规范和宿主兼容性仍在演进，多包和多运行时版本线会增加升级成本；接入写操作前要锁定协议版本、鉴权边界和工具副作用。
+
+### 2. I Have ADHD：把 Agent 输出规范做成可安装资产
+**介绍：** [I Have ADHD](https://github.com/ayghri/i-have-adhd) 为 Claude Code、Codex、Cursor 等编码 Agent 提供更易扫读、先给结论的输出规则和可安装 skill/plugin。
+
+**推荐依据：** 项目把“减少冗长回复”从提示词偏好做成带安装、卸载、hooks、测试和 evals 的跨工具配置，并在本周出现了明确的短期增长与持续兼容性修复。
+
+**适合：** 希望统一团队 Agent 回复结构、减少长答案遗漏，并愿意用现有任务集评估实际效果的开发者。
+
+**注意：** 强制短答可能压缩教学、审计或高风险任务所需的证据；名称涉及 ADHD，但项目不是医学建议或诊断工具，不能把表达偏好泛化成医学结论。
+
+### 3. OmniRoute：统一多模型凭据与路由的本地网关
+**介绍：** [OmniRoute](https://github.com/diegosouzapw/OmniRoute) 是统一管理多家 LLM Provider、凭据、模型路由和本地编码 Agent 接入的桌面与服务端网关。
+
+**推荐依据：** 桌面控制台、OpenAI 兼容入口、路由回退、浏览器池与 Agent skills 形成可运行的本地基础设施，仓库同时具备文档、示例、测试、容器配置和安全说明。
+
+**适合：** 需要在多个模型供应商之间做故障切换、成本控制，或给不同编码 Agent 提供统一调用入口的个人和小团队。
+
+**注意：** 集中保存多 Provider 凭据会扩大本地攻击面，自动回退还可能改变模型能力、价格和数据地域；必须先做最小权限、日志脱敏和故障演练。
+
+### 4. Sim：从工作流搭建走到部署与观测
+**介绍：** [Sim](https://github.com/simstudioai/sim) 是用于构建、部署和观测 AI Agent 与工作流的协作式开源工作区，面向希望把试验流程交付给团队的开发者。
+
+**推荐依据：** 它用流程构建、Docker 部署、版本化发布和监控入口覆盖 Agent 从设计到运行的基本闭环，并保持持续 Release，试用路径比零散编排组件更完整。
+
+**适合：** 已经有 Agent 原型，希望进一步验证共享、部署、失败处理和运行监控的开发团队。
+
+**注意：** 生产部署仍需独立评估模型费用、密钥管理、流程权限和持久化数据隔离；一体化平台也可能带来超出实际需要的运维面。
+
+## 二、本地优先的具体工作流
+### 5. OpenWhispr：端侧语音输入与 AI 笔记
+**介绍：** [OpenWhispr](https://github.com/OpenWhispr/openwhispr) 是跨平台、隐私优先的语音转文字与 AI 笔记桌面应用，同时支持本地 Whisper/Parakeet 和 BYOK 云端模型。
+
+**推荐依据：** 本地模型、云端模型、历史记录和 MCP 入口组合成完整桌面工作流，仓库还有原生代码、测试、安全政策与故障排查材料，可以同时评估产品体验和端侧工程成本。
+
+**适合：** 想快速验证本地语音输入、会议转写、AI 笔记或语音数据接入 Agent 的个人与小团队。
+
+**注意：** 本地模型下载、Node.js 24+ 和平台原生依赖会提高安装成本；用云端模型处理会议音频时仍需核对隐私、凭据和诊断数据边界。
+
+### 6. Pascal Editor：让 Agent 进入 3D 建筑编辑
+**介绍：** [Pascal Editor](https://github.com/pascalorg/editor) 是可在浏览器或本地 CLI 运行的 3D 建筑编辑器，并通过 MCP 向 AI Agent 暴露受控编辑能力。
+
+**推荐依据：** 项目把场景状态、WebGPU 渲染、CLI 生命周期和 MCP 工具拆成明确层次，文档覆盖 core、viewer、cli、mcp 的架构与数据流，为非文本专业工具提供了具体扩展边界。
+
+**适合：** 探索 AI 驱动 3D 场景编辑、WebGPU 工具链，或需要研究 Agent 如何安全操作专业软件的开发者。
+
+**注意：** npm 稳定包与 GitHub 预发布能力可能不同；WebGPU 兼容性、单服务并发约束、Agent 权限和本地密钥处理仍要逐项验证。
+
+### 7. Maxun：把网页操作变成受控数据任务
+**介绍：** [Maxun](https://github.com/getmaxun/maxun) 通过录制浏览器操作或自然语言配置，把网站转成结构化数据、定时任务和 API。
+
+**推荐依据：** Extract、Scrape、Crawl、Search、文档/OCR、SDK、CLI 与 MCP 覆盖从无代码录制到程序化调度的完整路径，并提供 Docker Compose、自托管和升级文档。
+
+**适合：** 做市场研究、价格监控、目录采集，或需要为 Agent 建立可观察网页数据入口的团队。
+
+**注意：** 网页条款、robots、登录凭据、代理来源和个人数据处理需要单独合规；AGPL 会影响闭源服务集成，页面改版也可能让自动恢复后的数据悄然失真。
+
+### 8. LLM Wiki：把图检索落到桌面知识库
+**介绍：** [LLM Wiki](https://github.com/nashsu/llm_wiki) 把个人资料、文档和网页整理为带知识图谱、混合检索与本地 Agent 接口的跨平台知识库应用。
+
+**推荐依据：** 项目公开了从文件导入、两阶段 ingest 到图谱、检索、Deep Research、Review、浏览器剪藏和 MCP/API 暴露的完整链路，并给出架构、构建与测试入口。
+
+**适合：** 想拆解桌面端知识库、图检索、社区发现与人机协作 Review 流程，或准备验证个人 RAG 产品的团队。
+
+**注意：** GPL-3.0 会影响闭源分发与组合方式；README 中的检索基准必须在自己的语料和模型上复测，也不应照搬可能暴露内部推理的实现描述。
+
+## 三、模型与运行时学习样本
+### 9. Colibri：观察 MoE 专家如何从磁盘流入内存
+**介绍：** [Colibri](https://github.com/JustVugg/colibri) 是以纯 C 实现、按需从磁盘流式加载专家的本地 MoE 模型推理引擎，目标是在受限内存硬件上运行更大的模型。
+
+**推荐依据：** 较小的零依赖 C 核心暴露了专家路由、磁盘 I/O、缓存和内存预算之间的取舍，README 同时提供安装、使用、Docker、测试和架构说明。
+
+**适合：** 希望通过源码与 profiler 理解 MoE 专家切换、缓存命中和存储瓶颈的系统工程师。
+
+**注意：** 性能数字高度依赖硬件、模型格式、量化和存储设备；为极限内存占用采用的同步 I/O、错误处理和接口取舍不宜直接照搬到通用生产服务。
+
+### 10. Spin：用 WebAssembly 约束服务端能力边界
+**介绍：** [Spin](https://github.com/spinframework/spin) 基于 WebAssembly Component Model 与 Wasmtime 构建、分发和运行云端微服务。
+
+**推荐依据：** 同一 CLI 支持 Rust、JavaScript、Python、Go 组件，并通过 HTTP、Redis、KV、SQL 与 AI 宿主接口展示 WASI 组件和宿主能力边界；安装和 `spin new/build/up` 路径完整。
+
+**适合：** 想拆解 WASI 组件、触发器、宿主权限、跨语言 SDK 和 Serverless 运行时的后端工程师。
+
+**注意：** WASI 与 Component Model 仍在演进，不同语言 SDK 的能力并不完全一致；canary 和宿主扩展接口不能未经验证就当作稳定生产合同。
+
+## 本周可行性精选
+这些方案从本周组合研究中按家族去重、四周历史和组件复用情况筛选出来，用来判断是否值得做小范围验证。它们仍属于可行性研究，不代表市场需求或生产可用性已经得到验证。
+
+### 可行性方案 1：今日锚点组合：openwhispr 等 5 个新发现项目（组合 5 个项目，今日锚点 5 个）
+**方案评分**：**83/100（中）**
+
+**业务定位：** 把今日新发现的 5 个项目作为组合试用候选：跨平台、隐私优先的语音转文字与 AI 笔记桌面应用，支持本地和 BYOK 云端模型。（`openwhispr/openwhispr`）、在浏览器中绘制 Material 3 Expressive 界面，并将屏幕结构转换为可供编码 Agent 使用的…（`lnkiai/m3e-canvas`）、面向长上下文 Agent 的轻量记忆增强生成研究实现，提供 LightMem、FluxMem、StructMem…（`zjunlp/lightmem`）、面向 OpenAI REST API 的官方 Go 命令行工具，覆盖资源化命令、文件输入与管理接口。（`openai/openai-cli`）、面向科研的本地优先、模型无关 AI 研究工作台，覆盖科学 Agent、Python/R…（`aipoch/open-science`）。先各自试用、记录产出，再找可打通的组合路径。
+
+**目标客户：** 想第一时间试用今日新发现项目的个人开发者与研究型小团队。
+
+**市场机会：** 今日 5 个锚点分属 Agent、检索、观测、本地等能力面，池中对应候选 89 个，组件供给充足；先用小规模试用验证价值，再决定产品化方向。（以上市场方向与产品化价值均为待验证假设）
+
+**可行性依据：** 全部组件来自今日日报，能力面尽量互补（4 个），无需等待固定模板命中即可拼出组合。本组合含今日发现项目 5 个（`openwhispr/openwhispr`、`lnkiai/m3e-canvas`、`zjunlp/lightmem`、`openai/openai-cli`、`aipoch/open-science`）；池中各能力面候选充足（rag 89 · agent 282 · local 164 · observability 121），最稀缺槽位也有 89 个候选。
+
+**组合方案：**
+
+| 角色 | 项目 | 入选理由 |
+|---|---|---|
+| 跨平台、隐私优先的语音转文字与 AI 笔记桌面应用，支持本地和 BYOK 云端模型。 | [`openwhispr/openwhispr`](https://github.com/OpenWhispr/openwhispr) | 它同时满足爆发型 5,000 Stars 下限、当日 Trending 加速证据与可运行质量门槛，适合作为今天最直观的端侧 AI 工程试用入口。 |
+| 在浏览器中绘制 Material 3 Expressive 界面，并将屏幕结构转换为可供编码 Agent 使用的… | [`lnkiai/m3e-canvas`](https://github.com/lnkiai/m3e-canvas) | 它的差异化不是又一个页面生成器，而是把 Material 3 结构化编辑和 Agent prompt 导出连起来… |
+| 面向长上下文 Agent 的轻量记忆增强生成研究实现，提供 LightMem、FluxMem、StructMem… | [`zjunlp/lightmem`](https://github.com/zjunlp/LightMem) | 实现新鲜度和源码可拆解性高，且学习入口不是泛泛教程，而是方法文档、模块、测试、数据集和基线评测的组合。 |
+| 面向 OpenAI REST API 的官方 Go 命令行工具，覆盖资源化命令、文件输入与管理接口。 | [`openai/openai-cli`](https://github.com/openai/openai-cli) | 虽然规模不大，但官方维护、稳定 Release、清晰命令模型和近期 API 变更使它成为一个低成本、可直接运行的工程补充。 |
+| 面向科研的本地优先、模型无关 AI 研究工作台，覆盖科学 Agent、Python/R… | [`aipoch/open-science`](https://github.com/aipoch/open-science) | 它不只是聊天壳，而是把本地数据、Agent 工具调用、研究产物和来源追踪放进可启动产品，当前上手路径和维护证据都足够具体。 |
+
+**差异化：** 完全由今日新发现驱动，组件全部来自今日日报，新鲜度最高，不依赖固定模板。
+
+**MVP 范围（做什么，不含代码）：** 先分别试用各组件并记录可用产出，再打通 `openwhispr/openwhispr`、`lnkiai/m3e-canvas`、`zjunlp/lightmem` 之间的最小数据流或协作流；其余按试用反馈取舍。
+
+**主要风险（来源报告）：**
+
+- `openwhispr/openwhispr`（跨平台、隐私优先的语音转文字与 AI 笔记桌面应用，支持本地和 BYOK 云端模型。）：本地模型下载、Node.js 24+ 与平台原生依赖会增加安装成本；云端 BYOK、会议音频与诊断数据仍需自行检查隐私边界；Trending 是加速证据，不等同于长期采用。
+- `lnkiai/m3e-canvas`（在浏览器中绘制 Material 3 Expressive 界面，并将屏幕结构转换为可供编码 Agent 使用的…）：项目较新且只有 1 个公开 Issue，组件覆盖和 prompt 语义稳定性还未被长期验证；生成的 prompt 不应直接替代设计评审、可访问性检查或真实设备测试。
+- `zjunlp/lightmem`（面向长上下文 Agent 的轻量记忆增强生成研究实现，提供 LightMem、FluxMem、StructMem…）：这是研究/实验代码，README 标注 pip 安装仍在准备，依赖 API keys、embedding 与 LLMLingua 模型；不要直接照搬其记忆保留规则、缓存假设或 benchmark…
+- `openai/openai-cli`（面向 OpenAI REST API 的官方 Go 命令行工具，覆盖资源化命令、文件输入与管理接口。）：项目仍处于快速演进期，必须匹配当前 API 权限、组织/项目/管理员 key 边界；Go 1.25+ 和官方 API 绑定使其不适合作为通用多 Provider CLI。
+- `aipoch/open-science`（面向科研的本地优先、模型无关 AI 研究工作台，覆盖科学 Agent、Python/R…）：模型与外部数据连接器的科学结论仍需人工复核；桌面应用和多 Provider 组合尚在快速迭代，生产数据应先做备份、权限与可复现性验证。
+
+**验证路径：** 每个组件按来源报告的“上手建议/真实风险”复核（固定版本、隔离环境、自有数据复测）。
+
+### 可行性方案 2：今日锚点组合：sim 等 3 个新发现项目（组合 3 个项目，今日锚点 3 个）
+**方案评分**：**82/100（中）**
+
+**业务定位：** 把今日新发现的 3 个项目作为组合试用候选：用于构建、部署与观测 AI Agent 和工作流的协作式开源工作区。（`simstudioai/sim`）、以纯 C 实现、按需从磁盘流式加载专家的本地 MoE 模型推理引擎。（`justvugg/colibri`）、以 Electron 桌面界面、Rust 宿主核心和 pi Agent Harness 组成的本地优先编码 Agent。（`vastsa/pi-desktop`）。先各自试用、记录产出，再找可打通的组合路径。
+
+**目标客户：** 想第一时间试用今日新发现项目的个人开发者与研究型小团队。
+
+**市场机会：** 今日 3 个锚点分属 Agent、网关、本地等能力面，池中对应候选 168 个，组件供给充足；先用小规模试用验证价值，再决定产品化方向。（以上市场方向与产品化价值均为待验证假设）
+
+**可行性依据：** 全部组件来自今日日报，能力面尽量互补（3 个），无需等待固定模板命中即可拼出组合。本组合含今日发现项目 3 个（`simstudioai/sim`、`justvugg/colibri`、`vastsa/pi-desktop`）；池中各能力面候选充足（agent 292 · gateway 168 · local 174），最稀缺槽位也有 168 个候选。
+
+**组合方案：**
+
+| 角色 | 项目 | 入选理由 |
+|---|---|---|
+| 用于构建、部署与观测 AI Agent 和工作流的协作式开源工作区。 | [`simstudioai/sim`](https://github.com/simstudioai/sim) | 它同时满足可运行示例、容器化部署、持续版本线与清晰文档等实用型门槛，适合作为团队评估 Agent 交付流程的起点。 |
+| 以纯 C 实现、按需从磁盘流式加载专家的本地 MoE 模型推理引擎。 | [`justvugg/colibri`](https://github.com/JustVugg/colibri) | 它提供了一个足够具体的学习切片：先跑一个受支持模型，再用 profiler 对照专家切换、缓存命中和磁盘读取，就能把 MoE… |
+| 以 Electron 桌面界面、Rust 宿主核心和 pi Agent Harness 组成的本地优先编码 Agent。 | [`vastsa/pi-desktop`](https://github.com/vastsa/PI-Desktop) | 它不是又一个云端 Agent 壳，而是提供了 Rust 宿主、Electron 界面和 Harness 的具体组合… |
+
+**差异化：** 完全由今日新发现驱动，组件全部来自今日日报，新鲜度最高，不依赖固定模板。
+
+**MVP 范围（做什么，不含代码）：** 先分别试用各组件并记录可用产出，再打通 `simstudioai/sim`、`justvugg/colibri`、`vastsa/pi-desktop` 之间的最小数据流或协作流；其余按试用反馈取舍。
+
+**主要风险（来源报告）：**
+
+- `simstudioai/sim`（用于构建、部署与观测 AI Agent 和工作流的协作式开源工作区。）：真实生产部署仍需单独评估模型费用、密钥管理、工作流权限和持久化数据隔离；大而全的 Agent 平台也可能引入不必要的运维面。
+- `justvugg/colibri`（以纯 C 实现、按需从磁盘流式加载专家的本地 MoE 模型推理引擎。）：硬件兼容性、模型格式、量化质量和性能数字高度依赖具体环境；为极限内存占用做的同步 I/O、错误处理和接口取舍不应直接照搬到通用生产服务。
+- `vastsa/pi-desktop`（以 Electron 桌面界面、Rust 宿主核心和 pi Agent Harness 组成的本地优先编码 Agent。）：LGPL-3.0 对分发与链接方式有合规要求；桌面端的插件权限、模型凭据和本地文件访问需要先做隔离设计，快速迭代的 API 不宜直接固化。
+
+**验证路径：** 每个组件按来源报告的“上手建议/真实风险”复核（固定版本、隔离环境、自有数据复测）。
+
+## 本周优先试用
+如果只做三项小范围验证，可以先从 mcp-use 的只读 MCP 工具与最小 View、OpenWhispr 的本地/云端短音频对比，以及 Spin 的最小 HTTP 组件开始；它们分别对应 Agent 工具交付、本地 AI 产品和受限运行时三条不同路径。
+
+**完整周报：** [2026-W37 完整周报](/weekly/2026-W37/)
+
+这 10 个项目里，你最想看到哪一个的实际试用记录？也欢迎分享你最在意的是权限、许可证、模型成本还是部署复杂度。
+
+---
+
+**关于仓库雷达**
+
+仓库雷达持续整理值得使用、学习和二次开发的开源项目。日报负责发现，周报负责筛选，也会尽量把风险和低成本试法说清楚。

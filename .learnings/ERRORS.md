@@ -1190,3 +1190,94 @@ Use a single direct raw-file request for the required license evidence instead o
 ### Resolution
 - **Resolved**: 2026-09-11T14:14:00+08:00
 - **Notes**: Switched to direct raw GitHub license retrieval.
+## [ERR-20260913-001] radar-ad-hoc-score-check
+
+**Logged**: 2026-09-13T20:18:00+08:00
+**Priority**: low
+**Status**: resolved
+**Area**: tests
+
+### Summary
+An ad-hoc radar preflight rejected valid market-opportunity prose because it searched globally for the phrase `组件供给` instead of limiting the check to score-detail lines.
+
+### Error
+```text
+AssertionError
+```
+
+### Context
+- The W37 draft correctly preserved the selected feasibility reports' market-opportunity text.
+- The forbidden output is the component-scoring breakdown after `方案评分`, not ordinary prose containing the same words.
+
+### Suggested Fix
+Scope the assertion to `方案评分` lines and reject parentheses or named score components only on those lines.
+
+### Metadata
+- Reproducible: yes
+- Related Files: data/github-project-digest/distribution-drafts/2026-W37-wechat.md.tmp
+
+### Resolution
+- **Resolved**: 2026-09-13T20:18:00+08:00
+- **Notes**: Replaced the global substring assertion with a line-scoped score-format assertion.
+
+---
+## [ERR-20260913-002] tool-wrapper-syntax
+
+**Logged**: 2026-09-13T20:27:00+08:00
+**Priority**: low
+**Status**: resolved
+**Area**: tests
+
+### Summary
+A finalization command did not start because the JavaScript tool wrapper had a missing closing parenthesis.
+
+### Error
+```text
+SyntaxError: missing ) after argument list
+```
+
+### Context
+- The failure occurred before shell execution, so no draft or radar file was moved.
+
+### Suggested Fix
+Keep the wrapper minimal and validate the `text(r.output)` call before execution.
+
+### Metadata
+- Reproducible: yes
+- Related Files: data/github-project-digest/distribution-drafts/2026-W37-wechat.md.tmp
+
+### Resolution
+- **Resolved**: 2026-09-13T20:27:00+08:00
+- **Notes**: Reissued the unchanged finalization command with a valid wrapper.
+
+---
+## [ERR-20260913-003] tool-wrapper-syntax
+
+**Logged**: 2026-09-13T22:15:00+08:00
+**Priority**: low
+**Status**: resolved
+**Area**: tests
+
+### Summary
+A read-only source inspection did not start because stray text was inserted into the JavaScript `text()` wrapper.
+
+### Error
+```text
+SyntaxError: missing ) after argument list
+```
+
+### Context
+- The shell command was never executed and no repository artifact changed.
+
+### Suggested Fix
+Use the minimal wrapper `text(r.output);` for command output.
+
+### Metadata
+- Reproducible: yes
+- Related Files: scripts/opportunity_analysis.py, scripts/weekly_feasibility_selector.py
+
+### Resolution
+- **Resolved**: 2026-09-13T22:15:00+08:00
+- **Notes**: Reissued the same read-only inspection with a valid wrapper.
+
+---

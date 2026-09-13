@@ -175,5 +175,121 @@ class FeasibilityRenderingTests(unittest.TestCase):
         )
 
 
+class AnchorBusinessNamingTests(unittest.TestCase):
+    @staticmethod
+    def project(repo, tags, tagline, stars=0):
+        return {
+            "id": repo,
+            "repo": repo,
+            "url": f"https://github.com/{repo}",
+            "score": 85,
+            "stars": stars,
+            "tags": tags,
+            "source_date": "2026-09-07",
+            "fields": {
+                "tagline": tagline,
+                "risks": "",
+                "quality": "",
+                "activity": "",
+                "metrics": "MIT",
+            },
+        }
+
+    def test_business_name_composes_qualifier_and_core(self):
+        self.assertEqual(
+            analysis.anchor_business_name({"agent", "local", "rag", "observability"}),
+            "本地优先 Agent 工作台",
+        )
+        self.assertEqual(
+            analysis.anchor_business_name({"agent", "comm", "rag"}),
+            "团队协作 Agent 工作台",
+        )
+
+    def test_every_capability_face_has_business_naming(self):
+        for tag in analysis.TAG_RULES:
+            self.assertIn(tag, analysis.ANCHOR_CORE_NOUN)
+            self.assertIn(tag, analysis.ANCHOR_QUALIFIER)
+
+    def test_anchor_combo_reuses_template_name_when_faces_match(self):
+        projects = [
+            self.project("owner/local", {"local": 5}, "本地优先笔记应用。", stars=500),
+            self.project("owner/agent", {"agent": 5}, "Agent 编排框架。", stars=400),
+            self.project("owner/memory", {"memory": 4}, "长期记忆存储。", stars=300),
+            self.project("owner/gateway", {"gateway": 4}, "多模型接入网关。", stars=200),
+            self.project("owner/rag", {"rag": 4}, "本地知识检索。", stars=100),
+        ]
+
+        combo = analysis.build_anchor_combo(
+            projects, projects, {p["id"] for p in projects})
+
+        self.assertEqual(combo["name"], "本地优先个人 AI 工作台")
+        self.assertEqual(combo["plan_family"], "local-first-personal-ai-workbench")
+        self.assertEqual(combo["origin"], "anchor")
+
+    def test_anchor_combo_without_template_match_gets_composed_name(self):
+        projects = [
+            self.project("owner/agent", {"agent": 6}, "Agent 编排框架。", stars=500),
+            self.project("owner/rag", {"rag": 5}, "知识库检索。", stars=300),
+            self.project("owner/local", {"local": 4}, "本地优先桌面助手。", stars=100),
+        ]
+
+        combo = analysis.build_anchor_combo(
+            projects, projects, {p["id"] for p in projects})
+
+        self.assertEqual(combo["name"], "本地优先 Agent 工作台")
+        self.assertNotIn("今日锚点组合", combo["name"])
+        self.assertTrue(combo["plan_family"].startswith("custom-"))
+
+    def test_anchor_combo_is_suppressed_when_business_name_is_blocked(self):
+        projects = [
+            self.project("owner/agent", {"agent": 6}, "Agent 编排框架。", stars=500),
+            self.project("owner/rag", {"rag": 5}, "知识库检索。", stars=300),
+            self.project("owner/local", {"local": 4}, "本地优先桌面助手。", stars=100),
+        ]
+
+        combo = analysis.build_anchor_combo(
+            projects, projects, {p["id"] for p in projects},
+            blocked_names={"本地优先 Agent 工作台"},
+        )
+
+        self.assertIsNone(combo)
+
+    def test_render_notes_anchor_origin_plans_only(self):
+        project = self.project("owner/tool", {"agent": 5}, "任务闭环工具。")
+        combo = {
+            "name": "本地优先 Agent 工作台",
+            "origin": "anchor",
+            "score": 80,
+            "score_parts": [("组件可靠度", 30, 35)],
+            "plan_family": "custom-e3f7d5a9c2b1",
+            "variant": "test-variant",
+            "pitch": "按'本地优先 Agent 工作台'方向组合今日项目。",
+            "target": "test audience",
+            "market": "test market",
+            "rationale": "test rationale",
+            "picks": {"Agent 编排": project},
+            "slot_supply": {"agent": 1},
+            "min_supply": 1,
+            "total": 1,
+            "today_count": 1,
+            "stars": 100,
+            "differentiation": "test differentiation",
+            "mvp": "test mvp",
+        }
+
+        def build(origin):
+            combo["origin"] = origin
+            return analysis.render(
+                [project], [project], [combo], [], "2026-09-07", "2026-06-09",
+                "2026-09-07", 1, 0, None,
+            )
+
+        report = build("anchor")
+
+        self.assertIn("补充说明：固定模板未拼满 3 个方案", report)
+        self.assertIn("### 1. 本地优先 Agent 工作台（组合 1 个项目，今日锚点 1 个）", report)
+        self.assertNotIn("补充说明", build("template"))
+
+
 if __name__ == "__main__":
     unittest.main()

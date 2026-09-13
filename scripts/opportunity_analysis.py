@@ -668,11 +668,70 @@ def top_tag(p):
     return max(p["tags"].items(), key=lambda kv: (kv[1], -order.get(kv[0], 99)))[0]
 
 
+# 兜底组合的业务命名：核心能力面决定业务主体，另一个能力面决定定位限定词。
+# 命名必须确定性、可跨天复用（plan_family 以名称为准），因此不用 LLM、不嵌入项目名与日期。
+ANCHOR_CORE_NOUN = {
+    "agent": "Agent 工作台",
+    "security": "安全 Agent 平台",
+    "document": "文档处理管线",
+    "codeintel": "代码智能平台",
+    "rag": "知识助手",
+    "comm": "协作控制面",
+    "local": "本地 AI 工作台",
+    "observability": "评测观测平台",
+    "gateway": "模型接入平台",
+    "memory": "记忆服务",
+    "sandbox": "执行沙箱服务",
+    "design": "设计协作工具",
+}
+ANCHOR_QUALIFIER = {
+    "local": "本地优先",
+    "comm": "团队协作",
+    "security": "安全合规",
+    "document": "文档智能",
+    "codeintel": "研发效能",
+    "design": "设计辅助",
+    "observability": "可观测",
+    "sandbox": "隔离执行",
+    "gateway": "多模型",
+    "memory": "长期记忆",
+    "rag": "知识增强",
+    "agent": "多 Agent",
+}
+# 业务主体优先取更偏业务的能力面，限定词优先取更偏场景/形态的能力面。
+ANCHOR_CORE_PRIORITY = ("agent", "security", "document", "codeintel", "rag",
+                        "comm", "local", "observability", "gateway", "memory",
+                        "sandbox", "design")
+ANCHOR_QUALIFIER_PRIORITY = ("local", "comm", "security", "document", "codeintel",
+                             "design", "observability", "sandbox", "gateway",
+                             "memory", "rag", "agent")
+# 能力面与固定模板完全一致时沿用模板名，让同一业务方向跨天共用 plan_family。
+TEMPLATE_NAME_BY_FACES = {frozenset(tag for tag, _ in tpl["slots"]): tpl["name"]
+                          for tpl in TEMPLATES}
+
+
+def anchor_business_name(faces):
+    """按能力面拼业务名：<定位限定词><业务主体>（确定性，可跨天复用）。"""
+    ranked = [tag for tag in ANCHOR_CORE_PRIORITY if tag in faces]
+    if not ranked:
+        return "多能力面组合方案"
+    qualifiers = [tag for tag in ANCHOR_QUALIFIER_PRIORITY
+                  if tag in faces and tag != ranked[0]]
+    core = ANCHOR_CORE_NOUN[ranked[0]]
+    if not qualifiers:
+        return core
+    qualifier = ANCHOR_QUALIFIER[qualifiers[0]]
+    # 中文与拉丁词相邻处补空格，与模板命名风格一致（如 "本地优先 Agent 工作台"）。
+    separator = " " if (core[:1].isascii() or qualifier[-1:].isascii()) else ""
+    return qualifier + separator + core
+
+
 def build_anchor_combo(projects, today_projects, today_ids, blocked_names=None):
     """固定模板命中不足时，用今日锚点按能力互补直接拼一个全新组合。
 
     全部组件来自今日日报（新鲜度最高），能力面尽量分散（同一能力面最多两个）；
-    方案名带"今日锚点组合"前缀，用于与固定模板方案区分。
+    业务名按组合能力面生成（命中固定模板能力面时沿用模板名，保持方案身份跨天连续），
+    并以 origin="anchor" 与固定模板方案区分。
     """
     blocked_names = blocked_names or set()
     anchors = [p for p in today_projects if p["tags"]]
@@ -706,7 +765,7 @@ def build_anchor_combo(projects, today_projects, today_ids, blocked_names=None):
         return None
     tags = [t for t in TAG_RULES if any(top_tag(p) == t for p in picks.values())]
     # 角色用项目真实定位（tagline 首句），避免能力面标签与项目错配；
-    # 方案名用项目短名，保证可读性与唯一性（新鲜度规则按名匹配）。
+    # 方案名由能力面决定而非项目名，同一业务方向才能共享 plan_family 并被新鲜度规则识别。
     def role_of(p):
         tagline = (p["fields"].get("tagline") or "").strip()
         if tagline:
@@ -722,11 +781,11 @@ def build_anchor_combo(projects, today_projects, today_ids, blocked_names=None):
             role += "（二）"
         roles[r] = role
     picks = {roles[r]: p for r, p in picks.items()}
-    repo_short = picks[list(picks)[0]]["repo"].split("/")[-1]
-    name = "今日锚点组合：{} 等 {} 个新发现项目".format(repo_short, len(picks))
+    slot_tags = [top_tag(p) for p in picks.values()]
+    faces = frozenset(slot_tags)
+    name = TEMPLATE_NAME_BY_FACES.get(faces) or anchor_business_name(faces)
     if name in blocked_names:
         return None
-    slot_tags = [top_tag(p) for p in picks.values()]
     supply = {t: sum(1 for p in projects if t in p["tags"]) for t in set(slot_tags)}
     min_supply = min(supply.values())
     today_count = len(picks)
@@ -738,8 +797,10 @@ def build_anchor_combo(projects, today_projects, today_ids, blocked_names=None):
         "score": score,
         "score_parts": score_parts,
         "name": name,
-        "pitch": "把今日新发现的 {} 个项目作为组合试用候选：{}。先各自试用、记录产出，再找可打通的组合路径。".format(
-            len(picks), roles_text),
+        "origin": "anchor",
+        "pitch": "按'{}'方向，把今日新发现的 {} 个项目作为组合试用候选：{}。"
+                   "先各自试用、记录产出，再找可打通的组合路径。".format(
+                       name, len(picks), roles_text),
         "target": "想第一时间试用今日新发现项目的个人开发者与研究型小团队。",
         "market": "今日 {} 个锚点分属 {} 等能力面，池中对应候选 {} 个，组件供给充足；"
                    "先用小规模试用验证价值，再决定产品化方向。".format(
@@ -793,6 +854,7 @@ def build_combos(projects, today_ids=None, blocked_names=None, reuse_counts=None
         combo = {
             "score": score,
             "score_parts": score_parts,
+            "origin": "template",
             "name": tpl["name"],
             "pitch": tpl["pitch"],
             "target": tpl["target"],
@@ -906,8 +968,9 @@ def render(projects, today_projects, combos, singles, run_date, cutoff,
     if blocked:
         A("> 新鲜度规则：以下方案已连续出现两天，本轮跳过（同一方案最多连续两天）：{}。".format(
             "、".join(sorted(blocked))))
-    if any(c["name"].startswith("今日锚点组合：") for c in combos):
-        A("> 补充说明：固定模板未拼满 3 个方案，已用今日新发现直接拼接'今日锚点组合'（组件全部来自今日日报）。")
+    if any(c.get("origin") == "anchor" for c in combos):
+        A("> 补充说明：固定模板未拼满 3 个方案，已用今日新发现直接拼接补充方案"
+          "（组件全部来自今日日报，业务名按组合能力面生成）。")
     A("")
     A("## 可行性方案")
     A("")
