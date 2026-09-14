@@ -2,6 +2,8 @@
 
 ![开源雷达周刊｜每周开源项目精选](/covers/repository-radar-weekly-subtitle.png)
 
+**本期标题：** AI 工程终于不止是 Demo
+
 这一周的十个项目集中在一件事上：让 AI 从演示走向可观察、可验证、可约束的工程系统。既有把 trace、评测和提示词管理放在一起的 Opik，也有把工作流、隔离运行和验收证据拆开的 ADK、Symphony 与 Agent Substrate；TurboVec 则把本地检索的性能与取舍放回可复测的工程语境。
 
 另一条线索是把边界写进工具本身。LangExtract 让抽取结果回到原文位置，Career-ops 把求职自动化停在人工确认之前，AI-Infra-Guard 把 Agent、Skill 和 MCP 的安全检查拆成模块，MarkItDown 与 Apex Inference Chip 则提供了很适合顺藤摸瓜阅读源码的工程样本。

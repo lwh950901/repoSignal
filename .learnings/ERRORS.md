@@ -33,6 +33,70 @@ Use `GITHUB_TOKEN` for recurring scans, reserve enrichment for the final shortli
 - **Notes**: Used live GitHub repository, Release, Commit and Issue/PR pages; no cache was presented as live evidence.
 
 ---
+## [ERR-20260914-002] cua-kun-state-refresh
+
+**Logged**: 2026-09-14T13:05:00+08:00
+**Priority**: low
+**Status**: resolved
+**Area**: config
+
+### Summary
+The first Kun paste attempt failed because Computer Use required a fresh app-state read after the user confirmation turn.
+
+### Error
+```text
+Computer Use is not active for '/Applications/Kun.app'. You first must call `get_app_state` to get the latest state before doing other Computer Use actions.
+```
+
+### Context
+- Kun had been selected in the preceding turn.
+- User confirmation created a turn boundary before the paste action.
+- No message text was pasted or sent.
+
+### Suggested Fix
+After any turn boundary, refresh the selected native app with `getAXState()` before attempting UI actions.
+
+### Metadata
+- Reproducible: yes
+- Related Files: none
+
+### Resolution
+- **Resolved**: 2026-09-14T13:05:00+08:00
+- **Notes**: Refreshing Kun state before retrying the confirmed send.
+
+---
+## [ERR-20260914-001] skill-path-resolution
+
+**Logged**: 2026-09-14T00:00:00+08:00
+**Priority**: low
+**Status**: resolved
+**Area**: config
+
+### Summary
+The first attempt to load the `understand-diff` skill used an incorrect duplicated directory segment.
+
+### Error
+```text
+sed: /Users/elvis/.agents/skills/understand-anything/understand-diff/SKILL.md: No such file or directory
+```
+
+### Context
+- The available-skills catalog maps `r2` directly to `/Users/elvis/.agents/skills`.
+- The correct path is `/Users/elvis/.agents/skills/understand-diff/SKILL.md`.
+- No project artifact was changed by the failed read.
+
+### Suggested Fix
+Expand the catalog root alias exactly once and append the listed relative skill path verbatim.
+
+### Metadata
+- Reproducible: yes
+- Related Files: none
+
+### Resolution
+- **Resolved**: 2026-09-14T00:00:00+08:00
+- **Notes**: Reloaded the skill from the correct path and continued the review.
+
+---
 
 ## [ERR-20260813-001] daily_report_patch_generation
 

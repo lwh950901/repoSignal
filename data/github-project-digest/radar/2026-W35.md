@@ -2,6 +2,8 @@
 
 ![开源雷达周刊｜每周开源项目精选](/covers/repository-radar-weekly-subtitle.png)
 
+**本期标题：** 训练治理交付正在补齐 Agent 的最后一公里
+
 本周的 10 个项目，集中在一条逐渐清晰的主线：Agent 不再只是接模型和工具，还要能训练、治理、运行、观察和恢复。DeepSeek Harness、Agent Lightning、Agent Governance Toolkit、Herdr 与 Google ADK Go 分别切进运行时、训练闭环、策略治理、长任务状态和 Go 工程入口，适合从不同层面评估团队的 Agent 基础设施。
 
 另一边，开发交付开始更强调可验证和可控：Archify 把架构图做成可追溯交付物，Playwright MCP 为浏览器自动化提供结构化入口，OpenMontage 将视频生产拆成可审计管线；AI Job Search 与 AI Engineering from Scratch 则把真实文档流程和学习过程都放回人工审阅、测试与证据留存的轨道上。

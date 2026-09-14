@@ -2,6 +2,8 @@
 
 ![开源雷达周刊｜每周开源项目精选](/covers/repository-radar-weekly-subtitle.png)
 
+**本期标题：** Agent 从 RAG 原型走向受控执行
+
 这一周的 10 个项目，集中在两件事：先把 Agent 与 RAG 做成可部署、可恢复的系统，再把编码 Agent 的规格、执行与协作放进更清晰的边界里。既有可以直接搭建 PoC 的 RAGFlow、Langflow，也有更适合拆解工程方法的 Spec Kit、OpenSpec 和 code-graph-rag。
 
 另一个明显方向是“执行”本身正在成为基础设施问题。OpenSandbox 讨论隔离，Conductor 处理持久化工作流，Paperclip 和 prime-agent 分别从团队控制面与长任务运行时切入；试用时，权限、凭据和升级路径比跑通演示更值得先确认。

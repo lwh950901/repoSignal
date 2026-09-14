@@ -36,7 +36,7 @@ npm run build
 python3 scripts/generate_monthly_digest.py 2026-07
 ```
 
-组合可行性方案以**Kun 定时任务**方式每天 08:30 运行：任务定义见 `data/github-project-digest/feasibility/KUN-TASK.md`（自包含执行指令：目标/步骤/验证/汇报），在 Kun 中按该文件配置每日触发即可。以当天日报发现的项目为锚点（当天无日报则取最近一份），从最近 90 天项目池（日报+周报，当前约 255 个唯一项目）中组合组件，每天输出 3 个可行业务方案（业务定位 / 目标客户 / 市场机会 / 组合分工 / 差异化 / 风险 / 验证路径），不含代码：
+组合可行性方案以**Kun 定时任务**方式每天 08:30 运行：任务定义见 `data/github-project-digest/feasibility/KUN-TASK.md`（自包含执行指令：目标/步骤/验证/汇报），在 Kun 中按该文件配置每日触发即可。以当天日报发现的项目为锚点（当天没有日报则跳过，不生成方案），从最近 90 天项目池（日报+周报，当前约 255 个唯一项目）中组合组件，每天输出 3 个可行业务方案（业务定位 / 目标客户 / 市场机会 / 组合分工 / 差异化 / 风险 / 验证路径），不含代码：
 
 ```bash
 python3 scripts/opportunity_analysis.py --check

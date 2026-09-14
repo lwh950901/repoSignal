@@ -467,3 +467,30 @@ RepoSignal 的 Logo 应是无文字的独立图形标，并从项目简介图右
 - **Notes**: 按简介图雷达图案重新生成无文字 Logo。
 
 ---
+
+## [LRN-20260914-001] correction
+
+**Logged**: 2026-09-14T15:38:00+08:00
+**Priority**: high
+**Status**: resolved
+**Area**: docs
+
+### Summary
+可行性方案已有明确业务名称时，周刊不得为“优化”而改名。
+
+### Details
+W37 的“本地优先 · 多模型 · Agent 工作台”已有源报告提供的业务名称；此前手动优化时错误替换为新的描述性名称。用户明确：只为“今日锚点组合”等未命名方案生成业务名称，已有名称必须原样保留。
+
+### Suggested Action
+生成或编辑雷达的可行性方案前，先判定源标题是否为明确业务名称；仅对未命名的组合说明生成标题，并在事实校验中记录映射。
+
+### Metadata
+- Source: user_feedback
+- Related Files: data/github-project-digest/radar/2026-W37.md, data/github-project-digest/distribution-drafts/2026-W37-wechat.md, /Users/elvis/.codex/automations/automation/automation.toml
+- Tags: radar, feasibility, naming, source-fidelity
+
+### Resolution
+- **Resolved**: 2026-09-14T15:38:00+08:00
+- **Notes**: 已恢复两份 W37 周刊稿中的源业务名称；自动化规则此前已限定为仅处理未命名方案。
+
+---

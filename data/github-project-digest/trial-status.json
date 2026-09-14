@@ -1521,5 +1521,55 @@
       "GitHub Trending 2026-09-12 核验 ayghri/i-have-adhd 约新增 3,440 Stars、nashsu/llm_wiki 约新增 640 Stars、alsk1992/CloddsBot 约新增 627 Stars；仅 ayghri 以 5,000+ Stars、量化增长和 Trending 加速证据进入爆发型。",
       "当日 feasibility 文件运行前已存在且含其他任务生成内容，未覆盖、未运行每日方案脚本；日报与 history 不受影响。"
     ]
+  },
+  "daily_run_2026-09-14": {
+    "date": "2026-09-14",
+    "run_time": "2026-09-14T14:00:00+08:00",
+    "status": "passed_from_candidate_checkpoint_with_api_rate_limit_and_web_fallback",
+    "skill_invoked": true,
+    "scanner_ran": true,
+    "candidate_file_preexisting": true,
+    "candidate_checkpoint_reused": true,
+    "broad_search_repeated": false,
+    "candidate_count": 59,
+    "primary_count": 4,
+    "extra_count": 0,
+    "history_entries_before_run": 357,
+    "history_entries_added": 4,
+    "history_entries_after_append": 361,
+    "history_duplicates_in_90_days": [],
+    "feedback_entries_read": 7,
+    "feedback_modified": false,
+    "report": "data/github-project-digest/daily/2026-09-14.md",
+    "candidate_ledger": "data/github-project-digest/candidates/2026-09-14.jsonl",
+    "fallback": "复用早间无缓存 GitHub Search 检查点；GitHub CLI 凭据失效且匿名 API 限流，最终入围项目改用 GitHub 仓库、README 与 Release 页面核验，未使用缓存冒充实时事实。",
+    "feasibility": {
+      "status": "preserved_preexisting_file",
+      "output": "data/github-project-digest/feasibility/2026-09-14.md",
+      "overlap_modification_blocked": true,
+      "boundary_notes": "当日 feasibility 文件早于本次日报补跑已存在；按重叠保护规则未覆盖、未重跑方案脚本，日报与 history 不受影响。"
+    },
+    "checks": {
+      "fixed_format": true,
+      "primary_count_4": true,
+      "extra_count_0": true,
+      "required_fields": true,
+      "learning_slot_4": true,
+      "candidate_checkpoint_reused": true,
+      "broad_search_not_repeated": true,
+      "history_jsonl": true,
+      "candidate_jsonl": true,
+      "dedupe_90d": true,
+      "feedback_read": true,
+      "github_fact_source": true,
+      "skill_invoked": true,
+      "scanner_ran": true,
+      "feasibility_preserved": true
+    },
+    "anomalies": [
+      "05:35 自动任务在生成 59 条候选后因 Codex 响应流中断，未写入日报；本次从候选检查点续跑。",
+      "本机 GitHub CLI 凭据失效，匿名 API enrichment 限流；按规则使用 GitHub 页面核验最终 4 项。",
+      "当日 feasibility 文件由其他任务先行生成，未覆盖。"
+    ]
   }
 }

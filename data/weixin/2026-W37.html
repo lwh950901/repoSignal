@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>开源雷达周刊 2026-W37（微信排版版）</title>
+<!--
+════════════════════════════════════════════════════════════
+发布前操作清单（以下内容不进入正文）
+1. 标题（三选一，≤30 字）：
+   A. 每周 10 个开源项目｜MCP 工程化与本地优先工作流
+   B. 开源雷达 2026-W37：MCP 工具链与端侧工作流
+   C. 端侧语音、3D 编辑与 MoE 推理：本周 10 个项目
+2. 摘要（勾选原创后可填，120 字内）：
+   本周 10 个项目沿两条线展开：MCP 与 Agent 工具从协议接入走向可测试、可部署的工程体系，本地优先应用继续进入语音、知识库、3D 编辑与模型推理；文末附 2 个本周可行性方案。
+3. 封面图：上传 public/covers/repository-radar-weekly-subtitle.png
+   （大封面 900×383，小封面另裁 1:1 方图）
+4. 发布时删除正文中两个【发布前删除】占位框
+5. 后台「阅读原文」指向完整周报页面 URL（如已部署）
+6. 勾选「原创」，添加话题标签：#开源项目 #开发者工具 #AI 编程
+正文文字由脚本自动生成，与原版周报逐字一致（已通过 verify-text.sh 校验）。
+════════════════════════════════════════════════════════════
+-->
+</head>
+<body style="margin:0;padding:0;">
+
+<button id="copyArticleBtn" style="position:fixed;right:20px;bottom:24px;z-index:9999;font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;font-size:14px;color:#fff;background:#ff7a1a;border:none;border-radius:999px;padding:10px 18px;box-shadow:0 4px 12px rgba(255,122,26,.35);cursor:pointer;">一键复制全文</button>
+
+<section style="font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;color:#1c2733;font-size:16px;line-height:1.9;letter-spacing:0.5px;max-width:680px;margin:0 auto;padding:24px 16px;">
+
+<section style="border:2px dashed #c9d4e8;border-radius:8px;background:#f7f9fc;color:#7a8aa5;font-size:14px;text-align:center;padding:18px 12px;margin-bottom:20px;">
+【发布前删除】封面图占位：上传 public/covers/repository-radar-weekly-subtitle.png<br>
+大封面 900×383，小封面另裁 1:1 方图（注意小封面会裁中间）
+</section>
+
+<h1 style="font-size:22px;font-weight:bold;color:#0b3d66;margin:0 0 24px;">开源雷达周刊</h1>
+<p style="font-size:14px;color:#5c6b7a;margin:10px 0;">本周的 10 个项目沿着两条线展开：一条是 MCP 与 Agent 工具从协议接入走向可测试、可部署、可观察的工程体系；另一条是本地优先应用继续进入语音、知识库、3D 编辑和模型推理等具体工作流。</p>
+<p style="font-size:14px;color:#5c6b7a;margin:10px 0;">这份清单既有适合直接做小范围验证的 mcp-use、Sim、OpenWhispr 和 Maxun，也保留了 I Have ADHD、Colibri、Spin 这类能帮助团队拆解交互规范、运行时与资源边界的样本。选择时不只看热度，更要看安装路径、维护证据以及真实使用风险。</p>
+<h2 style="font-size:18px;font-weight:bold;color:#0b3d66;border-left:4px solid #ff7a1a;padding-left:10px;margin:30px 0 6px;">一、MCP 与 Agent 交付工具</h2>
+<h3 style="font-size:17px;font-weight:bold;color:#1c2733;margin:22px 0 4px;"><span style="display:inline-block;width:26px;height:26px;line-height:26px;text-align:center;border-radius:50%;background:#ff7a1a;color:#fff;font-size:15px;font-weight:bold;margin-right:6px;">1.</span> <span style="color:#0b3d66;">mcp-use</span>：把 MCP 从协议接入推进到完整工程</h3>
+<p style="margin:10px 0;"><strong>介绍：</strong> mcp-use 是面向 TypeScript 开发者的全栈 MCP 框架，把 MCP Server、交互式 MCP App、Inspector、Agent 接入和部署工具放进同一套路径。</p>
+<p style="margin:10px 0;"><strong>推荐依据：</strong> 它覆盖脚手架、类型化 tool-to-UI 合约、调试、截图验证和部署，README 还给出从 <code style="font-family:Menlo,Consolas,monospace;background:#eef3f7;border-radius:3px;padding:1px 5px;font-size:15px;">npm run dev</code> 到构建发布的可运行流程，比只提供协议封装的库更接近可交付产品。</p>
+<p style="margin:10px 0;"><strong>适合：</strong> 准备开发 ChatGPT/Claude 连接器、内部数据工具或带交互界面的 MCP App，并希望统一调试与部署流程的团队。</p>
+<p style="font-size:15px;color:#5c6b7a;background:#eef3f7;border-left:3px solid #c7d3de;padding:10px 12px;margin:10px 0;"><strong style="color:#999;">注意：</strong> MCP 规范和宿主兼容性仍在演进，多包和多运行时版本线会增加升级成本；接入写操作前要锁定协议版本、鉴权边界和工具副作用。</p>
+<h3 style="font-size:17px;font-weight:bold;color:#1c2733;margin:22px 0 4px;"><span style="display:inline-block;width:26px;height:26px;line-height:26px;text-align:center;border-radius:50%;background:#ff7a1a;color:#fff;font-size:15px;font-weight:bold;margin-right:6px;">2.</span> <span style="color:#0b3d66;">I Have ADHD</span>：把 Agent 输出规范做成可安装资产</h3>
+<p style="margin:10px 0;"><strong>介绍：</strong> I Have ADHD 为 Claude Code、Codex、Cursor 等编码 Agent 提供更易扫读、先给结论的输出规则和可安装 skill/plugin。</p>
+<p style="margin:10px 0;"><strong>推荐依据：</strong> 项目把“减少冗长回复”从提示词偏好做成带安装、卸载、hooks、测试和 evals 的跨工具配置，并在本周出现了明确的短期增长与持续兼容性修复。</p>
+<p style="margin:10px 0;"><strong>适合：</strong> 希望统一团队 Agent 回复结构、减少长答案遗漏，并愿意用现有任务集评估实际效果的开发者。</p>
+<p style="font-size:15px;color:#5c6b7a;background:#eef3f7;border-left:3px solid #c7d3de;padding:10px 12px;margin:10px 0;"><strong style="color:#999;">注意：</strong> 强制短答可能压缩教学、审计或高风险任务所需的证据；名称涉及 ADHD，但项目不是医学建议或诊断工具，不能把表达偏好泛化成医学结论。</p>
+<h3 style="font-size:17px;font-weight:bold;color:#1c2733;margin:22px 0 4px;"><span style="display:inline-block;width:26px;height:26px;line-height:26px;text-align:center;border-radius:50%;background:#ff7a1a;color:#fff;font-size:15px;font-weight:bold;margin-right:6px;">3.</span> <span style="color:#0b3d66;">OmniRoute</span>：统一多模型凭据与路由的本地网关</h3>
+<p style="margin:10px 0;"><strong>介绍：</strong> OmniRoute 是统一管理多家 LLM Provider、凭据、模型路由和本地编码 Agent 接入的桌面与服务端网关。</p>
+<p style="margin:10px 0;"><strong>推荐依据：</strong> 桌面控制台、OpenAI 兼容入口、路由回退、浏览器池与 Agent skills 形成可运行的本地基础设施，仓库同时具备文档、示例、测试、容器配置和安全说明。</p>
+<p style="margin:10px 0;"><strong>适合：</strong> 需要在多个模型供应商之间做故障切换、成本控制，或给不同编码 Agent 提供统一调用入口的个人和小团队。</p>
+<p style="font-size:15px;color:#5c6b7a;background:#eef3f7;border-left:3px solid #c7d3de;padding:10px 12px;margin:10px 0;"><strong style="color:#999;">注意：</strong> 集中保存多 Provider 凭据会扩大本地攻击面，自动回退还可能改变模型能力、价格和数据地域；必须先做最小权限、日志脱敏和故障演练。</p>
+<h3 style="font-size:17px;font-weight:bold;color:#1c2733;margin:22px 0 4px;"><span style="display:inline-block;width:26px;height:26px;line-height:26px;text-align:center;border-radius:50%;background:#ff7a1a;color:#fff;font-size:15px;font-weight:bold;margin-right:6px;">4.</span> <span style="color:#0b3d66;">Sim</span>：从工作流搭建走到部署与观测</h3>
+<p style="margin:10px 0;"><strong>介绍：</strong> Sim 是用于构建、部署和观测 AI Agent 与工作流的协作式开源工作区，面向希望把试验流程交付给团队的开发者。</p>
+<p style="margin:10px 0;"><strong>推荐依据：</strong> 它用流程构建、Docker 部署、版本化发布和监控入口覆盖 Agent 从设计到运行的基本闭环，并保持持续 Release，试用路径比零散编排组件更完整。</p>
+<p style="margin:10px 0;"><strong>适合：</strong> 已经有 Agent 原型，希望进一步验证共享、部署、失败处理和运行监控的开发团队。</p>
+<p style="font-size:15px;color:#5c6b7a;background:#eef3f7;border-left:3px solid #c7d3de;padding:10px 12px;margin:10px 0;"><strong style="color:#999;">注意：</strong> 生产部署仍需独立评估模型费用、密钥管理、流程权限和持久化数据隔离；一体化平台也可能带来超出实际需要的运维面。</p>
+<h2 style="font-size:18px;font-weight:bold;color:#0b3d66;border-left:4px solid #ff7a1a;padding-left:10px;margin:30px 0 6px;">二、本地优先的具体工作流</h2>
+<h3 style="font-size:17px;font-weight:bold;color:#1c2733;margin:22px 0 4px;"><span style="display:inline-block;width:26px;height:26px;line-height:26px;text-align:center;border-radius:50%;background:#ff7a1a;color:#fff;font-size:15px;font-weight:bold;margin-right:6px;">5.</span> <span style="color:#0b3d66;">OpenWhispr</span>：端侧语音输入与 AI 笔记</h3>
+<p style="margin:10px 0;"><strong>介绍：</strong> OpenWhispr 是跨平台、隐私优先的语音转文字与 AI 笔记桌面应用，同时支持本地 Whisper/Parakeet 和 BYOK 云端模型。</p>
+<p style="margin:10px 0;"><strong>推荐依据：</strong> 本地模型、云端模型、历史记录和 MCP 入口组合成完整桌面工作流，仓库还有原生代码、测试、安全政策与故障排查材料，可以同时评估产品体验和端侧工程成本。</p>
+<p style="margin:10px 0;"><strong>适合：</strong> 想快速验证本地语音输入、会议转写、AI 笔记或语音数据接入 Agent 的个人与小团队。</p>
+<p style="font-size:15px;color:#5c6b7a;background:#eef3f7;border-left:3px solid #c7d3de;padding:10px 12px;margin:10px 0;"><strong style="color:#999;">注意：</strong> 本地模型下载、Node.js 24+ 和平台原生依赖会提高安装成本；用云端模型处理会议音频时仍需核对隐私、凭据和诊断数据边界。</p>
+<h3 style="font-size:17px;font-weight:bold;color:#1c2733;margin:22px 0 4px;"><span style="display:inline-block;width:26px;height:26px;line-height:26px;text-align:center;border-radius:50%;background:#ff7a1a;color:#fff;font-size:15px;font-weight:bold;margin-right:6px;">6.</span> <span style="color:#0b3d66;">Pascal Editor</span>：让 Agent 进入 3D 建筑编辑</h3>
+<p style="margin:10px 0;"><strong>介绍：</strong> Pascal Editor 是可在浏览器或本地 CLI 运行的 3D 建筑编辑器，并通过 MCP 向 AI Agent 暴露受控编辑能力。</p>
+<p style="margin:10px 0;"><strong>推荐依据：</strong> 项目把场景状态、WebGPU 渲染、CLI 生命周期和 MCP 工具拆成明确层次，文档覆盖 core、viewer、cli、mcp 的架构与数据流，为非文本专业工具提供了具体扩展边界。</p>
+<p style="margin:10px 0;"><strong>适合：</strong> 探索 AI 驱动 3D 场景编辑、WebGPU 工具链，或需要研究 Agent 如何安全操作专业软件的开发者。</p>
+<p style="font-size:15px;color:#5c6b7a;background:#eef3f7;border-left:3px solid #c7d3de;padding:10px 12px;margin:10px 0;"><strong style="color:#999;">注意：</strong> npm 稳定包与 GitHub 预发布能力可能不同；WebGPU 兼容性、单服务并发约束、Agent 权限和本地密钥处理仍要逐项验证。</p>
+<h3 style="font-size:17px;font-weight:bold;color:#1c2733;margin:22px 0 4px;"><span style="display:inline-block;width:26px;height:26px;line-height:26px;text-align:center;border-radius:50%;background:#ff7a1a;color:#fff;font-size:15px;font-weight:bold;margin-right:6px;">7.</span> <span style="color:#0b3d66;">Maxun</span>：把网页操作变成受控数据任务</h3>
+<p style="margin:10px 0;"><strong>介绍：</strong> Maxun 通过录制浏览器操作或自然语言配置，把网站转成结构化数据、定时任务和 API。</p>
+<p style="margin:10px 0;"><strong>推荐依据：</strong> Extract、Scrape、Crawl、Search、文档/OCR、SDK、CLI 与 MCP 覆盖从无代码录制到程序化调度的完整路径，并提供 Docker Compose、自托管和升级文档。</p>
+<p style="margin:10px 0;"><strong>适合：</strong> 做市场研究、价格监控、目录采集，或需要为 Agent 建立可观察网页数据入口的团队。</p>
+<p style="font-size:15px;color:#5c6b7a;background:#eef3f7;border-left:3px solid #c7d3de;padding:10px 12px;margin:10px 0;"><strong style="color:#999;">注意：</strong> 网页条款、robots、登录凭据、代理来源和个人数据处理需要单独合规；AGPL 会影响闭源服务集成，页面改版也可能让自动恢复后的数据悄然失真。</p>
+<h3 style="font-size:17px;font-weight:bold;color:#1c2733;margin:22px 0 4px;"><span style="display:inline-block;width:26px;height:26px;line-height:26px;text-align:center;border-radius:50%;background:#ff7a1a;color:#fff;font-size:15px;font-weight:bold;margin-right:6px;">8.</span> <span style="color:#0b3d66;">LLM Wiki</span>：把图检索落到桌面知识库</h3>
+<p style="margin:10px 0;"><strong>介绍：</strong> LLM Wiki 把个人资料、文档和网页整理为带知识图谱、混合检索与本地 Agent 接口的跨平台知识库应用。</p>
+<p style="margin:10px 0;"><strong>推荐依据：</strong> 项目公开了从文件导入、两阶段 ingest 到图谱、检索、Deep Research、Review、浏览器剪藏和 MCP/API 暴露的完整链路，并给出架构、构建与测试入口。</p>
+<p style="margin:10px 0;"><strong>适合：</strong> 想拆解桌面端知识库、图检索、社区发现与人机协作 Review 流程，或准备验证个人 RAG 产品的团队。</p>
+<p style="font-size:15px;color:#5c6b7a;background:#eef3f7;border-left:3px solid #c7d3de;padding:10px 12px;margin:10px 0;"><strong style="color:#999;">注意：</strong> GPL-3.0 会影响闭源分发与组合方式；README 中的检索基准必须在自己的语料和模型上复测，也不应照搬可能暴露内部推理的实现描述。</p>
+<h2 style="font-size:18px;font-weight:bold;color:#0b3d66;border-left:4px solid #ff7a1a;padding-left:10px;margin:30px 0 6px;">三、模型与运行时学习样本</h2>
+<h3 style="font-size:17px;font-weight:bold;color:#1c2733;margin:22px 0 4px;"><span style="display:inline-block;width:26px;height:26px;line-height:26px;text-align:center;border-radius:50%;background:#ff7a1a;color:#fff;font-size:15px;font-weight:bold;margin-right:6px;">9.</span> <span style="color:#0b3d66;">Colibri</span>：观察 MoE 专家如何从磁盘流入内存</h3>
+<p style="margin:10px 0;"><strong>介绍：</strong> Colibri 是以纯 C 实现、按需从磁盘流式加载专家的本地 MoE 模型推理引擎，目标是在受限内存硬件上运行更大的模型。</p>
+<p style="margin:10px 0;"><strong>推荐依据：</strong> 较小的零依赖 C 核心暴露了专家路由、磁盘 I/O、缓存和内存预算之间的取舍，README 同时提供安装、使用、Docker、测试和架构说明。</p>
+<p style="margin:10px 0;"><strong>适合：</strong> 希望通过源码与 profiler 理解 MoE 专家切换、缓存命中和存储瓶颈的系统工程师。</p>
+<p style="font-size:15px;color:#5c6b7a;background:#eef3f7;border-left:3px solid #c7d3de;padding:10px 12px;margin:10px 0;"><strong style="color:#999;">注意：</strong> 性能数字高度依赖硬件、模型格式、量化和存储设备；为极限内存占用采用的同步 I/O、错误处理和接口取舍不宜直接照搬到通用生产服务。</p>
+<h3 style="font-size:17px;font-weight:bold;color:#1c2733;margin:22px 0 4px;"><span style="display:inline-block;width:26px;height:26px;line-height:26px;text-align:center;border-radius:50%;background:#ff7a1a;color:#fff;font-size:15px;font-weight:bold;margin-right:6px;">10.</span> <span style="color:#0b3d66;">Spin</span>：用 WebAssembly 约束服务端能力边界</h3>
+<p style="margin:10px 0;"><strong>介绍：</strong> Spin 基于 WebAssembly Component Model 与 Wasmtime 构建、分发和运行云端微服务。</p>
+<p style="margin:10px 0;"><strong>推荐依据：</strong> 同一 CLI 支持 Rust、JavaScript、Python、Go 组件，并通过 HTTP、Redis、KV、SQL 与 AI 宿主接口展示 WASI 组件和宿主能力边界；安装和 <code style="font-family:Menlo,Consolas,monospace;background:#eef3f7;border-radius:3px;padding:1px 5px;font-size:15px;">spin new/build/up</code> 路径完整。</p>
+<p style="margin:10px 0;"><strong>适合：</strong> 想拆解 WASI 组件、触发器、宿主权限、跨语言 SDK 和 Serverless 运行时的后端工程师。</p>
+<p style="font-size:15px;color:#5c6b7a;background:#eef3f7;border-left:3px solid #c7d3de;padding:10px 12px;margin:10px 0;"><strong style="color:#999;">注意：</strong> WASI 与 Component Model 仍在演进，不同语言 SDK 的能力并不完全一致；canary 和宿主扩展接口不能未经验证就当作稳定生产合同。</p>
+<h2 style="font-size:18px;font-weight:bold;color:#0b3d66;border-left:4px solid #ff7a1a;padding-left:10px;margin:30px 0 6px;">本周可行性精选</h2>
+<p style="font-size:14px;color:#5c6b7a;margin:10px 0;">这些方案从本周组合研究中按家族去重、四周历史和组件复用情况筛选出来，用来判断是否值得做小范围验证。它们仍属于可行性研究，不代表市场需求或生产可用性已经得到验证。</p>
+<h3 style="font-size:17px;font-weight:bold;color:#0b3d66;border-left:4px solid #ff7a1a;padding-left:10px;margin:26px 0 10px;">可行性方案 1：AI 研究与 Agent 创作工作台（组合 5 个项目，今日锚点 5 个）</h3>
+<p style="margin:10px 0 6px;"><strong>方案评分</strong>：<strong style="color:#fff;background:#0b3d66;border-radius:999px;padding:2px 12px;font-size:15px;">83/100（中）</strong></p>
+<p style="margin:10px 0;"><strong>业务定位：</strong> 把今日新发现的 5 个项目作为组合试用候选：跨平台、隐私优先的语音转文字与 AI 笔记桌面应用，支持本地和 BYOK 云端模型。（<code style="font-family:Menlo,Consolas,monospace;background:#eef3f7;border-radius:3px;padding:1px 5px;font-size:15px;">openwhispr/openwhispr</code>）、在浏览器中绘制 Material 3 Expressive 界面，并将屏幕结构转换为可供编码 Agent 使用的…（<code style="font-family:Menlo,Consolas,monospace;background:#eef3f7;border-radius:3px;padding:1px 5px;font-size:15px;">lnkiai/m3e-canvas</code>）、面向长上下文 Agent 的轻量记忆增强生成研究实现，提供 LightMem、FluxMem、StructMem…（<code style="font-family:Menlo,Consolas,monospace;background:#eef3f7;border-radius:3px;padding:1px 5px;font-size:15px;">zjunlp/lightmem</code>）、面向 OpenAI REST API 的官方 Go 命令行工具，覆盖资源化命令、文件输入与管理接口。（<code style="font-family:Menlo,Consolas,monospace;background:#eef3f7;border-radius:3px;padding:1px 5px;font-size:15px;">openai/openai-cli</code>）、面向科研的本地优先、模型无关 AI 研究工作台，覆盖科学 Agent、Python/R…（<code style="font-family:Menlo,Consolas,monospace;background:#eef3f7;border-radius:3px;padding:1px 5px;font-size:15px;">aipoch/open-science</code>）。先各自试用、记录产出，再找可打通的组合路径。</p>
+<p style="margin:10px 0;"><strong>目标客户：</strong> 想第一时间试用今日新发现项目的个人开发者与研究型小团队。</p>
+<p style="margin:10px 0;"><strong>市场机会：</strong> 今日 5 个锚点分属 Agent、检索、观测、本地等能力面，池中对应候选 89 个，组件供给充足；先用小规模试用验证价值，再决定产品化方向。（以上市场方向与产品化价值均为待验证假设）</p>
+<p style="margin:10px 0;"><strong>可行性依据：</strong> 全部组件来自今日日报，能力面尽量互补（4 个），无需等待固定模板命中即可拼出组合。本组合含今日发现项目 5 个（<code style="font-family:Menlo,Consolas,monospace;background:#eef3f7;border-radius:3px;padding:1px 5px;font-size:15px;">openwhispr/openwhispr</code>、<code style="font-family:Menlo,Consolas,monospace;background:#eef3f7;border-radius:3px;padding:1px 5px;font-size:15px;">lnkiai/m3e-canvas</code>、<code style="font-family:Menlo,Consolas,monospace;background:#eef3f7;border-radius:3px;padding:1px 5px;font-size:15px;">zjunlp/lightmem</code>、<code style="font-family:Menlo,Consolas,monospace;background:#eef3f7;border-radius:3px;padding:1px 5px;font-size:15px;">openai/openai-cli</code>、<code style="font-family:Menlo,Consolas,monospace;background:#eef3f7;border-radius:3px;padding:1px 5px;font-size:15px;">aipoch/open-science</code>）；池中各能力面候选充足（rag 89 · agent 282 · local 164 · observability 121），最稀缺槽位也有 89 个候选。</p>
+<p style="margin:10px 0;"><strong>组合方案：</strong></p>
+<table style="width:100%;border-collapse:collapse;font-size:13px;color:#1c2733;margin:10px 0;" cellpadding="0" cellspacing="0">
+<tr><th style="width:35%;background:#0b3d66;color:#fff;font-size:13px;font-weight:bold;text-align:left;padding:5px 6px;border:1px solid #0b3d66;word-break:break-all;">角色</th><th style="width:20%;background:#0b3d66;color:#fff;font-size:13px;font-weight:bold;text-align:left;padding:5px 6px;border:1px solid #0b3d66;word-break:break-all;">项目</th><th style="width:45%;background:#0b3d66;color:#fff;font-size:13px;font-weight:bold;text-align:left;padding:5px 6px;border:1px solid #0b3d66;word-break:break-all;">入选理由</th></tr>
+<tr><td style="width:35%;padding:5px 6px;border:1px solid #e9eef4;vertical-align:top;font-size:13px;font-weight:bold;color:#ff7a1a;word-break:break-all;">跨平台、隐私优先的语音转文字与 AI 笔记桌面应用，支持本地和 BYOK 云端模型。</td><td style="width:20%;padding:5px 6px;border:1px solid #e9eef4;vertical-align:top;font-family:Menlo,Consolas,monospace;font-size:13px;color:#0b3d66;word-break:break-all;">openwhispr/openwhispr</td><td style="width:45%;padding:5px 6px;border:1px solid #e9eef4;vertical-align:top;font-size:13px;color:#1c2733;">它同时满足爆发型 5,000 Stars 下限、当日 Trending 加速证据与可运行质量门槛，适合作为今天最直观的端侧 AI 工程试用入口。</td></tr>
+<tr><td style="width:35%;padding:5px 6px;border:1px solid #e9eef4;vertical-align:top;font-size:13px;font-weight:bold;color:#ff7a1a;word-break:break-all;">在浏览器中绘制 Material 3 Expressive 界面，并将屏幕结构转换为可供编码 Agent 使用的…</td><td style="width:20%;padding:5px 6px;border:1px solid #e9eef4;vertical-align:top;font-family:Menlo,Consolas,monospace;font-size:13px;color:#0b3d66;word-break:break-all;">lnkiai/m3e-canvas</td><td style="width:45%;padding:5px 6px;border:1px solid #e9eef4;vertical-align:top;font-size:13px;color:#1c2733;">它的差异化不是又一个页面生成器，而是把 Material 3 结构化编辑和 Agent prompt 导出连起来…</td></tr>
+<tr><td style="width:35%;padding:5px 6px;border:1px solid #e9eef4;vertical-align:top;font-size:13px;font-weight:bold;color:#ff7a1a;word-break:break-all;">面向长上下文 Agent 的轻量记忆增强生成研究实现，提供 LightMem、FluxMem、StructMem…</td><td style="width:20%;padding:5px 6px;border:1px solid #e9eef4;vertical-align:top;font-family:Menlo,Consolas,monospace;font-size:13px;color:#0b3d66;word-break:break-all;">zjunlp/lightmem</td><td style="width:45%;padding:5px 6px;border:1px solid #e9eef4;vertical-align:top;font-size:13px;color:#1c2733;">实现新鲜度和源码可拆解性高，且学习入口不是泛泛教程，而是方法文档、模块、测试、数据集和基线评测的组合。</td></tr>
+<tr><td style="width:35%;padding:5px 6px;border:1px solid #e9eef4;vertical-align:top;font-size:13px;font-weight:bold;color:#ff7a1a;word-break:break-all;">面向 OpenAI REST API 的官方 Go 命令行工具，覆盖资源化命令、文件输入与管理接口。</td><td style="width:20%;padding:5px 6px;border:1px solid #e9eef4;vertical-align:top;font-family:Menlo,Consolas,monospace;font-size:13px;color:#0b3d66;word-break:break-all;">openai/openai-cli</td><td style="width:45%;padding:5px 6px;border:1px solid #e9eef4;vertical-align:top;font-size:13px;color:#1c2733;">虽然规模不大，但官方维护、稳定 Release、清晰命令模型和近期 API 变更使它成为一个低成本、可直接运行的工程补充。</td></tr>
+<tr><td style="width:35%;padding:5px 6px;border:1px solid #e9eef4;vertical-align:top;font-size:13px;font-weight:bold;color:#ff7a1a;word-break:break-all;">面向科研的本地优先、模型无关 AI 研究工作台，覆盖科学 Agent、Python/R…</td><td style="width:20%;padding:5px 6px;border:1px solid #e9eef4;vertical-align:top;font-family:Menlo,Consolas,monospace;font-size:13px;color:#0b3d66;word-break:break-all;">aipoch/open-science</td><td style="width:45%;padding:5px 6px;border:1px solid #e9eef4;vertical-align:top;font-size:13px;color:#1c2733;">它不只是聊天壳，而是把本地数据、Agent 工具调用、研究产物和来源追踪放进可启动产品，当前上手路径和维护证据都足够具体。</td></tr>
+</table>
+
+<p style="margin:10px 0;"><strong>差异化：</strong> 完全由今日新发现驱动，组件全部来自今日日报，新鲜度最高，不依赖固定模板。</p>
+<p style="margin:10px 0;"><strong>MVP 范围（做什么，不含代码）：</strong> 先分别试用各组件并记录可用产出，再打通 <code style="font-family:Menlo,Consolas,monospace;background:#eef3f7;border-radius:3px;padding:1px 5px;font-size:15px;">openwhispr/openwhispr</code>、<code style="font-family:Menlo,Consolas,monospace;background:#eef3f7;border-radius:3px;padding:1px 5px;font-size:15px;">lnkiai/m3e-canvas</code>、<code style="font-family:Menlo,Consolas,monospace;background:#eef3f7;border-radius:3px;padding:1px 5px;font-size:15px;">zjunlp/lightmem</code> 之间的最小数据流或协作流；其余按试用反馈取舍。</p>
+<p style="margin:10px 0;"><strong>主要风险（来源报告）：</strong></p>
+<p style="margin:8px 0;font-size:15px;color:#1c2733;"><span style="color:#ff7a1a;font-weight:bold;margin-right:8px;">-</span><code style="font-family:Menlo,Consolas,monospace;background:#eef3f7;border-radius:3px;padding:1px 5px;font-size:15px;">openwhispr/openwhispr</code>（跨平台、隐私优先的语音转文字与 AI 笔记桌面应用，支持本地和 BYOK 云端模型。）：本地模型下载、Node.js 24+ 与平台原生依赖会增加安装成本；云端 BYOK、会议音频与诊断数据仍需自行检查隐私边界；Trending 是加速证据，不等同于长期采用。</p>
+<p style="margin:8px 0;font-size:15px;color:#1c2733;"><span style="color:#ff7a1a;font-weight:bold;margin-right:8px;">-</span><code style="font-family:Menlo,Consolas,monospace;background:#eef3f7;border-radius:3px;padding:1px 5px;font-size:15px;">lnkiai/m3e-canvas</code>（在浏览器中绘制 Material 3 Expressive 界面，并将屏幕结构转换为可供编码 Agent 使用的…）：项目较新且只有 1 个公开 Issue，组件覆盖和 prompt 语义稳定性还未被长期验证；生成的 prompt 不应直接替代设计评审、可访问性检查或真实设备测试。</p>
+<p style="margin:8px 0;font-size:15px;color:#1c2733;"><span style="color:#ff7a1a;font-weight:bold;margin-right:8px;">-</span><code style="font-family:Menlo,Consolas,monospace;background:#eef3f7;border-radius:3px;padding:1px 5px;font-size:15px;">zjunlp/lightmem</code>（面向长上下文 Agent 的轻量记忆增强生成研究实现，提供 LightMem、FluxMem、StructMem…）：这是研究/实验代码，README 标注 pip 安装仍在准备，依赖 API keys、embedding 与 LLMLingua 模型；不要直接照搬其记忆保留规则、缓存假设或 benchmark…</p>
+<p style="margin:8px 0;font-size:15px;color:#1c2733;"><span style="color:#ff7a1a;font-weight:bold;margin-right:8px;">-</span><code style="font-family:Menlo,Consolas,monospace;background:#eef3f7;border-radius:3px;padding:1px 5px;font-size:15px;">openai/openai-cli</code>（面向 OpenAI REST API 的官方 Go 命令行工具，覆盖资源化命令、文件输入与管理接口。）：项目仍处于快速演进期，必须匹配当前 API 权限、组织/项目/管理员 key 边界；Go 1.25+ 和官方 API 绑定使其不适合作为通用多 Provider CLI。</p>
+<p style="margin:8px 0;font-size:15px;color:#1c2733;"><span style="color:#ff7a1a;font-weight:bold;margin-right:8px;">-</span><code style="font-family:Menlo,Consolas,monospace;background:#eef3f7;border-radius:3px;padding:1px 5px;font-size:15px;">aipoch/open-science</code>（面向科研的本地优先、模型无关 AI 研究工作台，覆盖科学 Agent、Python/R…）：模型与外部数据连接器的科学结论仍需人工复核；桌面应用和多 Provider 组合尚在快速迭代，生产数据应先做备份、权限与可复现性验证。</p>
+<p style="margin:10px 0;"><strong>验证路径：</strong> 每个组件按来源报告的“上手建议/真实风险”复核（固定版本、隔离环境、自有数据复测）。</p>
+<h3 style="font-size:17px;font-weight:bold;color:#0b3d66;border-left:4px solid #ff7a1a;padding-left:10px;margin:26px 0 10px;">可行性方案 2：本地优先 · 多模型 · Agent 工作台（组合 3 个项目，今日锚点 3 个）</h3>
+<p style="margin:10px 0 6px;"><strong>方案评分</strong>：<strong style="color:#fff;background:#0b3d66;border-radius:999px;padding:2px 12px;font-size:15px;">82/100（中）</strong></p>
+<p style="margin:10px 0;"><strong>业务定位：</strong> 按'本地优先 · 多模型 · Agent 工作台'方向，把今日新发现的 3 个项目作为组合试用候选：用于构建、部署与观测 AI Agent 和工作流的协作式开源工作区。（<code style="font-family:Menlo,Consolas,monospace;background:#eef3f7;border-radius:3px;padding:1px 5px;font-size:15px;">simstudioai/sim</code>）、以纯 C 实现、按需从磁盘流式加载专家的本地 MoE 模型推理引擎。（<code style="font-family:Menlo,Consolas,monospace;background:#eef3f7;border-radius:3px;padding:1px 5px;font-size:15px;">justvugg/colibri</code>）、以 Electron 桌面界面、Rust 宿主核心和 pi Agent Harness 组成的本地优先编码 Agent。（<code style="font-family:Menlo,Consolas,monospace;background:#eef3f7;border-radius:3px;padding:1px 5px;font-size:15px;">vastsa/pi-desktop</code>）。先各自试用、记录产出，再找可打通的组合路径。</p>
+<p style="margin:10px 0;"><strong>目标客户：</strong> 想第一时间试用今日新发现项目的个人开发者与研究型小团队。</p>
+<p style="margin:10px 0;"><strong>市场机会：</strong> 今日 3 个锚点分属 Agent、网关、本地等能力面，池中对应候选 168 个，组件供给充足；先用小规模试用验证价值，再决定产品化方向。（以上市场方向与产品化价值均为待验证假设）</p>
+<p style="margin:10px 0;"><strong>可行性依据：</strong> 全部组件来自今日日报，能力面尽量互补（3 个），无需等待固定模板命中即可拼出组合。本组合含今日发现项目 3 个（<code style="font-family:Menlo,Consolas,monospace;background:#eef3f7;border-radius:3px;padding:1px 5px;font-size:15px;">simstudioai/sim</code>、<code style="font-family:Menlo,Consolas,monospace;background:#eef3f7;border-radius:3px;padding:1px 5px;font-size:15px;">justvugg/colibri</code>、<code style="font-family:Menlo,Consolas,monospace;background:#eef3f7;border-radius:3px;padding:1px 5px;font-size:15px;">vastsa/pi-desktop</code>）；池中各能力面候选充足（agent 292 · gateway 168 · local 174），最稀缺槽位也有 168 个候选。</p>
+<p style="margin:10px 0;"><strong>组合方案：</strong></p>
+<table style="width:100%;border-collapse:collapse;font-size:13px;color:#1c2733;margin:10px 0;" cellpadding="0" cellspacing="0">
+<tr><th style="width:35%;background:#0b3d66;color:#fff;font-size:13px;font-weight:bold;text-align:left;padding:5px 6px;border:1px solid #0b3d66;word-break:break-all;">角色</th><th style="width:20%;background:#0b3d66;color:#fff;font-size:13px;font-weight:bold;text-align:left;padding:5px 6px;border:1px solid #0b3d66;word-break:break-all;">项目</th><th style="width:45%;background:#0b3d66;color:#fff;font-size:13px;font-weight:bold;text-align:left;padding:5px 6px;border:1px solid #0b3d66;word-break:break-all;">入选理由</th></tr>
+<tr><td style="width:35%;padding:5px 6px;border:1px solid #e9eef4;vertical-align:top;font-size:13px;font-weight:bold;color:#ff7a1a;word-break:break-all;">用于构建、部署与观测 AI Agent 和工作流的协作式开源工作区。</td><td style="width:20%;padding:5px 6px;border:1px solid #e9eef4;vertical-align:top;font-family:Menlo,Consolas,monospace;font-size:13px;color:#0b3d66;word-break:break-all;">simstudioai/sim</td><td style="width:45%;padding:5px 6px;border:1px solid #e9eef4;vertical-align:top;font-size:13px;color:#1c2733;">它同时满足可运行示例、容器化部署、持续版本线与清晰文档等实用型门槛，适合作为团队评估 Agent 交付流程的起点。</td></tr>
+<tr><td style="width:35%;padding:5px 6px;border:1px solid #e9eef4;vertical-align:top;font-size:13px;font-weight:bold;color:#ff7a1a;word-break:break-all;">以纯 C 实现、按需从磁盘流式加载专家的本地 MoE 模型推理引擎。</td><td style="width:20%;padding:5px 6px;border:1px solid #e9eef4;vertical-align:top;font-family:Menlo,Consolas,monospace;font-size:13px;color:#0b3d66;word-break:break-all;">justvugg/colibri</td><td style="width:45%;padding:5px 6px;border:1px solid #e9eef4;vertical-align:top;font-size:13px;color:#1c2733;">它提供了一个足够具体的学习切片：先跑一个受支持模型，再用 profiler 对照专家切换、缓存命中和磁盘读取，就能把 MoE…</td></tr>
+<tr><td style="width:35%;padding:5px 6px;border:1px solid #e9eef4;vertical-align:top;font-size:13px;font-weight:bold;color:#ff7a1a;word-break:break-all;">以 Electron 桌面界面、Rust 宿主核心和 pi Agent Harness 组成的本地优先编码 Agent。</td><td style="width:20%;padding:5px 6px;border:1px solid #e9eef4;vertical-align:top;font-family:Menlo,Consolas,monospace;font-size:13px;color:#0b3d66;word-break:break-all;">vastsa/pi-desktop</td><td style="width:45%;padding:5px 6px;border:1px solid #e9eef4;vertical-align:top;font-size:13px;color:#1c2733;">它不是又一个云端 Agent 壳，而是提供了 Rust 宿主、Electron 界面和 Harness 的具体组合…</td></tr>
+</table>
+
+<p style="margin:10px 0;"><strong>差异化：</strong> 完全由今日新发现驱动，组件全部来自今日日报，新鲜度最高，不依赖固定模板。</p>
+<p style="margin:10px 0;"><strong>MVP 范围（做什么，不含代码）：</strong> 先分别试用各组件并记录可用产出，再打通 <code style="font-family:Menlo,Consolas,monospace;background:#eef3f7;border-radius:3px;padding:1px 5px;font-size:15px;">simstudioai/sim</code>、<code style="font-family:Menlo,Consolas,monospace;background:#eef3f7;border-radius:3px;padding:1px 5px;font-size:15px;">justvugg/colibri</code>、<code style="font-family:Menlo,Consolas,monospace;background:#eef3f7;border-radius:3px;padding:1px 5px;font-size:15px;">vastsa/pi-desktop</code> 之间的最小数据流或协作流；其余按试用反馈取舍。</p>
+<p style="margin:10px 0;"><strong>主要风险（来源报告）：</strong></p>
+<p style="margin:8px 0;font-size:15px;color:#1c2733;"><span style="color:#ff7a1a;font-weight:bold;margin-right:8px;">-</span><code style="font-family:Menlo,Consolas,monospace;background:#eef3f7;border-radius:3px;padding:1px 5px;font-size:15px;">simstudioai/sim</code>（用于构建、部署与观测 AI Agent 和工作流的协作式开源工作区。）：真实生产部署仍需单独评估模型费用、密钥管理、工作流权限和持久化数据隔离；大而全的 Agent 平台也可能引入不必要的运维面。</p>
+<p style="margin:8px 0;font-size:15px;color:#1c2733;"><span style="color:#ff7a1a;font-weight:bold;margin-right:8px;">-</span><code style="font-family:Menlo,Consolas,monospace;background:#eef3f7;border-radius:3px;padding:1px 5px;font-size:15px;">justvugg/colibri</code>（以纯 C 实现、按需从磁盘流式加载专家的本地 MoE 模型推理引擎。）：硬件兼容性、模型格式、量化质量和性能数字高度依赖具体环境；为极限内存占用做的同步 I/O、错误处理和接口取舍不应直接照搬到通用生产服务。</p>
+<p style="margin:8px 0;font-size:15px;color:#1c2733;"><span style="color:#ff7a1a;font-weight:bold;margin-right:8px;">-</span><code style="font-family:Menlo,Consolas,monospace;background:#eef3f7;border-radius:3px;padding:1px 5px;font-size:15px;">vastsa/pi-desktop</code>（以 Electron 桌面界面、Rust 宿主核心和 pi Agent Harness 组成的本地优先编码 Agent。）：LGPL-3.0 对分发与链接方式有合规要求；桌面端的插件权限、模型凭据和本地文件访问需要先做隔离设计，快速迭代的 API 不宜直接固化。</p>
+<p style="margin:10px 0;"><strong>验证路径：</strong> 每个组件按来源报告的“上手建议/真实风险”复核（固定版本、隔离环境、自有数据复测）。</p>
+<h2 style="font-size:18px;font-weight:bold;color:#0b3d66;border-left:4px solid #ff7a1a;padding-left:10px;margin:30px 0 6px;">本周优先试用</h2>
+<p style="margin:10px 0;">如果只做三项小范围验证，可以先从 mcp-use 的只读 MCP 工具与最小 View、OpenWhispr 的本地/云端短音频对比，以及 Spin 的最小 HTTP 组件开始；它们分别对应 Agent 工具交付、本地 AI 产品和受限运行时三条不同路径。</p>
+<p style="margin:10px 0;"><strong>完整周报：</strong> 2026-W37 完整周报</p>
+<p style="margin:10px 0;">这 10 个项目里，你最想看到哪一个的实际试用记录？也欢迎分享你最在意的是权限、许可证、模型成本还是部署复杂度。</p>
+<hr style="border:none;border-top:1px solid #e3e9ef;margin:28px 0 20px;">
+<section style="background:#eef3f7;border-radius:8px;padding:14px 18px;margin-top:20px;">
+<p style="font-weight:bold;color:#222;margin:0 0 6px;">关于仓库雷达</p>
+<p style="font-size:15px;color:#555;margin:0;">仓库雷达持续整理值得使用、学习和二次开发的开源项目。日报负责发现，周报负责筛选，也会尽量把风险和低成本试法说清楚。</p>
+</section>
+<section style="border:2px dashed #c9d4e8;border-radius:8px;background:#f7f9fc;color:#7a8aa5;font-size:14px;text-align:center;padding:14px 12px;margin-top:20px;">
+【发布前删除】后台设置「阅读原文」→ 完整周报页面 URL（如已部署）
+</section>
+</section>
+
+<script>
+(function(){
+  var btn = document.getElementById('copyArticleBtn');
+  if (!btn) return;
+  btn.addEventListener('click', function(){
+    var placeholders = document.querySelectorAll('section[style*="dashed"]');
+    var hidden = [];
+    placeholders.forEach(function(s){ s.style.display = 'none'; hidden.push(s); });
+    var h1 = document.querySelector('body > section h1');
+    if (h1) { h1.style.display = 'none'; hidden.push(h1); }
+    var box = document.querySelector('body > section') || document.body;
+    var r = document.createRange();
+    r.selectNodeContents(box);
+    var sel = window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(r);
+    var ok = false;
+    try { ok = document.execCommand('copy'); } catch(e) { ok = false; }
+    sel.removeAllRanges();
+    hidden.forEach(function(s){ s.style.display = ''; });
+    var old = btn.textContent;
+    btn.textContent = ok ? '✅ 已复制，去公众号粘贴' : '❌ 复制失败，请手动框选正文';
+    btn.style.background = ok ? '#0b3d66' : '#b00020';
+    setTimeout(function(){ btn.textContent = old; btn.style.background = '#ff7a1a'; }, 2000);
+  });
+})();
+</script>
+</body>
+</html>

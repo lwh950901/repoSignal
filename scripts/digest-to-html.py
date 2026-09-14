@@ -42,6 +42,8 @@ RISK_ITEM = ('<p style="margin:8px 0;font-size:15px;color:#1c2733;">'
 TBL = ('<table style="width:100%;border-collapse:collapse;font-size:13px;color:#1c2733;margin:10px 0;"'
        ' cellpadding="0" cellspacing="0">')
 COL_W = {'role': '13%', 'name': '20%', 'src': '15%', 'lic': '10%'}  # 语义列宽；理由列拿剩余宽度
+ROLE_WIDE = '35%'        # 「角色」列放整句项目定位时的宽度（见 col_plan）
+ROLE_LABEL_MAX = 20      # 「角色」列仍算短标签的字数上限
 TBL_TH = ('<th style="{w}background:#0b3d66;color:#fff;font-size:13px;font-weight:bold;text-align:left;'
           'padding:5px 6px;border:1px solid #0b3d66;word-break:break-all;">{c}</th>')
 TD_ROLE = ('<td style="{w}padding:5px 6px;border:1px solid #e9eef4;vertical-align:top;'
@@ -167,34 +169,35 @@ def is_sep_row(cells):
     return bool(cells) and all(re.fullmatch(r':?-+:?', c) for c in cells)
 
 
-def col_plan(header):
+def col_plan(header, data_rows=()):
     """按表头文字推断每列语义与宽度：role/name/src/lic 取固定宽，理由列拿剩余宽度
-    （兼容 5 列完整表和已精简的 3 列/4 列表）"""
+    （兼容 5 列完整表和已精简的 3 列/4 列表）。
+
+    今日锚点组合把项目定位整句写进「角色」列（最长约 60 字），固定 13% 会把它压成
+    一条竖排窄条、把整行撑到半个屏：该列内容超过 ROLE_LABEL_MAX 字时改用 ROLE_WIDE。"""
     plan = []
-    used = 0
     for h in header:
         if h == '角色':
             plan.append('role')
-            used += 13
         elif h == '项目':
             plan.append('name')
-            used += 20
         elif h == '来源':
             plan.append('src')
-            used += 15
         elif h == '许可证':
             plan.append('lic')
-            used += 10
         else:
             plan.append('reason')
+    role_w = COL_W['role']
+    if 'role' in plan:
+        idx = plan.index('role')
+        longest = max([len(r[idx].replace('`', '')) for r in data_rows if idx < len(r)] or [0])
+        if longest > ROLE_LABEL_MAX:
+            role_w = ROLE_WIDE
+    fixed = {'role': role_w, 'name': COL_W['name'], 'src': COL_W['src'], 'lic': COL_W['lic']}
+    used = sum(int(fixed[k].rstrip('%')) for k in plan if k != 'reason')
     reason_n = sum(1 for k in plan if k == 'reason')
     rw = max(20, 100 - used) // max(reason_n, 1)
-    widths = []
-    for k in plan:
-        if k == 'reason':
-            widths.append('{0}%'.format(rw))
-        else:
-            widths.append(COL_W[k])
+    widths = ['{0}%'.format(rw) if k == 'reason' else fixed[k] for k in plan]
     return plan, widths
 
 
@@ -203,7 +206,7 @@ def emit_table(out, rows):
     if not rows:
         return
     header, data_rows = rows[0], rows[1:]
-    plan, widths = col_plan([h for h in header if h])
+    plan, widths = col_plan([h for h in header if h], data_rows)
     out.append(TBL)
     ths = ''.join(
         TBL_TH.format(w='width:{0};'.format(widths[j]), c=c.replace('`', ''))
