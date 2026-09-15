@@ -38,6 +38,151 @@ class ValidationError(ValueError):
     """Raised when finalization inputs violate the daily digest contract."""
 
 
+def _utc_now() -> datetime:
+    return datetime.now(timezone.utc)
+
+
+def _parse_datetime(value: str | None) -> datetime:
+    if not value:
+        return _utc_now()
+    try:
+        parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    except ValueError as exc:
+        raise ValidationError(f"时间必须为 ISO-8601：{value}") from exc
+    if parsed.tzinfo is None:
+        raise ValidationError(f"时间必须包含时区：{value}")
+    return parsed.astimezone(timezone.utc)
+
+
+def _iso(value: datetime) -> str:
+    if value.tzinfo is None:
+        raise ValidationError("运行时间必须包含时区")
+    return value.astimezone(timezone.utc).isoformat(timespec="seconds")
+
+
+def _checkpoint_path(run_date: str, root: Path) -> Path:
+    return Path(root) / "daily-runs" / f"{run_date}.json"
+
+
+def start_run(run_date: str, root: Path, *, now: datetime | None = None) -> dict[str, Any]:
+    """Create an idempotent 90-minute runtime checkpoint."""
+    _parse_date(run_date)
+    root = Path(root)
+    current = _read_json(_checkpoint_path(run_date, root), {})
+    if not isinstance(current, dict):
+        raise ValidationError("运行检查点必须是 JSON 对象")
+    moment = now or _utc_now()
+    if moment.tzinfo is None:
+        raise ValidationError("运行时间必须包含时区")
+    started = _parse_datetime(current.get("startedAt")) if current.get("startedAt") else moment
+    stage = current.get("stage") or inspect_run(run_date, root)["stage"]
+    record = dict(current)
+    record.update(
+        {
+            "date": run_date,
+            "stage": stage,
+            "startedAt": _iso(started),
+            "lastProgressAt": current.get("lastProgressAt") or _iso(started),
+            "deadlineAt": current.get("deadlineAt") or _iso(started + timedelta(minutes=90)),
+            "updatedAt": _iso(moment),
+            "attempt": max(1, int(current.get("attempt", 1) or 1)),
+            "candidateCount": int(current.get("candidateCount", 0) or 0),
+            "verifiedCount": int(current.get("verifiedCount", 0) or 0),
+            "errors": list(current.get("errors") or [])[-5:],
+        }
+    )
+    _stage_writes([(_checkpoint_path(run_date, root), _json_text(record))])
+    return record
+
+
+def resume_run(run_date: str, root: Path, *, now: datetime | None = None) -> dict[str, Any]:
+    """Explicitly start a fresh manual budget while preserving resumable progress."""
+    _parse_date(run_date)
+    root = Path(root)
+    current = _read_json(_checkpoint_path(run_date, root), None)
+    if not isinstance(current, dict):
+        raise ValidationError("没有可人工续跑的检查点")
+    if current.get("stage") == "complete":
+        raise ValidationError("日报已经完成，无需人工续跑")
+    moment = now or _utc_now()
+    if moment.tzinfo is None:
+        raise ValidationError("运行时间必须包含时区")
+    record = dict(current)
+    record.update(
+        {
+            "date": run_date,
+            "startedAt": _iso(moment),
+            "lastProgressAt": _iso(moment),
+            "deadlineAt": _iso(moment + timedelta(minutes=90)),
+            "updatedAt": _iso(moment),
+            "attempt": max(1, int(current.get("attempt", 1) or 1)) + 1,
+            "previousStartedAt": current.get("startedAt"),
+            "errors": list(current.get("errors") or [])[-5:],
+        }
+    )
+    _stage_writes([(_checkpoint_path(run_date, root), _json_text(record))])
+    return record
+
+
+def record_progress(
+    run_date: str,
+    root: Path,
+    stage: str,
+    *,
+    now: datetime | None = None,
+    candidate_count: int | None = None,
+    verified_count: int | None = None,
+    error: str | None = None,
+) -> dict[str, Any]:
+    """Record one meaningful stage change without growing an unbounded log."""
+    moment = now or _utc_now()
+    record = start_run(run_date, root, now=moment)
+    record["stage"] = stage
+    record["lastProgressAt"] = _iso(moment)
+    record["updatedAt"] = _iso(moment)
+    if candidate_count is not None:
+        record["candidateCount"] = max(0, int(candidate_count))
+    if verified_count is not None:
+        record["verifiedCount"] = max(0, int(verified_count))
+    if error:
+        record["errors"] = (list(record.get("errors") or []) + [str(error)])[-5:]
+    _stage_writes([(_checkpoint_path(run_date, root), _json_text(record))])
+    return record
+
+
+def audit_run(run_date: str, root: Path, *, now: datetime | None = None) -> dict[str, Any]:
+    """Return the deterministic action for the current runtime boundary."""
+    moment = now or _utc_now()
+    record = start_run(run_date, root, now=moment)
+    started = _parse_datetime(str(record["startedAt"]))
+    last_progress = _parse_datetime(str(record["lastProgressAt"]))
+    elapsed = max(0, int((moment - started).total_seconds() // 60))
+    stalled_minutes = max(0, (moment - last_progress).total_seconds() / 60)
+    if record.get("stage") == "complete":
+        action = "complete"
+    elif elapsed >= 90:
+        action = "stop"
+    elif elapsed >= 85:
+        action = "finalize_now"
+    elif elapsed >= 60:
+        action = "start_report"
+    elif elapsed >= 30:
+        action = "stop_discovery"
+    else:
+        action = "continue_discovery"
+    return {
+        "date": run_date,
+        "stage": record.get("stage"),
+        "action": action,
+        "elapsedMinutes": elapsed,
+        "remainingMinutes": max(0, 90 - elapsed),
+        "stalled": record.get("stage") != "complete" and stalled_minutes >= 15,
+        "candidateCount": record.get("candidateCount", 0),
+        "verifiedCount": record.get("verifiedCount", 0),
+        "errors": list(record.get("errors") or [])[-5:],
+    }
+
+
 def _parse_date(value: str) -> date:
     try:
         return date.fromisoformat(value)
@@ -358,9 +503,17 @@ def finalize_run(
     root: Path,
     draft_path: Path,
     selections_path: Path,
+    *,
+    now: datetime | None = None,
 ) -> dict[str, Any]:
     _parse_date(run_date)
     root = Path(root)
+    completed_at = now or _utc_now()
+    runtime_checkpoint = _read_json(_checkpoint_path(run_date, root), {})
+    if isinstance(runtime_checkpoint, dict) and runtime_checkpoint.get("deadlineAt"):
+        deadline = _parse_datetime(str(runtime_checkpoint["deadlineAt"]))
+        if runtime_checkpoint.get("stage") != "complete" and completed_at >= deadline:
+            raise ValidationError("90 分钟运行预算已到，禁止 finalize；请人工 resume 后续跑")
     try:
         draft = Path(draft_path).read_text(encoding="utf-8")
     except OSError as exc:
@@ -454,18 +607,21 @@ def finalize_run(
     trial_status[f"daily_run_{run_date}"] = summary
     trial_status["latest_daily_run"] = summary
 
-    checkpoint_record = {
+    existing_checkpoint = _read_json(_checkpoint_path(run_date, root), {})
+    if not isinstance(existing_checkpoint, dict):
+        raise ValidationError("运行检查点必须是 JSON 对象")
+    checkpoint_record = dict(existing_checkpoint)
+    checkpoint_record.update({
         "date": run_date,
         "stage": "complete",
-        "updatedAt": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        "updatedAt": _iso(completed_at),
+        "lastProgressAt": _iso(completed_at),
         "candidateCount": len(candidates),
+        "verifiedCount": len(selections),
         "selectedCount": len(selections),
         "report": f"daily/{run_date}.md",
         "historyEntries": len(history),
-        "feasibility": "complete"
-        if (root / "feasibility" / f"{run_date}.md").exists()
-        else "pending",
-    }
+    })
 
     _stage_writes(
         [
@@ -473,7 +629,7 @@ def finalize_run(
             (root / "candidates" / f"{run_date}.jsonl", _jsonl_text(updated_candidates)),
             (history_path, _jsonl_text(history)),
             (status_path, _json_text(trial_status)),
-            (root / "daily-runs" / f"{run_date}.json", _json_text(checkpoint_record)),
+            (_checkpoint_path(run_date, root), _json_text(checkpoint_record)),
         ]
     )
     result = inspect_run(run_date, root)
@@ -488,6 +644,26 @@ def _parser() -> argparse.ArgumentParser:
     inspect_parser = subparsers.add_parser("inspect", help="输出紧凑恢复状态")
     inspect_parser.add_argument("date")
     inspect_parser.add_argument("--data-root", type=Path, default=Path("data/github-project-digest"))
+    start_parser = subparsers.add_parser("start", help="创建或恢复 90 分钟运行预算")
+    start_parser.add_argument("date")
+    start_parser.add_argument("--data-root", type=Path, default=Path("data/github-project-digest"))
+    start_parser.add_argument("--now", help="用于测试的 ISO-8601 时间")
+    resume_parser = subparsers.add_parser("resume", help="人工开启新的 90 分钟续跑预算")
+    resume_parser.add_argument("date")
+    resume_parser.add_argument("--data-root", type=Path, default=Path("data/github-project-digest"))
+    resume_parser.add_argument("--now", help="用于测试的 ISO-8601 时间")
+    progress_parser = subparsers.add_parser("progress", help="记录有意义的阶段进度")
+    progress_parser.add_argument("date")
+    progress_parser.add_argument("stage")
+    progress_parser.add_argument("--data-root", type=Path, default=Path("data/github-project-digest"))
+    progress_parser.add_argument("--now", help="用于测试的 ISO-8601 时间")
+    progress_parser.add_argument("--candidate-count", type=int)
+    progress_parser.add_argument("--verified-count", type=int)
+    progress_parser.add_argument("--error")
+    audit_parser = subparsers.add_parser("audit", help="输出当前时间预算动作")
+    audit_parser.add_argument("date")
+    audit_parser.add_argument("--data-root", type=Path, default=Path("data/github-project-digest"))
+    audit_parser.add_argument("--now", help="用于测试的 ISO-8601 时间")
     finalize_parser = subparsers.add_parser("finalize", help="校验并幂等写入日报产物")
     finalize_parser.add_argument("date")
     finalize_parser.add_argument("--data-root", type=Path, default=Path("data/github-project-digest"))
@@ -501,6 +677,22 @@ def main(argv: list[str] | None = None) -> int:
     try:
         if args.command == "inspect":
             result = inspect_run(args.date, args.data_root)
+        elif args.command == "start":
+            result = start_run(args.date, args.data_root, now=_parse_datetime(args.now))
+        elif args.command == "resume":
+            result = resume_run(args.date, args.data_root, now=_parse_datetime(args.now))
+        elif args.command == "progress":
+            result = record_progress(
+                args.date,
+                args.data_root,
+                args.stage,
+                now=_parse_datetime(args.now),
+                candidate_count=args.candidate_count,
+                verified_count=args.verified_count,
+                error=args.error,
+            )
+        elif args.command == "audit":
+            result = audit_run(args.date, args.data_root, now=_parse_datetime(args.now))
         else:
             result = finalize_run(args.date, args.data_root, args.draft, args.selections)
         print(json.dumps(result, ensure_ascii=False, separators=(",", ":")))

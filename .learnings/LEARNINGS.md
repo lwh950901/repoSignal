@@ -24,6 +24,34 @@
 
 ---
 
+## [LRN-20260915-001] correction
+
+**Logged**: 2026-09-15T16:45:00+08:00
+**Priority**: high
+**Status**: resolved
+**Area**: config
+
+### Summary
+GitHub 日报自动化不负责 feasibility；下游依赖不等于上游任务职责。
+
+### Details
+在日报耗时优化中，错误地把独立的 feasibility 生成步骤加入日报 prompt，并增加了 75 分钟门禁。用户明确纠正：feasibility 已由独立的 08:30 launchd 脚本处理，日报模型不应触发、等待、检查、调试或汇报它。
+
+### Suggested Action
+自动化职责按调度单元隔离：日报只生成并 finalize 日报；feasibility 只由 `com.reposignal.opportunity-analysis.plist` 调用本地脚本。设计下游数据依赖时，不把它自动解释为上游模型的执行步骤。
+
+### Metadata
+- Source: user_feedback
+- Related Files: docs/automation-prompts/github-daily.md, scripts/com.reposignal.opportunity-analysis.plist
+- Tags: automation, responsibility-boundary, feasibility, token-efficiency
+- Pattern-Key: automation.downstream_dependency_not_ownership
+
+### Resolution
+- **Resolved**: 2026-09-15T16:45:00+08:00
+- **Notes**: 日报自动化中的 feasibility 职责已移除，独立 08:30 调度保持不变。
+
+---
+
 ## [LRN-20260907-002] correction
 
 **Logged**: 2026-09-07T15:52:00+08:00

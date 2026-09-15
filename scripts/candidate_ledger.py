@@ -20,6 +20,8 @@ from pathlib import Path
 RECORD_FIELDS = [
     "date", "repo", "url", "lanes", "sources",
     "stars", "forks", "license", "archived", "pushed",
+    "description", "language", "topics", "created", "updated",
+    "homepage", "openIssues", "riskFlags", "scoreHint", "readmeSignal", "latestRelease",
     "status", "verified", "reason",
 ]
 
@@ -76,6 +78,17 @@ def build_record(item, date, lane, source):
         "license": _get_license(item),
         "archived": item.get("archived", False),
         "pushed": item.get("pushed_at") or item.get("pushed"),
+        "description": item.get("description"),
+        "language": item.get("language"),
+        "topics": item.get("topics") or [],
+        "created": item.get("created_at") or item.get("created"),
+        "updated": item.get("updated_at") or item.get("updated"),
+        "homepage": item.get("homepage"),
+        "openIssues": item.get("open_issues") or item.get("open_issues_count"),
+        "riskFlags": item.get("risk_flags") or [],
+        "scoreHint": item.get("objective_score_hint"),
+        "readmeSignal": item.get("readme_signal"),
+        "latestRelease": item.get("latest_release"),
         "status": "discovered",
         "verified": False,
         "reason": None,
@@ -111,6 +124,17 @@ def merge_record(existing, item, lane, source):
         ("forks", "forks_count"), ("forks", "forks"),
         ("archived", "archived"),
         ("pushed", "pushed_at"), ("pushed", "pushed"),
+        ("description", "description"),
+        ("language", "language"),
+        ("topics", "topics"),
+        ("created", "created_at"), ("created", "created"),
+        ("updated", "updated_at"), ("updated", "updated"),
+        ("homepage", "homepage"),
+        ("openIssues", "open_issues"), ("openIssues", "open_issues_count"),
+        ("riskFlags", "risk_flags"),
+        ("scoreHint", "objective_score_hint"),
+        ("readmeSignal", "readme_signal"),
+        ("latestRelease", "latest_release"),
     ]:
         val = item.get(src_key)
         if val is not None:

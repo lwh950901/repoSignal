@@ -1,0 +1,18 @@
+{
+  "attempt": 1,
+  "candidateCount": 0,
+  "date": "2026-09-16",
+  "deadlineAt": "2026-09-15T22:30:56+00:00",
+  "errors": [
+    "mature: Tip: set GITHUB_TOKEN=<token> for higher GitHub API limits.\nNetwork error: <urlopen error [Errno 8] nodename nor servname provided, or not known>",
+    "emerging: Tip: set GITHUB_TOKEN=<token> for higher GitHub API limits.\nNetwork error: <urlopen error [Errno 8] nodename nor servname provided, or not known>",
+    "learning_rag: Tip: set GITHUB_TOKEN=<token> for higher GitHub API limits.\nNetwork error: <urlopen error [Errno 8] nodename nor servname provided, or not known>",
+    "developer_tools: Tip: set GITHUB_TOKEN=<token> for higher GitHub API limits.\nNetwork error: <urlopen error [Errno 8] nodename nor servname provided, or not known>",
+    "cross_domain: Tip: set GITHUB_TOKEN=<token> for higher GitHub API limits.\nNetwork error: <urlopen error [Errno 8] nodename nor servname provided, or not known>"
+  ],
+  "lastProgressAt": "2026-09-15T21:01:02+00:00",
+  "stage": "discovery_failed",
+  "startedAt": "2026-09-15T21:00:56+00:00",
+  "updatedAt": "2026-09-15T21:01:36+00:00",
+  "verifiedCount": 0
+}

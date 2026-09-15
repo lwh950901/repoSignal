@@ -3,9 +3,13 @@ import json
 import tempfile
 import unittest
 from contextlib import redirect_stdout
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
-import daily_digest_checkpoint as checkpoint
+try:
+    from scripts import daily_digest_checkpoint as checkpoint
+except ModuleNotFoundError:  # Allow direct execution from scripts/.
+    import daily_digest_checkpoint as checkpoint
 
 
 DATE = "2026-09-14"
@@ -119,6 +123,159 @@ class DailyDigestCheckpointTest(unittest.TestCase):
         self.assertEqual("needs_discovery", result["stage"])
         self.assertIn("candidate_ledger", result["missing"])
 
+    def test_start_is_idempotent_and_preserves_original_deadline(self):
+        started = datetime(2026, 9, 14, 21, 30, tzinfo=timezone.utc)
+        first = checkpoint.start_run(DATE, self.root, now=started)
+        second = checkpoint.start_run(DATE, self.root, now=started + timedelta(minutes=20))
+
+        self.assertEqual(started.isoformat(timespec="seconds"), first["startedAt"])
+        self.assertEqual(first["startedAt"], second["startedAt"])
+        self.assertEqual(first["deadlineAt"], second["deadlineAt"])
+        self.assertEqual("needs_discovery", second["stage"])
+
+    def test_progress_updates_counts_and_caps_recent_errors(self):
+        started = datetime(2026, 9, 14, 21, 30, tzinfo=timezone.utc)
+        checkpoint.start_run(DATE, self.root, now=started)
+        for index in range(7):
+            result = checkpoint.record_progress(
+                DATE,
+                self.root,
+                "discovery",
+                now=started + timedelta(minutes=index + 1),
+                candidate_count=index,
+                verified_count=max(index - 2, 0),
+                error=f"error-{index}",
+            )
+
+        self.assertEqual("discovery", result["stage"])
+        self.assertEqual(6, result["candidateCount"])
+        self.assertEqual(4, result["verifiedCount"])
+        self.assertEqual([f"error-{index}" for index in range(2, 7)], result["errors"])
+        self.assertEqual(
+            (started + timedelta(minutes=7)).isoformat(timespec="seconds"),
+            result["lastProgressAt"],
+        )
+
+    def test_audit_actions_follow_runtime_boundaries(self):
+        started = datetime(2026, 9, 14, 21, 30, tzinfo=timezone.utc)
+        checkpoint.start_run(DATE, self.root, now=started)
+        cases = [
+            (29, "continue_discovery"),
+            (30, "stop_discovery"),
+            (60, "start_report"),
+            (75, "start_report"),
+            (85, "finalize_now"),
+            (90, "stop"),
+        ]
+        for minutes, action in cases:
+            with self.subTest(minutes=minutes):
+                result = checkpoint.audit_run(
+                    DATE, self.root, now=started + timedelta(minutes=minutes)
+                )
+                self.assertEqual(action, result["action"])
+                self.assertEqual(minutes, result["elapsedMinutes"])
+
+    def test_audit_marks_fifteen_minutes_without_progress_as_stalled(self):
+        started = datetime(2026, 9, 14, 21, 30, tzinfo=timezone.utc)
+        checkpoint.start_run(DATE, self.root, now=started)
+        checkpoint.record_progress(
+            DATE, self.root, "discovery", now=started + timedelta(minutes=5)
+        )
+
+        fresh = checkpoint.audit_run(
+            DATE, self.root, now=started + timedelta(minutes=19, seconds=59)
+        )
+        stalled = checkpoint.audit_run(
+            DATE, self.root, now=started + timedelta(minutes=20)
+        )
+        self.assertFalse(fresh["stalled"])
+        self.assertTrue(stalled["stalled"])
+
+    def test_finalize_preserves_runtime_metadata(self):
+        started = datetime.now(timezone.utc).replace(microsecond=0)
+        checkpoint.start_run(DATE, self.root, now=started)
+        self.write_candidates()
+        draft, picks = self.write_inputs()
+
+        checkpoint.finalize_run(DATE, self.root, draft, picks)
+
+        saved = json.loads((self.root / "daily-runs" / f"{DATE}.json").read_text())
+        self.assertEqual(started.isoformat(timespec="seconds"), saved["startedAt"])
+        self.assertEqual((started + timedelta(minutes=90)).isoformat(timespec="seconds"), saved["deadlineAt"])
+
+    def test_manual_resume_resets_budget_but_preserves_progress(self):
+        started = datetime(2026, 9, 14, 21, 30, tzinfo=timezone.utc)
+        checkpoint.start_run(DATE, self.root, now=started)
+        checkpoint.record_progress(
+            DATE,
+            self.root,
+            "discovery",
+            now=started + timedelta(minutes=20),
+            candidate_count=7,
+            verified_count=2,
+            error="rate limited",
+        )
+        resumed_at = started + timedelta(hours=3)
+
+        resumed = checkpoint.resume_run(DATE, self.root, now=resumed_at)
+
+        self.assertEqual(2, resumed["attempt"])
+        self.assertEqual(resumed_at.isoformat(timespec="seconds"), resumed["startedAt"])
+        self.assertEqual(
+            (resumed_at + timedelta(minutes=90)).isoformat(timespec="seconds"),
+            resumed["deadlineAt"],
+        )
+        self.assertEqual("discovery", resumed["stage"])
+        self.assertEqual(7, resumed["candidateCount"])
+        self.assertEqual(2, resumed["verifiedCount"])
+        self.assertEqual(["rate limited"], resumed["errors"])
+
+    def test_finalize_refuses_an_expired_non_complete_budget(self):
+        started = datetime(2026, 9, 14, 21, 30, tzinfo=timezone.utc)
+        checkpoint.start_run(DATE, self.root, now=started)
+        self.write_candidates()
+        draft, picks = self.write_inputs()
+
+        with self.assertRaisesRegex(checkpoint.ValidationError, "90 分钟"):
+            checkpoint.finalize_run(
+                DATE,
+                self.root,
+                draft,
+                picks,
+                now=started + timedelta(minutes=91),
+            )
+        self.assertFalse((self.root / "daily" / f"{DATE}.md").exists())
+
+    def test_cli_resume_and_audit_use_injected_time(self):
+        started = "2026-09-14T21:30:00+00:00"
+        resumed = "2026-09-15T01:00:00+00:00"
+        output = io.StringIO()
+        with redirect_stdout(output):
+            self.assertEqual(
+                0,
+                checkpoint.main(
+                    ["start", DATE, "--data-root", str(self.root), "--now", started]
+                ),
+            )
+        output = io.StringIO()
+        with redirect_stdout(output):
+            self.assertEqual(
+                0,
+                checkpoint.main(
+                    ["resume", DATE, "--data-root", str(self.root), "--now", resumed]
+                ),
+            )
+        self.assertEqual(resumed, json.loads(output.getvalue())["startedAt"])
+        output = io.StringIO()
+        with redirect_stdout(output):
+            self.assertEqual(
+                0,
+                checkpoint.main(
+                    ["audit", DATE, "--data-root", str(self.root), "--now", resumed]
+                ),
+            )
+        self.assertEqual("continue_discovery", json.loads(output.getvalue())["action"])
+
     def test_inspect_candidates_ready_is_compact(self):
         self.write_candidates()
         prior = [
@@ -206,6 +363,7 @@ class DailyDigestCheckpointTest(unittest.TestCase):
         self.assertEqual(DATE, status["latest_daily_run"]["date"])
         saved = json.loads((self.root / "daily-runs" / f"{DATE}.json").read_text())
         self.assertEqual("complete", saved["stage"])
+        self.assertNotIn("feasibility", saved)
         self.assertEqual("complete", checkpoint.inspect_run(DATE, self.root)["stage"])
 
     def test_corrupt_candidate_does_not_overwrite_report(self):
