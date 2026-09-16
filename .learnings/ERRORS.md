@@ -33,6 +33,40 @@ Use `GITHUB_TOKEN` for recurring scans, reserve enrichment for the final shortli
 - **Notes**: Used live GitHub repository, Release, Commit and Issue/PR pages; no cache was presented as live evidence.
 
 ---
+
+## [ERR-20260916-001] automation-memory-rsync-sandbox
+
+**Logged**: 2026-09-16T13:13:04+08:00
+**Priority**: medium
+**Status**: resolved
+**Area**: config
+
+### Summary
+同步仓库中的紧凑日报 memory 到 Codex 自动化目录时，默认沙箱拒绝了 `rsync` 的临时文件与时间戳写入。
+
+### Error
+```text
+rsync: error: mkstempat: Operation not permitted
+rsync: error: memory.md: utimensat (2): Operation not permitted
+```
+
+### Context
+- Command: `rsync -a docs/automation-memory/github-daily/memory.compact.md /Users/elvis/.codex/automations/github/memory.md`
+- Workspace writes are allowed, but `/Users/elvis/.codex/automations/` is outside the writable project root.
+- The same command succeeded immediately with explicit upgraded execution.
+
+### Suggested Fix
+When synchronizing an automation memory file outside the project root, call the exact `rsync -a` command with explicit upgraded filesystem permission; do not interpret the failure as a content or path mismatch.
+
+### Metadata
+- Reproducible: yes
+- Related Files: docs/automation-memory/github-daily/memory.compact.md, /Users/elvis/.codex/automations/github/memory.md
+
+### Resolution
+- **Resolved**: 2026-09-16T13:13:04+08:00
+- **Notes**: Re-ran the same narrow `rsync -a` command with upgraded permission and verified success.
+
+---
 ## [ERR-20260914-002] cua-kun-state-refresh
 
 **Logged**: 2026-09-14T13:05:00+08:00

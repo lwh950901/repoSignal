@@ -55,6 +55,18 @@ class DailyAutomationContractTest(unittest.TestCase):
             self.assertIn(required, self.text)
         self.assertNotIn("response_length=long", self.text)
 
+    def test_discovery_uses_only_the_preapproved_network_escalation(self):
+        self.assertIn("sandbox_permissions=require_escalated", self.text)
+        self.assertRegex(
+            self.text,
+            r"仅[^\n]*daily_digest_runner\.py discover[^\n]*require_escalated",
+        )
+        self.assertRegex(self.text, r"不得[^\n]*默认沙箱[^\n]*(?:试跑|运行)")
+        self.assertRegex(
+            self.text,
+            r"(?:升级执行|require_escalated)[^\n]*(?:失败|拒绝)[^\n]*(?:停止|结束)",
+        )
+
     def test_prompt_requires_checkpoint_and_forbids_automatic_retry(self):
         self.assertIn("daily_digest_checkpoint.py start", self.text)
         self.assertIn("daily_digest_checkpoint.py resume", self.text)

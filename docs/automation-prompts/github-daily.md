@@ -15,7 +15,7 @@
 
 ## 有界发现与核验
 
-- 仅在 `needs_discovery` 运行一次 `python3 scripts/daily_digest_runner.py discover YYYY-MM-DD --data-root data/github-project-digest`。runner 并发执行最多 6 条 GitHub Search、每条最多 12 个结果，覆盖增长、成熟实用、新兴潜力、学习/RAG、开发工具、跨界主题；同日账本存在时不得覆盖。
+- 仅在 `needs_discovery` 运行一次 `python3 scripts/daily_digest_runner.py discover YYYY-MM-DD --data-root data/github-project-digest`。仅该 `daily_digest_runner.py discover` 命令调用终端工具时必须设置 `sandbox_permissions=require_escalated`，使用已预授权的最小网络权限；不得先在默认沙箱试跑，也不得把权限扩大到其他命令。升级执行被拒绝或失败时记录检查点并立即停止，不得降回默认沙箱或循环重试。runner 并发执行最多 6 条 GitHub Search、每条最多 12 个结果，覆盖增长、成熟实用、新兴潜力、学习/RAG、开发工具、跨界主题；同日账本存在时不得覆盖。
 - 运行 `python3 scripts/daily_digest_runner.py shortlist YYYY-MM-DD --data-root data/github-project-digest --output <临时JSON>`，只读取该短名单。它负责归档、许可证不明和普通 90 天重复的硬过滤，并为四类各保留最多 3 项；不能直接当成最终排名。
 - 只对最终 4–5 项做 enrichment，并尽量一次批量完成。每项最多 2 个 GitHub 页面；事实优先级为 GitHub API/仓库元数据、README、Release、Commit、Issue/PR、GitHub Trending。无法核实就标注或排除，不得以旧缓存冒充实时数据。
 - TLS/证书失败仅允许 runner 自动进行一次 `--insecure` 降级；API、DNS、页面、工具失败不得循环重试。GitHub API 限流后停止 API 扩展，改用已取得的仓库事实和最多两页证据。
