@@ -522,3 +522,46 @@ W37 的“本地优先 · 多模型 · Agent 工作台”已有源报告提供�
 - **Notes**: 已恢复两份 W37 周刊稿中的源业务名称；自动化规则此前已限定为仅处理未命名方案。
 
 ---
+
+## [LRN-20260917-001] best_practice
+
+**Logged**: 2026-09-17T12:56:26Z
+**Priority**: high
+**Status**: resolved
+**Area**: infra
+
+### Summary
+日报的“爆发型位置阻塞”必须有可执行的 finalize 校验分支。
+
+### Details
+自动化提示允许爆发型位置阻塞，但 finalize 只接受固定的爆发、实用、潜力、学习四类，导致已核验的日报无法落盘。校验器现要求阻塞标记出现时使用实用、潜力、学习、可复用的四项顺序，并有回归测试覆盖。
+
+### Suggested Action
+修改日报格式或 slot 规则时，同时更新 `validate_report`、选择校验、自动化提示和回归测试。
+
+### Metadata
+- Source: conversation
+- Related Files: scripts/daily_digest_checkpoint.py, scripts/test_daily_digest_checkpoint.py, docs/automation-prompts/github-daily.md
+- Tags: github-digest, finalize, validation, regression
+- Pattern-Key: harden.digest-slot-contract
+
+## [LRN-20260917-002] best_practice
+
+**Logged**: 2026-09-17T13:11:00Z
+**Priority**: high
+**Status**: resolved
+**Area**: config
+
+### Summary
+日报修复必须同步实际 automation prompt，并验证消费端解析与提交输入。
+
+### Details
+仓库协议已修改，但定时任务仍保存旧提示词；显示端还漏识别可复用型。已同步任务配置，补齐严格标题和顶层 JSON 数组示例，增加共享输入校验的只读 preflight，提前拒绝未进入账本的用户关注项，并修复页面解析。
+
+### Suggested Action
+修改定时任务协议后，用 automation_update 更新现有任务并读回核对；报告生成前先 preflight，再 finalize，最后 inspect/audit。
+
+### Metadata
+- Source: conversation
+- Related Files: docs/automation-prompts/github-daily.md, scripts/daily_digest_checkpoint.py, src/lib/digests.ts
+- Pattern-Key: harden.automation-prompt-sync

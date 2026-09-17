@@ -103,6 +103,14 @@ function weeklyFieldOrderIsValid(markdown: string): boolean {
 }
 
 describe("parseDailyReport", () => {
+  it("keeps reusable picks visible in a blocked-burst report", () => {
+    const blocked = sample.replace("爆发型：", "可复用型：");
+    const report = parseDailyReport(blocked, "2026-09-18.md");
+    expect(report.projects).toHaveLength(4);
+    expect(report.projects[0].kind).toBe("可复用型");
+    expect(report.projects[0].repository).toBe("safishamsi/graphify");
+  });
+
   it("extracts report metadata and ordered projects", () => {
     const report = parseDailyReport(sample, "2026-07-01.md");
 

@@ -15,6 +15,8 @@ from typing import Any
 
 
 EXPECTED_SLOTS = ["爆发型", "实用型", "潜力型", "学习型"]
+BLOCKED_BURST_SLOTS = ["实用型", "潜力型", "学习型", "可复用型"]
+BURST_BLOCKED_MARKER = "爆发型位置阻塞"
 REQUIRED_FIELDS = [
     "仓库",
     "一句话定位",
@@ -28,7 +30,7 @@ REQUIRED_FIELDS = [
     "推荐理由",
 ]
 HEADING_RE = re.compile(
-    r"^### (?P<number>\d+)\. (?P<slot>爆发型|实用型|潜力型|学习型)："
+    r"^### (?P<number>\d+)\. (?P<slot>爆发型|实用型|潜力型|学习型|可复用型)："
     r"(?P<repo>[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+) — (?P<score>\d{1,3})/100$",
     re.MULTILINE,
 )
@@ -314,17 +316,27 @@ def validate_report(text: str, run_date: str) -> list[dict[str, Any]]:
         raise ValidationError("日报缺少“## 主推荐”")
     section = text.split(marker, 1)[1]
     section = re.split(r"\n## (?!主推荐)", section, maxsplit=1)[0]
+    for heading in re.findall(r"^###\s+.*$", section, re.MULTILINE):
+        if not HEADING_RE.fullmatch(heading):
+            raise ValidationError(
+                f"主推荐标题格式错误：{heading}；应为 ### 1. 类型：owner/repo — 85/100"
+            )
     matches = list(HEADING_RE.finditer(section))
     if not 4 <= len(matches) <= 5:
-        raise ValidationError("正式推荐数量必须为 4–5")
+        raise ValidationError(f"正式推荐数量必须为 4–5，实际识别 {len(matches)} 项")
+
+    slots = [match.group("slot") for match in matches]
+    if BURST_BLOCKED_MARKER in text:
+        if slots != BLOCKED_BURST_SLOTS:
+            raise ValidationError("爆发型位置阻塞时，推荐顺序必须为实用型、潜力型、学习型、可复用型")
+    elif slots != EXPECTED_SLOTS[: len(slots)] + (["可复用型"] if len(slots) == 5 else []):
+        raise ValidationError("前四类顺序必须为爆发型、实用型、潜力型、学习型")
 
     parsed: list[dict[str, Any]] = []
     for index, match in enumerate(matches):
         expected_number = index + 1
         if int(match.group("number")) != expected_number:
             raise ValidationError("正式推荐序号必须连续")
-        if index < 4 and match.group("slot") != EXPECTED_SLOTS[index]:
-            raise ValidationError("前四类顺序必须为爆发型、实用型、潜力型、学习型")
         score = int(match.group("score"))
         if not 0 <= score <= 100:
             raise ValidationError("评分必须在 0–100")
@@ -476,8 +488,6 @@ def _validate_selections(
             raise ValidationError("选择类型与日报不一致")
         if int(selection.get("score", -1)) != report_item["score"]:
             raise ValidationError("选择评分与日报不一致")
-        if index < 4 and selection.get("slot") != EXPECTED_SLOTS[index]:
-            raise ValidationError("前四类顺序错误")
         if selection.get("verified") is not True:
             raise ValidationError(f"候选尚未核验：{repo}")
         if not str(selection.get("reason", "")).strip():
@@ -498,6 +508,37 @@ def _validate_selections(
             raise ValidationError(f"重复例外缺少理由：{repo}")
 
 
+def _validated_inputs(
+    run_date: str, root: Path, draft_path: Path, selections_path: Path,
+) -> tuple[str, list[dict[str, Any]], list[dict[str, Any]], list[dict[str, Any]]]:
+    """Shared read-only validation for preflight and finalization."""
+    _parse_date(run_date)
+    try:
+        draft = Path(draft_path).read_text(encoding="utf-8")
+    except OSError as exc:
+        raise ValidationError(f"无法读取日报草稿：{draft_path}") from exc
+    report_items = validate_report(draft, run_date)
+    candidates = _candidate_records(run_date, root)
+    candidate_by_repo = {_norm_repo(item.get("repo")): item for item in candidates}
+    selections = _load_selections(Path(selections_path))
+    history = _read_jsonl(root / "history.jsonl")
+    _validate_selections(
+        selections, report_items, candidate_by_repo, set(_recent_repos(run_date, history))
+    )
+    return draft, candidates, selections, history
+
+
+def preflight_run(
+    run_date: str, root: Path, draft_path: Path, selections_path: Path,
+) -> dict[str, Any]:
+    """Validate report, selections, candidates and deduplication without writing."""
+    _, candidates, selections, _ = _validated_inputs(
+        run_date, Path(root), draft_path, selections_path
+    )
+    return {"date": run_date, "status": "valid", "candidateCount": len(candidates),
+            "selectedCount": len(selections)}
+
+
 def finalize_run(
     run_date: str,
     root: Path,
@@ -514,18 +555,11 @@ def finalize_run(
         deadline = _parse_datetime(str(runtime_checkpoint["deadlineAt"]))
         if runtime_checkpoint.get("stage") != "complete" and completed_at >= deadline:
             raise ValidationError("90 分钟运行预算已到，禁止 finalize；请人工 resume 后续跑")
-    try:
-        draft = Path(draft_path).read_text(encoding="utf-8")
-    except OSError as exc:
-        raise ValidationError(f"无法读取日报草稿：{draft_path}") from exc
-    report_items = validate_report(draft, run_date)
-    candidates = _candidate_records(run_date, root)
+    draft, candidates, selections, history = _validated_inputs(
+        run_date, root, draft_path, selections_path
+    )
     candidate_by_repo = {_norm_repo(item.get("repo")): item for item in candidates}
-    selections = _load_selections(Path(selections_path))
     history_path = root / "history.jsonl"
-    history = _read_jsonl(history_path)
-    recent = set(_recent_repos(run_date, history))
-    _validate_selections(selections, report_items, candidate_by_repo, recent)
 
     selection_by_repo = {_norm_repo(item["repo"]): item for item in selections}
     updated_candidates: list[dict[str, Any]] = []
@@ -664,11 +698,13 @@ def _parser() -> argparse.ArgumentParser:
     audit_parser.add_argument("date")
     audit_parser.add_argument("--data-root", type=Path, default=Path("data/github-project-digest"))
     audit_parser.add_argument("--now", help="用于测试的 ISO-8601 时间")
-    finalize_parser = subparsers.add_parser("finalize", help="校验并幂等写入日报产物")
-    finalize_parser.add_argument("date")
-    finalize_parser.add_argument("--data-root", type=Path, default=Path("data/github-project-digest"))
-    finalize_parser.add_argument("--draft", type=Path, required=True)
-    finalize_parser.add_argument("--selections", type=Path, required=True)
+    for name, help_text in (("preflight", "只读检查草稿、选择、候选归属与去重"),
+                            ("finalize", "校验并幂等写入日报产物")):
+        input_parser = subparsers.add_parser(name, help=help_text)
+        input_parser.add_argument("date")
+        input_parser.add_argument("--data-root", type=Path, default=Path("data/github-project-digest"))
+        input_parser.add_argument("--draft", type=Path, required=True)
+        input_parser.add_argument("--selections", type=Path, required=True)
     return parser
 
 
@@ -693,6 +729,8 @@ def main(argv: list[str] | None = None) -> int:
             )
         elif args.command == "audit":
             result = audit_run(args.date, args.data_root, now=_parse_datetime(args.now))
+        elif args.command == "preflight":
+            result = preflight_run(args.date, args.data_root, args.draft, args.selections)
         else:
             result = finalize_run(args.date, args.data_root, args.draft, args.selections)
         print(json.dumps(result, ensure_ascii=False, separators=(",", ":")))

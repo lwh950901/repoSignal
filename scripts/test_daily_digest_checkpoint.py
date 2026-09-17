@@ -29,10 +29,10 @@ FIELDS = [
 ]
 
 
-def report_text(date=DATE, slots=None, omit_field=None):
+def report_text(date=DATE, slots=None, omit_field=None, repos=None):
     slots = slots or SLOTS
     blocks = []
-    for index, (slot, repo) in enumerate(zip(slots, REPOS), 1):
+    for index, (slot, repo) in enumerate(zip(slots, repos or REPOS), 1):
         rows = []
         for field in FIELDS:
             if field == omit_field:
@@ -317,6 +317,23 @@ class DailyDigestCheckpointTest(unittest.TestCase):
         with self.assertRaisesRegex(checkpoint.ValidationError, "顺序"):
             checkpoint.finalize_run(DATE, self.root, draft, picks)
 
+    def test_finalize_allows_blocked_burst_slot_with_reusable_pick(self):
+        self.write_candidates()
+        slots = ["实用型", "潜力型", "学习型", "可复用型"]
+        report = report_text(slots=slots).replace(
+            "## 今日结论\n\n测试。",
+            "## 今日结论\n\n爆发型位置阻塞：本轮无合格加速证据。",
+        )
+        selections = [
+            selection(repo, slot, index)
+            for index, (repo, slot) in enumerate(zip(REPOS, slots), 1)
+        ]
+        draft, picks = self.write_inputs(report=report, selections=selections)
+
+        result = checkpoint.finalize_run(DATE, self.root, draft, picks)
+
+        self.assertEqual("complete", result["stage"])
+
     def test_finalize_rejects_unapproved_recent_duplicate(self):
         self.write_candidates()
         prior = {
@@ -383,6 +400,65 @@ class DailyDigestCheckpointTest(unittest.TestCase):
             exit_code = checkpoint.main(["inspect", DATE, "--data-root", str(self.root)])
         self.assertEqual(0, exit_code)
         self.assertEqual("candidates_ready", json.loads(output.getvalue())["stage"])
+
+    def test_preflight_checks_real_inputs_without_writing_artifacts(self):
+        self.write_candidates()
+        draft, picks = self.write_inputs()
+        before = {str(p): p.read_bytes() for p in self.root.rglob("*") if p.is_file()}
+        output = io.StringIO()
+        with redirect_stdout(output):
+            code = checkpoint.main([
+                "preflight", DATE, "--data-root", str(self.root),
+                "--draft", str(draft), "--selections", str(picks),
+            ])
+        self.assertEqual(0, code)
+        self.assertEqual("valid", json.loads(output.getvalue())["status"])
+        after = {str(p): p.read_bytes() for p in self.root.rglob("*") if p.is_file()}
+        self.assertEqual(before, after)
+
+    def test_preflight_rejects_a_user_request_missing_from_ledger(self):
+        self.write_candidates()
+        draft, picks = self.write_inputs()
+        values = json.loads(picks.read_text())
+        values[0]["repo"] = "user/requested"
+        picks.write_text(json.dumps(values))
+        with self.assertRaisesRegex(checkpoint.ValidationError, "选择不在当日候选中"):
+            checkpoint.preflight_run(DATE, self.root, draft, picks)
+
+    def test_report_names_malformed_heading_instead_of_miscounting(self):
+        text = report_text().replace("爆发型：acme/burst", "爆发型:acme/burst")
+        with self.assertRaisesRegex(checkpoint.ValidationError, "标题格式.*acme/burst"):
+            checkpoint.validate_report(text, DATE)
+
+    def test_next_day_preflight_finalize_and_repeat_for_all_supported_layouts(self):
+        run_date = "2026-09-18"
+        now = datetime(2026, 9, 17, 21, 0, tzinfo=timezone.utc)
+        layouts = [SLOTS, SLOTS + ["可复用型"], ["实用型", "潜力型", "学习型", "可复用型"]]
+        for index, slots in enumerate(layouts):
+            with self.subTest(slots=slots):
+                root = self.root / str(index)
+                (root / "candidates").mkdir(parents=True)
+                repos = (REPOS + ["acme/reusable"])[:len(slots)]
+                records = [dict(candidate(repo), date=run_date) for repo in repos]
+                (root / "candidates" / f"{run_date}.jsonl").write_text(
+                    "".join(json.dumps(record) + "\n" for record in records)
+                )
+                text = report_text(date=run_date, slots=slots, repos=repos)
+                if "爆发型" not in slots:
+                    text = text.replace("## 今日结论\n\n测试。", "## 今日结论\n\n爆发型位置阻塞：缺乏加速证据。")
+                draft, picks = root / "draft.md", root / "picks.json"
+                draft.write_text(text)
+                picks.write_text(json.dumps([
+                    selection(repo, slot, i) for i, (repo, slot) in enumerate(zip(repos, slots), 1)
+                ]))
+                checkpoint.start_run(run_date, root, now=now)
+                self.assertEqual("valid", checkpoint.preflight_run(run_date, root, draft, picks)["status"])
+                for _ in range(2):
+                    result = checkpoint.finalize_run(run_date, root, draft, picks, now=now + timedelta(minutes=10))
+                    self.assertEqual("complete", result["stage"])
+                    self.assertEqual([], result["missing"])
+                    self.assertEqual(len(slots), result["selectedCount"])
+                self.assertEqual(len(slots), len((root / "history.jsonl").read_text().splitlines()))
 
 
 if __name__ == "__main__":

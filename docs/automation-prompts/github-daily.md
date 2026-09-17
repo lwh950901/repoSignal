@@ -4,7 +4,7 @@
 
 ## 启动、恢复与时间门禁
 
-1. 完整读取并遵守 `find-github-projects` skill。不得读取源码；不得读取完整 memory、history、candidate、feedback 或 trial-status，也不得把长网页或原始 JSON 打进上下文。
+1. 完整读取并遵守 `find-github-projects` skill。允许读取本协议和 CLI `--help`；不得读取源码；只读取 memory 的最近运行摘要，不得读取完整 memory、history、candidate、feedback 或 trial-status，也不得把长网页或原始 JSON 打进上下文。日期必须按 Asia/Shanghai 计算，不得使用 UTC 日期。
 2. 立即运行：
    - `python3 scripts/daily_digest_checkpoint.py start YYYY-MM-DD --data-root data/github-project-digest`
    - `python3 scripts/daily_digest_checkpoint.py inspect YYYY-MM-DD --data-root data/github-project-digest`
@@ -17,13 +17,14 @@
 
 - 仅在 `needs_discovery` 运行一次 `python3 scripts/daily_digest_runner.py discover YYYY-MM-DD --data-root data/github-project-digest`。仅该 `daily_digest_runner.py discover` 命令调用终端工具时必须设置 `sandbox_permissions=require_escalated`，使用已预授权的最小网络权限；不得先在默认沙箱试跑，也不得把权限扩大到其他命令。升级执行被拒绝或失败时记录检查点并立即停止，不得降回默认沙箱或循环重试。runner 并发执行最多 6 条 GitHub Search、每条最多 12 个结果，覆盖增长、成熟实用、新兴潜力、学习/RAG、开发工具、跨界主题；同日账本存在时不得覆盖。
 - 运行 `python3 scripts/daily_digest_runner.py shortlist YYYY-MM-DD --data-root data/github-project-digest --output <临时JSON>`，只读取该短名单。它负责归档、许可证不明和普通 90 天重复的硬过滤，并为四类各保留最多 3 项；不能直接当成最终排名。
+- `userCandidates` 只是用户关注名单，不代表已进入当日候选账本。正式选择必须来自短名单 `slots` 中有完整元数据的仓库；可复用型从这些仓库中另选一项。只有名字而没有候选记录的用户关注项，说明“尚未进入当日候选账本，暂缓推荐”，不得直接写入选择 JSON。
 - 只对最终 4–5 项做 enrichment，并尽量一次批量完成。每项最多 2 个 GitHub 页面；事实优先级为 GitHub API/仓库元数据、README、Release、Commit、Issue/PR、GitHub Trending。无法核实就标注或排除，不得以旧缓存冒充实时数据。
 - TLS/证书失败仅允许 runner 自动进行一次 `--insecure` 降级；API、DNS、页面、工具失败不得循环重试。GitHub API 限流后停止 API 扩展，改用已取得的仓库事实和最多两页证据。
 - 联网只用短/中摘要；单次命令输出最多 4,000 tokens，超出先本地聚合。禁止长响应，禁止调试式反复打开页面或打印完整文件。
 
 ## 不变的质量合同
 
-统一评分：社区信号 25%、维护状态 25%、项目质量 20%、用户适合度 20%、风险 10%。Stars 只是信号，不单独排名。正式推荐 4–5 项，前四项严格为爆发型、实用型、潜力型、学习型；第 5 项可复用类型。内容型项目最多一个主位置。主推荐原则上不低于 80 分，70–79 分只能进额外发现或明确说明例外。
+统一评分：社区信号 25%、维护状态 25%、项目质量 20%、用户适合度 20%、风险 10%。Stars 只是信号，不单独排名。正式推荐 4–5 项，常规顺序为爆发型、实用型、潜力型、学习型，且第 5 项只能是可复用型；若爆发型位置阻塞，必须在“今日结论”明确写出“爆发型位置阻塞”，并以实用型、潜力型、学习型、可复用型四项替代顺序。内容型项目最多一个主位置。主推荐原则上不低于 80 分，70–79 分只能进额外发现或明确说明例外。
 
 90 天内 history 已出现的仓库默认不得再推荐；仅显著增长、重大版本或用户明确要求可破例，选择 JSON 必须含 `repeat_exception: true` 和具体 `repeat_reason`。用户候选无论入选与否都须在候选账本保留结论。
 
@@ -41,8 +42,13 @@
 
 先在临时路径写草稿和 4–5 项选择 JSON；选择至少含 `repo`、`slot`、`score`、`reason`、`activity`、`sources`、`verified: true`、`repeat_exception`。仅通过下列命令落盘：
 
+- 日报首行必须严格为 `# GitHub 优质项目每日发现｜YYYY-MM-DD`。
+- 每个主推荐标题必须严格使用 `### 1. 实用型：owner/repo — 85/100` 的格式（序号、类型、仓库、评分换为实际值；中文冒号 `：`，长破折号 `—`）；序号从 1 连续递增。
+- 选择 JSON 顶层必须是数组 `[{"repo":"owner/repo","slot":"实用型","score":85,"reason":"实际推荐理由","activity":"有日期的已核验活动","sources":["https://github.com/owner/repo"],"verified":true,"repeat_exception":false}]`。示例仅展示一项格式，实际写 4–5 项，顺序与正文完全一致。不要包成 `{"selections":[...]}`，不要猜测格式。
+- 提交前必须先运行只读预检：`python3 scripts/daily_digest_checkpoint.py preflight YYYY-MM-DD --data-root data/github-project-digest --draft <草稿> --selections <选择JSON>`。按报错修正明确的字段，只有返回 `status: valid` 才执行 finalize。预检不写日报、不延长预算；仍须通过 audit 时间门禁。
+
 `python3 scripts/daily_digest_checkpoint.py finalize YYYY-MM-DD --data-root data/github-project-digest --draft <草稿> --selections <选择JSON>`
 
-finalize 失败只修报错项，不重新发现。日报自动化的职责在 finalize 和验证完成后结束，不触发、等待、检查或汇报任何下游任务。
+finalize 失败只修报错项，不重新发现。不得把格式错误误诊为 JSON 包装错误；相同错误未变化时停止猜测，以本协议和 `--help` 为准。finalize 后运行 inspect 与 audit，只有 `stage: complete` 且 `missing: []` 才报告完成，并将最终结果写入自动化 memory，覆盖过时的阻塞摘要。日报自动化的职责在 finalize 和验证完成后结束，不触发、等待、检查或汇报任何下游任务。
 
 最终仅汇报日报路径、主推荐、额外发现数、检查点阶段、降级路径和验证结果。不自动补跑、不创建第二时段、不自行调度重试。
