@@ -311,6 +311,8 @@ def validate_report(text: str, run_date: str) -> list[dict[str, Any]]:
     title = f"# GitHub 优质项目每日发现｜{run_date}"
     if not text.startswith(title):
         raise ValidationError(f"日报标题或日期错误，应为：{title}")
+    if not re.search(r"^> 今日重点：\S.+$", text, re.MULTILINE):
+        raise ValidationError("今日重点格式错误，应为：> 今日重点：具体内容")
     marker = "## 主推荐"
     if marker not in text:
         raise ValidationError("日报缺少“## 主推荐”")
@@ -342,6 +344,12 @@ def validate_report(text: str, run_date: str) -> list[dict[str, Any]]:
             raise ValidationError("评分必须在 0–100")
         end = matches[index + 1].start() if index + 1 < len(matches) else len(section)
         block = section[match.end() : end]
+        repo = match.group("repo")
+        repository_line = f"- 仓库：[{repo}](https://github.com/{repo})"
+        if not re.search(rf"^{re.escape(repository_line)}$", block, re.MULTILINE):
+            raise ValidationError(
+                f"{repo} 仓库字段格式错误，应为：{repository_line}"
+            )
         positions = []
         for field in REQUIRED_FIELDS:
             found = re.search(rf"^- {re.escape(field)}：", block, re.MULTILINE)

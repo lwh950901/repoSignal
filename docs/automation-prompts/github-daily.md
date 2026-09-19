@@ -43,7 +43,9 @@
 先在临时路径写草稿和 4–5 项选择 JSON；选择至少含 `repo`、`slot`、`score`、`reason`、`activity`、`sources`、`verified: true`、`repeat_exception`。仅通过下列命令落盘：
 
 - 日报首行必须严格为 `# GitHub 优质项目每日发现｜YYYY-MM-DD`。
+- 今日重点必须严格使用单行引用格式 `> 今日重点：具体内容`，不得改成 `## 今日重点`。
 - 每个主推荐标题必须严格使用 `### 1. 实用型：owner/repo — 85/100` 的格式（序号、类型、仓库、评分换为实际值；中文冒号 `：`，长破折号 `—`）；序号从 1 连续递增。
+- 每项的仓库字段必须严格使用 `- 仓库：[owner/repo](https://github.com/owner/repo)`，链接文本、URL 和标题中的仓库必须一致，不得只写裸 URL。
 - 选择 JSON 顶层必须是数组 `[{"repo":"owner/repo","slot":"实用型","score":85,"reason":"实际推荐理由","activity":"有日期的已核验活动","sources":["https://github.com/owner/repo"],"verified":true,"repeat_exception":false}]`。示例仅展示一项格式，实际写 4–5 项，顺序与正文完全一致。不要包成 `{"selections":[...]}`，不要猜测格式。
 - 提交前必须先运行只读预检：`python3 scripts/daily_digest_checkpoint.py preflight YYYY-MM-DD --data-root data/github-project-digest --draft <草稿> --selections <选择JSON>`。按报错修正明确的字段，只有返回 `status: valid` 才执行 finalize。预检不写日报、不延长预算；仍须通过 audit 时间门禁。
 

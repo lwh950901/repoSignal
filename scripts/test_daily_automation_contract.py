@@ -77,6 +77,10 @@ class DailyAutomationContractTest(unittest.TestCase):
         self.assertIn("日报自动化的职责在 finalize 和验证完成后结束", self.text)
         self.assertRegex(self.text, r"resume[^\n]*(?:人工|手动)|(?:人工|手动)[^\n]*resume")
 
+    def test_prompt_pins_frontend_compatible_report_fields(self):
+        self.assertIn("> 今日重点：", self.text)
+        self.assertIn("- 仓库：[owner/repo](https://github.com/owner/repo)", self.text)
+
     def test_prompt_forbids_high_context_reads_and_keeps_model(self):
         self.assertIn("不得读取源码", self.text)
         self.assertIn("不得读取完整 memory、history、candidate、feedback 或 trial-status", self.text)

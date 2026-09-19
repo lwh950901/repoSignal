@@ -85,8 +85,8 @@ describe("navigation layout contract", () => {
   test("keeps the five-tab navigation on one scrollable mobile row", async () => {
     const styles = await readFile(new URL("../styles/global.css", import.meta.url), "utf8");
 
-    expect(styles).toMatch(/@media \(max-width: 768px\)[\s\S]*\.site-period-navigation\s*\{[^}]*overflow-x:\s*auto/s);
-    expect(styles).toMatch(/@media \(max-width: 768px\)[\s\S]*\.period-switcher\s*\{[^}]*width:\s*max-content[^}]*justify-content:\s*flex-start/s);
+    expect(styles).toMatch(/@media \(max-width: 1100px\)[\s\S]*\.site-period-navigation\s*\{[^}]*overflow-x:\s*auto/s);
+    expect(styles).toMatch(/@media \(max-width: 1100px\)[\s\S]*\.period-switcher\s*\{[^}]*width:\s*max-content[^}]*justify-content:\s*flex-start/s);
   });
 
   test("places the period switcher in the header center column", async () => {
@@ -185,9 +185,9 @@ describe("navigation layout contract", () => {
   test("uses a two-row mobile header and readable radar article measure", async () => {
     const styles = await readFile(new URL("../styles/global.css", import.meta.url), "utf8");
 
-    expect(styles).toMatch(/@media \(max-width: 768px\)[\s\S]*\.site-header\s*\{[^}]*grid-template-columns:\s*minmax\(0, 1fr\) auto[^}]*grid-template-rows:\s*auto auto/s);
-    expect(styles).toMatch(/@media \(max-width: 768px\)[\s\S]*\.site-period-navigation\s*\{[^}]*grid-column:\s*1 \/ -1[^}]*grid-row:\s*2/s);
-    expect(styles).toMatch(/@media \(max-width: 768px\)[\s\S]*\.period-switcher a\s*\{[^}]*min-height:\s*2\.75rem/s);
+    expect(styles).toMatch(/@media \(max-width: 1100px\)[\s\S]*\.site-header\s*\{[^}]*grid-template-columns:\s*minmax\(0, 1fr\) auto[^}]*grid-template-rows:\s*auto auto/s);
+    expect(styles).toMatch(/@media \(max-width: 1100px\)[\s\S]*\.site-period-navigation\s*\{[^}]*grid-column:\s*1 \/ -1[^}]*grid-row:\s*2/s);
+    expect(styles).toMatch(/@media \(max-width: 1100px\)[\s\S]*\.period-switcher a\s*\{[^}]*min-height:\s*2\.75rem/s);
     expect(styles).toMatch(/\.radar-cover\s*\{[^}]*height:\s*auto[^}]*aspect-ratio:\s*2\.35 \/ 1/s);
     expect(styles).toMatch(/\.radar-body\s*\{[^}]*max-width:\s*52rem/s);
   });
@@ -231,8 +231,8 @@ describe("navigation layout contract", () => {
     expect(layout).toContain('aria-hidden="true"');
     expect(layout).toContain('<span class="search-trigger__label">搜索</span>');
     expect(styles).toMatch(/\.search-trigger__icon\s*\{/s);
-    expect(styles).toMatch(/@media \(max-width: 768px\)[\s\S]*\.search-trigger\s*\{[^}]*min-width:\s*2\.75rem[^}]*min-height:\s*2\.75rem/s);
-    expect(styles).toMatch(/@media \(max-width: 768px\)[\s\S]*\.search-trigger__label,\s*\.search-trigger kbd\s*\{[^}]*display:\s*none/s);
+    expect(styles).toMatch(/@media \(max-width: 1100px\)[\s\S]*\.search-trigger\s*\{[^}]*min-width:\s*2\.75rem[^}]*min-height:\s*2\.75rem/s);
+    expect(styles).toMatch(/@media \(max-width: 1100px\)[\s\S]*\.search-trigger__label,\s*\.search-trigger kbd\s*\{[^}]*display:\s*none/s);
   });
 
   test("adds monthly section navigation and native evidence disclosure", async () => {
@@ -271,11 +271,11 @@ describe("navigation layout contract", () => {
     expect(styles).toMatch(/--space-8:\s*3rem/);
   });
 
-  test("gives desktop report headings and summaries a wider reading measure", async () => {
+  test("keeps broad report headings and a controlled paragraph measure", async () => {
     const styles = await readFile(new URL("../styles/global.css", import.meta.url), "utf8");
 
     expect(styles).toMatch(/\.report-hero h1\s*\{[^}]*max-width:\s*32ch[^}]*text-wrap:\s*pretty/s);
-    expect(styles).toMatch(/\.project-positioning\s*\{[^}]*max-width:\s*min\(62rem,\s*100%\)/s);
-    expect(styles).toMatch(/\.project-introduction\s*\{[^}]*max-width:\s*min\(62rem,\s*100%\)/s);
+    expect(styles).toMatch(/\.project-positioning\s*\{[^}]*max-width:\s*min\(var\(--reading-width\),\s*100%\)/s);
+    expect(styles).toMatch(/\.project-introduction\s*\{[^}]*max-width:\s*min\(var\(--reading-width\),\s*100%\)/s);
   });
 });

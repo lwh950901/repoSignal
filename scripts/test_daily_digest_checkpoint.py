@@ -430,6 +430,22 @@ class DailyDigestCheckpointTest(unittest.TestCase):
         with self.assertRaisesRegex(checkpoint.ValidationError, "标题格式.*acme/burst"):
             checkpoint.validate_report(text, DATE)
 
+    def test_report_rejects_bare_repository_url(self):
+        text = report_text().replace(
+            "- 仓库：[acme/burst](https://github.com/acme/burst)",
+            "- 仓库：https://github.com/acme/burst",
+        )
+        with self.assertRaisesRegex(checkpoint.ValidationError, "仓库字段格式"):
+            checkpoint.validate_report(text, DATE)
+
+    def test_report_rejects_unstructured_daily_focus(self):
+        text = report_text().replace(
+            "> 今日重点：测试。",
+            "## 今日重点\n\n测试。",
+        )
+        with self.assertRaisesRegex(checkpoint.ValidationError, "今日重点格式"):
+            checkpoint.validate_report(text, DATE)
+
     def test_next_day_preflight_finalize_and_repeat_for_all_supported_layouts(self):
         run_date = "2026-09-18"
         now = datetime(2026, 9, 17, 21, 0, tzinfo=timezone.utc)
