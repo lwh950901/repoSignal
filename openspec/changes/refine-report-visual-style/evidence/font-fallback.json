@@ -1,0 +1,42 @@
+[
+  {
+    "bodyFont": "\"Noto Sans SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif",
+    "fonts": 0,
+    "scroll": 320,
+    "title": "Agent 从“能执行”走向可控交付；浏览器验收、可观测性和本地数据边界成为同等重要的工程条件。",
+    "url": "/monthly/2026-08/",
+    "width": 320
+  },
+  {
+    "bodyFont": "\"Noto Sans SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif",
+    "fonts": 0,
+    "scroll": 320,
+    "title": "本周深度精选",
+    "url": "/weekly/2026-W37/",
+    "width": 320
+  },
+  {
+    "bodyFont": "\"Noto Sans SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif",
+    "fonts": 0,
+    "scroll": 320,
+    "title": "GitHub 优质项目每日发现｜2026-09-19",
+    "url": "/daily/2026-09-19/",
+    "width": 320
+  },
+  {
+    "bodyFont": "\"Noto Sans SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif",
+    "fonts": 0,
+    "scroll": 320,
+    "title": "每日可行性方案",
+    "url": "/feasibility/2026-09-19/",
+    "width": 320
+  },
+  {
+    "bodyFont": "\"Noto Sans SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif",
+    "fonts": 0,
+    "scroll": 320,
+    "title": "开源雷达周刊",
+    "url": "/radar/2026-W37/",
+    "width": 320
+  }
+]

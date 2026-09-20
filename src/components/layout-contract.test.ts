@@ -73,12 +73,15 @@ describe("navigation layout contract", () => {
     expect(view).toContain('class="archive-shell feasibility-shell"');
     expect(view).toContain('period="feasibility"');
     expect(view).toContain('class="feasibility-summary"');
-    expect(view).toContain("业务定位");
+    expect(view).toContain("方案判断");
     expect(view).toContain("目标客户");
-    expect(view).toContain("市场机会");
+    expect(view).toContain("需求证据");
+    expect(view).toContain('class="feasibility-judgment"');
+    expect(view).toContain('class="feasibility-scores"');
     expect(view).toContain('class="feasibility-plan__body prose"');
     expect(view).toContain('class="feasibility-tail"');
     expect(styles).toMatch(/\.feasibility-summary\s*\{[^}]*grid-template-columns:\s*repeat\(3,/s);
+    expect(styles).toMatch(/\.feasibility-scores\s*\{[^}]*grid-template-columns:\s*repeat\(2,/s);
     expect(styles).toMatch(/\.feasibility-plan__body table\s*\{[^}]*display:\s*block[^}]*overflow-x:\s*auto/s);
   });
 

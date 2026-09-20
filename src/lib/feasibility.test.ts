@@ -190,3 +190,86 @@ describe("parseFeasibilityReport（双轨报告兼容）", () => {
     expect(report.opportunitiesHtml).toContain("example/tool");
   });
 });
+
+// 新格式报告（双评分 + 判断四档 + 无单点机会）必须可解析，旧格式仍兼容。
+const dualScoreMarkdown = `# GitHub 项目组合可行性方案｜2026-09-20
+
+> 双评分：技术组合成熟度与需求证据强度互不合并。
+> 方案判断四档：值得用户访谈 / 值得技术试验 / 继续观察 / 暂不建议。
+
+## 今日结论
+
+- 本轮方案 1 个：成熟方向 1 个 + 探索方向 0 个。
+
+## 可行性方案
+
+### 1. 本地优先个人 AI 工作台
+
+**方案判断**：继续观察（依据：技术组合成熟度 79/100 与需求证据强度 59/100 均未到推进线）
+
+**业务定位**：把本地记忆、编排和网关拼成个人工作台。
+
+**业务轨道**：成熟方向（组件供给已核对）
+
+**业务语义**：track=mature · customer=重视隐私的个人与小型团队 · problem=数据留云端、记忆导不出来 · workflow=本地记忆写入 → Agent 读取 · delivery=桌面端本地安装 · expected_outcome=数据不出本机 · evidence_status=supply-checked
+
+**方案身份**：plan_family=local-first-personal-ai-workbench · variant=83ec9016ac8a
+
+**目标客户**：重视隐私的个人开发者与小型团队
+
+**客户问题**：客户问题「个人数据留在云端」；预期结果「数据不出本机」；交付形态 桌面端本地安装。
+
+**市场机会**：【待验证假设】付费意愿本轮无外部证据。
+
+**需求证据**（59/100，最高等级：项目方自述）：
+
+- 【项目方自述】\`owner/memory\`（2026-09-14）：提供会话记忆与导出。
+- 【无证据】付费意愿、采购预算与市场规模：本轮无来源
+
+**组件数据流**（起点 → 处理 → 终点）：
+
+| 顺序 | 组件 | 角色 | 输入 | 输出 | 上下游 |
+|---|---|---|---|---|---|
+| 1 | [\`owner/memory\`](https://github.com/owner/memory) | 长期记忆 | 会话与运行记录 | 可召回的长期上下文 | 下游：agent |
+
+**接入方式**：桌面端本地安装，无云依赖
+
+**双评分**：技术组合成熟度 **79/100（中）**（组件可靠度 33/40 · 组件供给 18/20 · 风险敞口 8/20 · 许可证 10/10 · 完整度 10/10） · 需求证据强度 **59/100（低）**（证据等级 24/40 · 用户明确表态 0/25 · 独立来源 20/20 · 新鲜度 15/15）
+
+**MVP 实验**：
+
+- 周期：14 天
+- 停止条件：周期结束未达到成功指标 → 停止
+`;
+
+describe("parseFeasibilityReport（双评分新格式）", () => {
+  const report = parseFeasibilityReport(dualScoreMarkdown, "2026-09-20.md");
+
+  it("parses the plan judgment and both score panels", () => {
+    expect(report.plans).toHaveLength(1);
+    const plan = report.plans[0];
+
+    expect(plan.title).toBe("本地优先个人 AI 工作台");
+    expect(plan.judgment).toBe("继续观察");
+    expect(plan.judgmentReason).toContain("均未到推进线");
+    expect(plan.techScore).toMatchObject({ name: "技术组合成熟度", score: 79, grade: "中" });
+    expect(plan.demandScore).toMatchObject({ name: "需求证据强度", score: 59, grade: "低" });
+    expect(plan.techScore?.parts).toContainEqual({ name: "风险敞口", points: 8, max: 20 });
+    expect(plan.demandScore?.parts).toContainEqual({ name: "证据等级", points: 24, max: 40 });
+    expect(plan.evidenceLevel).toBe("项目方自述");
+    expect(plan.audience).toContain("重视隐私");
+  });
+
+  it("keeps the dual scores out of the prose body", () => {
+    const plan = report.plans[0];
+
+    expect(plan.bodyHtml).not.toContain("双评分");
+    expect(plan.bodyHtml).not.toContain("方案判断");
+    expect(plan.bodyHtml).toContain("需求证据");
+    expect(plan.bodyHtml).toContain("组件数据流");
+    // 旧字段在新格式下为空，由 techScore / demandScore 代替
+    expect(plan.score).toBeNull();
+    expect(report.opportunitiesHtml).toBe("");
+    expect(report.actionsHtml).toBe("");
+  });
+});

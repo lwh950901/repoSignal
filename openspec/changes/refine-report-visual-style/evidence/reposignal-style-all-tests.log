@@ -1,0 +1,13 @@
+
+> repo-signal@0.1.0 test
+> vitest run
+
+
+ RUN  v4.1.9 /Users/elvis/Desktop/repo-signal
+
+
+ Test Files  15 passed (15)
+      Tests  145 passed (145)
+   Start at  16:29:27
+   Duration  607ms (transform 1.53s, setup 0ms, import 2.07s, tests 497ms, environment 1ms)
+

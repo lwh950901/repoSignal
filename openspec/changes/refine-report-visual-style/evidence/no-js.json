@@ -1,0 +1,47 @@
+[
+  {
+    "details": 5,
+    "enhanced": false,
+    "links": 2,
+    "scroll": 320,
+    "signals": 0,
+    "url": "/monthly/2026-08/",
+    "width": 320
+  },
+  {
+    "details": 10,
+    "enhanced": false,
+    "links": 12,
+    "scroll": 320,
+    "signals": 0,
+    "url": "/weekly/2026-W37/",
+    "width": 320
+  },
+  {
+    "details": 4,
+    "enhanced": false,
+    "links": 72,
+    "scroll": 320,
+    "signals": 4,
+    "url": "/daily/2026-09-19/",
+    "width": 320
+  },
+  {
+    "details": 0,
+    "enhanced": false,
+    "links": 27,
+    "scroll": 320,
+    "signals": 0,
+    "url": "/feasibility/2026-09-19/",
+    "width": 320
+  },
+  {
+    "details": 0,
+    "enhanced": false,
+    "links": 12,
+    "scroll": 320,
+    "signals": 0,
+    "url": "/radar/2026-W37/",
+    "width": 320
+  }
+]

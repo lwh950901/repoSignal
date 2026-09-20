@@ -6,15 +6,27 @@ export interface ScorePart {
   max: number;
 }
 
+export interface ScoreSummary {
+  name: string;
+  score: number;
+  grade: string;
+  parts: ScorePart[];
+}
+
 export interface FeasibilityPlan {
   id: string;
   title: string;
   positioning: string;
   audience: string;
   marketOpportunity: string;
+  judgment: string;
+  judgmentReason: string;
+  evidenceLevel: string;
   score: number | null;
   grade: string | null;
   scoreParts: ScorePart[];
+  techScore: ScoreSummary | null;
+  demandScore: ScoreSummary | null;
   markdown: string;
   bodyHtml: string;
 }
@@ -57,7 +69,7 @@ function getSummaryField(markdown: string, label: string): string {
 }
 
 function removeSummaryFields(markdown: string): string {
-  const labels = ["业务定位", "目标客户", "市场机会", "方案评分"];
+  const labels = ["业务定位", "目标客户", "市场机会", "方案评分", "方案判断", "双评分"];
   return markdown
     .split("\n")
     .filter((line) => !labels.some((label) => line.startsWith(`**${label}**：`)))
@@ -66,20 +78,49 @@ function removeSummaryFields(markdown: string): string {
     .trim();
 }
 
-// 方案评分行：**方案评分**：**79/100（中）**（组件可靠度 30/35 · 组件供给 14/15 · ...）
-const SCORE_LINE_RE = /^\*\*方案评分\*\*：\*\*(\d+)\/100（([高中低])）\*\*（(.+)）$/mu;
-
-function parsePlanScore(markdown: string): { score: number; grade: string; scoreParts: ScorePart[] } | null {
-  const match = markdown.match(SCORE_LINE_RE);
-  if (!match) return null;
-  const scoreParts = match[3]
+function parseScoreParts(detail: string): ScorePart[] {
+  return detail
     .split("·")
     .map((item) => {
       const part = item.trim().match(/^(.+?)\s+(\d+)\/(\d+)$/u);
       return part ? { name: part[1], points: Number(part[2]), max: Number(part[3]) } : null;
     })
     .filter((part): part is ScorePart => part !== null);
-  return { score: Number(match[1]), grade: match[2], scoreParts };
+}
+
+// 方案评分行（旧格式）：**方案评分**：**79/100（中）**（组件可靠度 30/35 · ...）
+const SCORE_LINE_RE = /^\*\*方案评分\*\*：\*\*(\d+)\/100（([高中低])）\*\*（(.+)）$/mu;
+// 双评分行（新格式）：**双评分**：技术组合成熟度 **79/100（中）**（...） · 需求证据强度 **59/100（低）**（...）
+const TECH_SCORE_RE = /技术组合成熟度\s*\*\*(\d+)\/100（([高中低])）\*\*（([^）]*)）/u;
+const DEMAND_SCORE_RE = /需求证据强度\s*\*\*(\d+)\/100（([高中低])）\*\*（([^）]*)）/u;
+const JUDGMENT_RE = /^\*\*方案判断\*\*：([^（(]+)(?:[（(]依据：(.+?)[）)])?$/mu;
+const EVIDENCE_LEVEL_RE = /^\*\*需求证据\*\*（\d+\/100，最高等级：(.+?)）/mu;
+
+function parsePlanScore(markdown: string): { score: number; grade: string; scoreParts: ScorePart[] } | null {
+  const match = markdown.match(SCORE_LINE_RE);
+  if (!match) return null;
+  return { score: Number(match[1]), grade: match[2], scoreParts: parseScoreParts(match[3]) };
+}
+
+function parseScoreSide(markdown: string, re: RegExp, name: string): ScoreSummary | null {
+  const match = markdown.match(re);
+  if (!match) return null;
+  return {
+    name,
+    score: Number(match[1]),
+    grade: match[2],
+    parts: parseScoreParts(match[3]),
+  };
+}
+
+function parseDualScores(markdown: string): {
+  techScore: ScoreSummary | null;
+  demandScore: ScoreSummary | null;
+} {
+  return {
+    techScore: parseScoreSide(markdown, TECH_SCORE_RE, "技术组合成熟度"),
+    demandScore: parseScoreSide(markdown, DEMAND_SCORE_RE, "需求证据强度"),
+  };
 }
 
 function parsePlans(markdown: string): FeasibilityPlan[] {
@@ -91,6 +132,8 @@ function parsePlans(markdown: string): FeasibilityPlan[] {
     const end = headings[index + 1]?.index ?? section.length;
     const body = section.slice(start, end).trim();
     const parsedScore = parsePlanScore(body);
+    const { techScore, demandScore } = parseDualScores(body);
+    const judgment = body.match(JUDGMENT_RE);
     const bodyMarkdown = removeSummaryFields(body);
 
     return {
@@ -99,9 +142,14 @@ function parsePlans(markdown: string): FeasibilityPlan[] {
       positioning: getSummaryField(body, "业务定位"),
       audience: getSummaryField(body, "目标客户"),
       marketOpportunity: getSummaryField(body, "市场机会"),
+      judgment: judgment ? cleanInline(judgment[1]) : "",
+      judgmentReason: judgment?.[2] ? cleanInline(judgment[2]) : "",
+      evidenceLevel: cleanInline(body.match(EVIDENCE_LEVEL_RE)?.[1] ?? ""),
       score: parsedScore?.score ?? null,
       grade: parsedScore?.grade ?? null,
       scoreParts: parsedScore?.scoreParts ?? [],
+      techScore,
+      demandScore,
       markdown: body,
       bodyHtml: marked.parse(bodyMarkdown) as string,
     };

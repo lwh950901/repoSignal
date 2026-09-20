@@ -1,8 +1,46 @@
+import re
 import tempfile
 import unittest
 from pathlib import Path
 
 from scripts import opportunity_analysis as analysis
+
+
+def plan_project(repo, tag, score=88, stars=100, tagline="", value="", risks="",
+                 source_date="2026-09-14"):
+    """构造一个带接口依据的组件项目（闭环门槛要求有输入输出描述）。"""
+    return {
+        "id": repo, "repo": repo, "url": "https://github.com/{}".format(repo),
+        "score": score, "stars": stars, "tags": {tag: 5}, "source_date": source_date,
+        "fields": {
+            "tagline": tagline or "{} 提供可试用的接口与导出格式。".format(repo),
+            "value": value or "可先小范围试用并记录产出。",
+            "risks": risks, "quality": "", "activity": "", "metrics": "MIT",
+        },
+    }
+
+
+def plan_steps(slots):
+    return [(tag, role, plan_project("owner/{}".format(tag), tag))
+            for tag, role in slots]
+
+
+def make_combo(steps, business=None, track=analysis.TRACK_MATURE, run_date="2026-09-14",
+               feedback=None):
+    business = business or dict(analysis.TEMPLATE_BUSINESS[
+        analysis.TEMPLATES[0]["name"]])
+    combo = {
+        "name": "测试方案", "origin": "template", "track": track,
+        "business": business, "pitch": "测试定位", "target": business["customer"],
+        "market": "【待验证假设】测试市场", "differentiation": "测试差异",
+        "rationale": "测试依据", "mvp": "测试范围",
+        "picks": {role: p for _, role, p in steps},
+        "slot_supply": {tag: 30 for tag, _, _ in steps},
+        "min_supply": 30, "total": len(steps), "today_count": len(steps),
+        "stars": sum(p["stars"] for _, _, p in steps),
+        "plan_family": "test-family", "variant": "test-variant",
+    }
+    return analysis.finalize_combo(combo, steps, feedback or [], run_date)
 
 
 class PlanIdentityTests(unittest.TestCase):
@@ -129,52 +167,21 @@ class ReuseAwareSelectionTests(unittest.TestCase):
 
 class FeasibilityRenderingTests(unittest.TestCase):
     def test_combo_table_only_exposes_role_project_and_reason(self):
-        project = {
-            "id": "owner/tool",
-            "repo": "owner/tool",
-            "url": "https://github.com/owner/tool",
-            "score": 85,
-            "stars": 100,
-            "tags": {"agent": 5},
-            "source": "daily",
-            "source_date": "2026-09-07",
-            "fields": {
-                "value": "完成最小任务闭环。",
-                "risks": "需先在隔离环境验证。",
-                "quality": "",
-                "activity": "",
-                "metrics": "MIT",
-            },
-        }
-        combo = {
-            "name": "test plan",
-            "score": 80,
-            "score_parts": [("组件可靠度", 30, 35)],
-            "plan_family": "test-family",
-            "variant": "test-variant",
-            "pitch": "test pitch",
-            "target": "test audience",
-            "market": "test market",
-            "rationale": "test rationale",
-            "picks": {"Agent 编排": project},
-            "slot_supply": {"agent": 1},
-            "min_supply": 1,
-            "total": 1,
-            "today_count": 1,
-            "stars": 100,
-            "differentiation": "test differentiation",
-            "mvp": "test mvp",
-        }
+        steps = plan_steps([("document", "文档解析"), ("rag", "检索/知识库"),
+                            ("agent", "Agent 编排"), ("observability", "观测/评测")])
+        combo = make_combo(steps)
+        project = steps[0][2]
 
         report = analysis.render(
-            [project], [project], [combo], [], "2026-09-07", "2026-06-09",
+            [project], [project], [combo], "2026-09-07", "2026-06-09",
             "2026-09-07", 1, 0, None,
         )
 
         self.assertIn("| 角色 | 项目 | 入选理由 |", report)
         self.assertNotIn("| 角色 | 项目 | 来源 | 许可证 | 入选理由 |", report)
         self.assertIn(
-            "| Agent 编排 | [`owner/tool`](https://github.com/owner/tool) | 完成最小任务闭环。 |",
+            "| 文档解析 | [`owner/document`](https://github.com/owner/document) | "
+            "可先小范围试用并记录产出。 |",
             report,
         )
 
@@ -245,22 +252,82 @@ class AnchorBusinessNamingTests(unittest.TestCase):
             self.assertIn(tpl["name"], analysis.TEMPLATE_BUSINESS)
             self.assertGreaterEqual(len(tpl["slots"]), 2)
 
-    def test_freshness_matches_family_not_wording(self):
+    def test_cooldown_blocks_within_the_first_seven_days(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             (root / "feasibility").mkdir()
-            for day, title in (("2026-09-10", "本地优先 · 知识增强 · Agent 工作台"),
-                               ("2026-09-11", "本地优先 · 多模型 · Agent 工作台")):
-                (root / "feasibility" / f"{day}.md").write_text(
-                    "## 可行性方案\n\n"
-                    f"### 1. {title}（组合 3 个项目，今日锚点 3 个）\n\n"
-                    "**方案身份**：`plan_family=biz-1a2b3c4d5e6f` · `variant=v1`\n",
-                    encoding="utf-8",
-                )
+            (root / "feasibility" / "2026-09-10.md").write_text(
+                "## 可行性方案\n\n"
+                "### 1. 本地优先 · 知识增强 · Agent 工作台\n\n"
+                "**方案身份**：`plan_family=biz-1a2b3c4d5e6f` · `variant=v1`\n",
+                encoding="utf-8",
+            )
+            history = analysis.load_family_history(root, "2026-09-12")
 
-            blocked = analysis.load_recent_families(root, "2026-09-12")
+        blocked, note = analysis.cooldown_decision(
+            "biz-1a2b3c4d5e6f", history, {"picks": {"角色": {"id": "owner/new"}},
+                                          "business": {}})
 
-        self.assertEqual(set(blocked), {"biz-1a2b3c4d5e6f"})
+        self.assertTrue(blocked)
+        self.assertIn("冷却期内", note)
+
+    def test_cooldown_mid_window_requires_new_components_or_evidence(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "feasibility").mkdir()
+            (root / "feasibility" / "2026-09-10.md").write_text(
+                "## 可行性方案\n\n"
+                "### 1. 本地优先 · 知识增强 · Agent 工作台\n\n"
+                "**方案身份**：`plan_family=biz-1a2b3c4d5e6f` · `variant=v1`\n\n"
+                "**业务语义**：`evidence_status=to-validate`\n\n"
+                "| 角色 | 项目 |\n|---|---|\n"
+                "| 编排 | [`owner/old`](https://github.com/owner/old) |\n",
+                encoding="utf-8",
+            )
+            history = analysis.load_family_history(root, "2026-09-19")
+
+        unchanged = {"picks": {"编排": {"id": "owner/old"}}, "business": {}}
+        upgraded = {"picks": {"编排": {"id": "owner/new"}}, "business": {}}
+
+        blocked, note = analysis.cooldown_decision("biz-1a2b3c4d5e6f", history, unchanged)
+        allowed, allow_note = analysis.cooldown_decision(
+            "biz-1a2b3c4d5e6f", history, upgraded)
+
+        self.assertTrue(blocked)
+        self.assertIn("冷却中", note)
+        self.assertFalse(allowed)
+        self.assertIn("新增关键组件", allow_note)
+
+    def test_cooldown_expires_after_the_full_window(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "feasibility").mkdir()
+            (root / "feasibility" / "2026-09-01.md").write_text(
+                "## 可行性方案\n\n### 1. 本地优先 · 知识增强 · Agent 工作台\n\n"
+                "**方案身份**：`plan_family=biz-1a2b3c4d5e6f` · `variant=v1`\n",
+                encoding="utf-8",
+            )
+            history = analysis.load_family_history(root, "2026-09-20")
+
+        blocked, note = analysis.cooldown_decision(
+            "biz-1a2b3c4d5e6f", history, {"picks": {}, "business": {}})
+
+        self.assertFalse(blocked)
+        self.assertEqual(note, "")
+
+    def test_history_ignores_reports_outside_the_cooldown_window(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "feasibility").mkdir()
+            (root / "feasibility" / "2026-06-01.md").write_text(
+                "## 可行性方案\n\n### 1. 旧方案\n\n"
+                "**方案身份**：`plan_family=old-family` · `variant=v1`\n",
+                encoding="utf-8",
+            )
+
+            history = analysis.load_family_history(root, "2026-09-20")
+
+        self.assertEqual(history, {})
 
 
 class DualTrackSelectionTests(unittest.TestCase):
@@ -446,11 +513,22 @@ class DualTrackRenderingTests(unittest.TestCase):
     def combo(track, project):
         return {
             "name": "本地优先 · 知识增强 · Agent 工作台", "origin": "anchor",
-            "track": track, "score": 80, "score_parts": [("组件可靠度", 30, 35)],
+            "track": track, "score": 80, "score_parts": [("组件可靠度", 30, 40)],
+            "tech_score": 80, "tech_parts": [("组件可靠度", 30, 40)],
+            "demand_score": 24, "demand_parts": [("证据等级", 24, 40)],
+            "judgment": analysis.JUDGMENT_WATCH, "judgment_reason": "测试依据",
             "plan_family": "biz-1a2b3c4d5e6f", "variant": "test-variant",
             "pitch": "按'本地优先 · 知识增强 · Agent 工作台'方向组合今日项目。",
-            "target": "重视数据留在本机的个人与小型团队", "market": "test market",
-            "rationale": "test rationale", "picks": {"Agent 编排": project},
+            "target": "重视数据留在本机的个人与小型团队", "market": "测试市场（待验证假设）",
+            "rationale": "test rationale",
+            "picks": {"编排": project},
+            "flow": [{"tag": "agent", "role": "编排", "project": project,
+                      "input": "任务指令与上游片段", "output": "可审批的步骤执行结果",
+                      "upstream": [], "downstream": [], "deploy": False}],
+            "experiment": {"scenario": "测试场景", "data": "测试数据", "days": 14,
+                           "success": ["成功指标"], "failure": ["失败指标"], "stop": ["停止条件"]},
+            "uncertainty": ["需求侧：测试", "组件侧：测试"],
+            "actions": ["先补证据", "核验组件"],
             "slot_supply": {"agent": 1}, "min_supply": 1, "total": 1,
             "today_count": 1, "stars": 100, "differentiation": "test differentiation",
             "mvp": "test mvp",
@@ -468,7 +546,7 @@ class DualTrackRenderingTests(unittest.TestCase):
         }
 
     def render(self, combo, project):
-        return analysis.render([project], [project], [combo], [], "2026-09-14",
+        return analysis.render([project], [project], [combo], "2026-09-14",
                                "2026-06-16", "2026-09-14", 1, 0, None)
 
     def test_render_exposes_track_and_machine_readable_business_semantics(self):
@@ -479,7 +557,7 @@ class DualTrackRenderingTests(unittest.TestCase):
         self.assertIn("**业务轨道**：探索方向（待验证）", report)
         self.assertIn("`track=exploratory`", report)
         self.assertIn("`problem=资料散落各处，答案没有出处可查`", report)
-        self.assertIn("**待验证说明**", report)
+        self.assertIn("**方案判断**：", report)
         self.assertIn("探索方向：由今日锚点直接拼接", report)
 
     def test_render_marks_mature_track_without_validation_notice(self):
@@ -490,13 +568,276 @@ class DualTrackRenderingTests(unittest.TestCase):
         report = self.render(combo, project)
 
         self.assertIn("**业务轨道**：成熟方向（组件供给已核对）", report)
-        self.assertNotIn("**待验证说明**", report)
+        self.assertNotIn("探索方向：由今日锚点直接拼接", report)
 
     def test_render_states_when_no_plan_qualified(self):
-        report = analysis.render([], [], [], [], "2026-09-14", "2026-06-16",
+        report = analysis.render([], [], [], "2026-09-14", "2026-06-16",
                                  "2026-09-14", 0, 0, None)
 
         self.assertIn("本轮无合格方案", report)
+
+
+class ClosureGateTests(unittest.TestCase):
+    """闭环门槛：仅标签相关、能力面重复、数据流不连通、组件不足都不成方案。"""
+
+    def test_requires_at_least_three_components(self):
+        steps = plan_steps([("document", "文档解析"), ("rag", "检索")])
+
+        flow = analysis.combo_flow(steps)
+
+        self.assertFalse(flow["ok"])
+        self.assertIn("构不成完整数据流", flow["reason"])
+
+    def test_rejects_components_without_interface_evidence(self):
+        steps = plan_steps([("document", "文档解析"), ("rag", "检索"),
+                            ("agent", "编排")])
+        blank = steps[1][2]
+        blank["fields"] = {"tagline": "", "value": "", "quality": "", "reason": ""}
+
+        flow = analysis.combo_flow(steps)
+
+        self.assertFalse(flow["ok"])
+        self.assertIn("仅标签相关", flow["reason"])
+        self.assertIn(blank["repo"], flow["reason"])
+
+    def test_rejects_duplicate_capability_faces(self):
+        steps = plan_steps([("agent", "编排 A"), ("agent", "编排 B"),
+                            ("observability", "观测")])
+
+        flow = analysis.combo_flow(steps)
+
+        self.assertFalse(flow["ok"])
+        self.assertIn("能力面重复", flow["reason"])
+
+    def test_rejects_unconnected_data_flow(self):
+        steps = plan_steps([("comm", "消息入口"), ("memory", "长期记忆"),
+                            ("design", "设计"), ("codeintel", "代码理解")])
+
+        flow = analysis.combo_flow(steps)
+
+        self.assertFalse(flow["ok"])
+        self.assertIn("数据流不连通", flow["reason"])
+
+    def test_every_declared_handoff_goes_downstream(self):
+        for upstream, downstream in analysis.CAPABILITY_HANDOFFS:
+            self.assertLess(analysis.CAPABILITY_RANK[upstream],
+                            analysis.CAPABILITY_RANK[downstream],
+                            "{} → {} 的排序与交接方向不一致".format(upstream, downstream))
+
+    def test_every_template_forms_a_connected_flow(self):
+        for tpl in analysis.TEMPLATES:
+            steps = plan_steps(tpl["slots"])
+            flow = analysis.combo_flow(steps)
+            self.assertTrue(flow["ok"], "{}：{}".format(tpl["name"], flow["reason"]))
+            self.assertGreaterEqual(len(flow["steps"]), analysis.MIN_PLAN_COMPONENTS)
+            for step in flow["steps"]:
+                self.assertTrue(step["input"])
+                self.assertTrue(step["output"])
+
+
+class DualScoreTests(unittest.TestCase):
+    """双评分：技术组合成熟度与需求证据强度互不合并。"""
+
+    def test_tech_score_parts_add_up_and_exclude_demand(self):
+        combo = make_combo(plan_steps([("document", "文档解析"), ("rag", "检索"),
+                                       ("agent", "编排"), ("observability", "评测")]))
+
+        self.assertEqual(combo["tech_score"], sum(v for _, v, _ in combo["tech_parts"]))
+        self.assertEqual([name for name, _, _ in combo["tech_parts"]],
+                         [name for name, _ in analysis.TECH_SCORE_PARTS])
+        self.assertNotIn("证据等级", [name for name, _, _ in combo["tech_parts"]])
+
+    def test_demand_score_parts_add_up(self):
+        combo = make_combo(plan_steps([("document", "文档解析"), ("rag", "检索"),
+                                       ("agent", "编排")]))
+
+        self.assertEqual(combo["demand_score"],
+                         sum(v for _, v, _ in combo["demand_parts"]))
+        self.assertEqual([name for name, _, _ in combo["demand_parts"]],
+                         [name for name, _ in analysis.DEMAND_SCORE_PARTS])
+
+    def test_component_maturity_never_upgrades_demand_evidence(self):
+        combo = make_combo(plan_steps([("document", "文档解析"), ("rag", "检索"),
+                                       ("agent", "编排"), ("observability", "评测")]),
+                           run_date="2026-09-14")
+
+        self.assertGreaterEqual(combo["tech_score"], 80)
+        self.assertEqual(combo["demand"]["level"], analysis.EVIDENCE_SELF_REPORTED)
+        self.assertNotEqual(combo["judgment"], analysis.JUDGMENT_INTERVIEW)
+
+    def test_user_feedback_raises_demand_level_and_judgment(self):
+        steps = plan_steps([("document", "文档解析"), ("rag", "检索"), ("agent", "编排")])
+        feedback = [{"source": "user", "date": "2026-09-13", "repo": "owner/rag",
+                     "detail": "希望先把引用溯源跑通"},
+                    {"source": "user", "date": "2026-09-12", "repo": "owner/agent",
+                     "detail": "需要能中断和回滚的编排"}]
+
+        combo = make_combo(steps, run_date="2026-09-14", feedback=feedback)
+
+        self.assertEqual(combo["demand"]["level"], analysis.EVIDENCE_CONFIRMED)
+        self.assertGreaterEqual(combo["demand_score"], 90)
+        self.assertEqual(combo["judgment"], analysis.JUDGMENT_INTERVIEW)
+
+    def test_components_without_interface_evidence_are_rejected(self):
+        steps = plan_steps([("document", "文档解析"), ("rag", "检索"), ("agent", "编排")])
+        steps[2][2]["fields"] = {"tagline": "", "value": "", "quality": "", "reason": "",
+                                 "risks": "", "howto": "安装说明", "kind": ""}
+
+        combo = make_combo(steps, run_date="2026-09-14")
+
+        self.assertIsNone(combo)
+
+    def test_no_source_components_report_none_evidence(self):
+        picks = {role: {"id": "x/{}".format(i), "repo": "x/{}".format(i),
+                        "source_date": "2026-01-01", "fields": {}}
+                 for i, role in enumerate(("文档解析", "检索", "编排"))}
+
+        silent = analysis.plan_evidence({"picks": picks, "business": {}}, [], "2026-09-14")
+
+        self.assertEqual(silent["level"], analysis.EVIDENCE_NONE)
+        self.assertEqual(silent["score"], 0)
+
+    def test_plans_without_demand_evidence_are_dropped(self):
+        judgment, reason = analysis.plan_judgment(
+            90, {"level": analysis.EVIDENCE_NONE, "score": 0}, 20)
+
+        self.assertEqual(judgment, analysis.JUDGMENT_DROP)
+        self.assertIn("无任何可引用证据", reason)
+
+    def test_high_risk_share_is_dropped(self):
+        judgment, _ = analysis.plan_judgment(
+            90, {"level": analysis.EVIDENCE_SELF_REPORTED, "score": 59}, 5)
+
+        self.assertEqual(judgment, analysis.JUDGMENT_DROP)
+
+    def test_judgment_ladder_covers_all_four_labels(self):
+        self.assertEqual(
+            analysis.plan_judgment(90, {"level": analysis.EVIDENCE_CONFIRMED,
+                                        "score": 80}, 20)[0],
+            analysis.JUDGMENT_INTERVIEW)
+        self.assertEqual(
+            analysis.plan_judgment(85, {"level": analysis.EVIDENCE_SELF_REPORTED,
+                                        "score": 40}, 20)[0],
+            analysis.JUDGMENT_TECH_TRIAL)
+        self.assertEqual(
+            analysis.plan_judgment(75, {"level": analysis.EVIDENCE_SELF_REPORTED,
+                                        "score": 40}, 20)[0],
+            analysis.JUDGMENT_WATCH)
+
+
+class ExperimentAndEvidenceTests(unittest.TestCase):
+    """MVP 要可证伪：场景/数据/周期/成功/失败/停止条件，需求表述要带证据等级。"""
+
+    @staticmethod
+    def combo():
+        return make_combo(plan_steps([("document", "文档解析"), ("rag", "检索"),
+                                      ("agent", "编排"), ("observability", "评测")]))
+
+    def test_mvp_experiment_is_falsifiable(self):
+        combo = self.combo()
+        experiment = combo["experiment"]
+
+        self.assertTrue(experiment["scenario"])
+        self.assertTrue(experiment["data"])
+        self.assertEqual(experiment["days"], analysis.EXPERIMENT_DAYS)
+        self.assertTrue(experiment["success"])
+        self.assertTrue(experiment["failure"])
+        self.assertTrue(experiment["stop"])
+        self.assertTrue(any("停止" in item for item in experiment["stop"]))
+
+    def test_report_prints_the_experiment_and_uncertainty_blocks(self):
+        combo = self.combo()
+        report = analysis.render([combo["picks"]["文档解析"]], [], [combo],
+                                 "2026-09-14", "2026-06-16", "2026-09-14", 1, 0, None)
+
+        for label in ("- 测试场景：", "- 测试数据：", "- 周期：", "- 成功指标：",
+                      "- 失败指标：", "- 停止条件："):
+            self.assertIn(label, report)
+        self.assertIn("**最大不确定性**：", report)
+        self.assertIn("**下一步动作**：", report)
+
+    def test_demand_statements_carry_evidence_levels(self):
+        combo = self.combo()
+        report = analysis.render([], [], [combo], "2026-09-14", "2026-06-16",
+                                 "2026-09-14", 1, 0, None)
+
+        self.assertIn("**需求证据**", report)
+        self.assertIn("【项目方自述】", report)
+        self.assertIn("【待验证假设】", report)
+        self.assertIn("【无证据】", report)
+
+    def test_templates_and_report_avoid_unfounded_claims(self):
+        for tpl in analysis.TEMPLATES:
+            for field in ("market", "pitch", "rationale", "differentiation", "mvp"):
+                text = tpl[field]
+                for word in analysis.FORBIDDEN_CLAIMS:
+                    self.assertNotIn(word, text,
+                                     "{} 的 {} 含无来源断言 {}".format(tpl["name"], field, word))
+
+        combo = self.combo()
+        combo["market"] = "企业愿意付费，这是刚需。"
+        report = analysis.render([], [], [combo], "2026-09-14", "2026-06-16",
+                                 "2026-09-14", 1, 0, None)
+        body = report.split("## 可行性方案", 1)[1]
+
+        self.assertNotIn("愿意付费", body)
+        self.assertNotIn("刚需", body)
+        self.assertIn("（无来源断言，已删除）", body)
+
+
+class ReportStructureTests(unittest.TestCase):
+    """阅读顺序与新报告结构：允许没有方案，不生成单点机会与笼统行动建议。"""
+
+    @staticmethod
+    def combo():
+        return make_combo(plan_steps([("document", "文档解析"), ("rag", "检索"),
+                                      ("agent", "编排"), ("observability", "评测")]))
+
+    def test_summary_lists_cooldown_dropped_and_rejected_candidates(self):
+        combo = make_combo(plan_steps([("document", "文档解析"), ("rag", "检索"),
+                                       ("agent", "编排")]))
+
+        report = analysis.render(
+            [], [], [combo], "2026-09-14", "2026-06-16", "2026-09-14", 1, 0, None,
+            ["企业内部知识助手：冷却期内（最近一次出现 1 天前，起点 7 天）"],
+            [("旧方向", "缺需求证据（无证据）")],
+            [("旧组合", "仅标签相关（缺接口依据）：owner/x")],
+        )
+
+        self.assertIn("冷却与重现：企业内部知识助手：冷却期内", report)
+        self.assertIn("暂不建议（未列入）：旧方向（缺需求证据（无证据））", report)
+        self.assertIn("闭环门槛未过（未列入）：旧组合（仅标签相关（缺接口依据）：owner/x）", report)
+
+    def test_report_follows_the_agreed_reading_order(self):
+        combo = self.combo()
+        report = analysis.render([], [], [combo], "2026-09-14", "2026-06-16",
+                                 "2026-09-14", 1, 0, None)
+        order = ["## 今日结论", "**方案判断**：", "**客户问题**：", "**组件数据流**",
+                 "**双评分**：", "**MVP 实验**：", "**最大不确定性**：", "**下一步动作**："]
+        positions = [report.index(marker) for marker in order]
+
+        self.assertEqual(positions, sorted(positions))
+
+    def test_report_drops_low_value_sections(self):
+        report = analysis.render([], [], [self.combo()], "2026-09-14", "2026-06-16",
+                                 "2026-09-14", 1, 0, None)
+
+        self.assertNotIn("## 单点项目机会", report)
+        self.assertNotIn("## 行动建议", report)
+        self.assertNotIn("优先推进评分最高的组合", report)
+
+    def test_zero_plan_report_lists_skipped_and_dropped_candidates(self):
+        report = analysis.render([], [], [], "2026-09-14", "2026-06-16", "2026-09-14",
+                                 1, 0, None,
+                                 cooldown_notes=["方案 A：冷却期内（最近一次出现 2 天前，起点 7 天）"],
+                                 dropped=[("方案 B", "需求侧无任何可引用证据")],
+                                 rejected=[("方案 C", "仅标签相关（缺接口依据）：owner/x")])
+
+        self.assertIn("本轮无合格方案", report)
+        self.assertIn("暂不建议（未列入）：方案 B", report)
+        self.assertIn("闭环门槛未过（未列入）：方案 C", report)
+        self.assertIn("冷却与重现：方案 A", report)
+        self.assertIn("不为每日产出凑数", report)
 
 
 class ReportCompatibilityTests(unittest.TestCase):
@@ -536,7 +877,7 @@ class ReportCompatibilityTests(unittest.TestCase):
 
 
 class KunTaskContractTests(unittest.TestCase):
-    """KUN-TASK.md 的数量契约必须与双轨机制一致（1–3 个，允许少于 3 个）。"""
+    """KUN-TASK.md 的契约必须与生成器一致（0–3 个、双评分、四档判断、冷却）。"""
 
     @classmethod
     def setUpClass(cls):
@@ -546,7 +887,7 @@ class KunTaskContractTests(unittest.TestCase):
 
     def test_contract_uses_the_dual_track_range(self):
         self.assertTrue(self.text, "KUN-TASK.md 缺失")
-        self.assertIn("1–3", self.text)
+        self.assertIn("0–3", self.text)
         self.assertIn("成熟方向", self.text)
         self.assertIn("探索方向", self.text)
 
@@ -556,12 +897,38 @@ class KunTaskContractTests(unittest.TestCase):
     def test_contract_drops_the_fixed_three_plan_claim(self):
         self.assertNotIn("每天输出 3 个", self.text)
         self.assertNotIn("报告含 3 个方案", self.text)
+        self.assertNotIn("优先推进评分最高", self.text)
 
     def test_contract_requires_post_generation_naming_step(self):
         self.assertIn("命名标准", self.text)
         self.assertIn("生成后", self.text)
         self.assertIn("plan_family", self.text)
         self.assertIn("8–20", self.text)
+
+    def test_contract_splits_the_two_scores(self):
+        for token in ("双评分", "技术组合成熟度", "需求证据强度", "组件成熟不等于商业可行"):
+            self.assertIn(token, self.text)
+
+    def test_contract_defines_the_four_judgments(self):
+        for label in analysis.JUDGMENT_ORDER:
+            self.assertIn(label, self.text)
+        self.assertIn("不列入方案列表", self.text)
+
+    def test_contract_defines_closure_gate_and_evidence_levels(self):
+        for token in ("闭环门槛", "组件数据流", "接入方式", "仅标签相关"):
+            self.assertIn(token, self.text)
+        for level in analysis.EVIDENCE_LEVELS:
+            self.assertIn(level, self.text)
+
+    def test_contract_defines_cooldown_window_and_falsifiable_mvp(self):
+        self.assertIn("7–14", self.text)
+        for token in ("新增关键组件", "证据等级提升", "测试场景", "成功指标",
+                      "失败指标", "停止条件"):
+            self.assertIn(token, self.text)
+
+    def test_contract_retires_low_value_sections(self):
+        self.assertNotIn("单点项目机会", self.text)
+        self.assertIn("刚需", self.text)   # 仅出现在禁用措辞说明里
 
 
 class DailyAnchorRequirementTests(unittest.TestCase):
@@ -620,6 +987,109 @@ class DailyAnchorRequirementTests(unittest.TestCase):
         runs_log = (self.root / "feasibility" / "runs.log").read_text(
             encoding="utf-8")
         self.assertIn("anchor=2026-09-14", runs_log)
+
+    def test_generated_report_carries_the_new_contract_sections(self):
+        self.write_daily("2026-09-12", "owner/old")
+        self.write_daily("2026-09-14", "owner/new")
+
+        code = analysis.main(["--date", "2026-09-14", "--data-root", str(self.root),
+                              "--no-llm"])
+        report = (self.root / "feasibility" / "2026-09-14.md").read_text(encoding="utf-8")
+
+        self.assertEqual(code, 0)
+        self.assertIn("## 今日结论", report)
+        self.assertNotIn("## 单点项目机会", report)
+        self.assertNotIn("## 行动建议", report)
+        for word in analysis.FORBIDDEN_CLAIMS:
+            self.assertNotIn(word, report.replace("不使用刚需、愿意付费等无来源结论", ""))
+
+    def test_second_run_of_the_same_family_is_skipped_by_cooldown(self):
+        self.write_daily("2026-09-12", "owner/old")
+        self.write_daily("2026-09-14", "owner/new")
+        analysis.main(["--date", "2026-09-14", "--data-root", str(self.root),
+                       "--no-llm"])
+        first = (self.root / "feasibility" / "2026-09-14.md").read_text(encoding="utf-8")
+
+        self.write_daily("2026-09-15", "owner/newer")
+        analysis.main(["--date", "2026-09-15", "--data-root", str(self.root),
+                       "--no-llm"])
+        second = (self.root / "feasibility" / "2026-09-15.md").read_text(encoding="utf-8")
+
+        self.assertIn("## 今日结论", second)
+
+
+class CooldownIntegrationTests(unittest.TestCase):
+    """端到端：同一 plan_family 在 7 天内被冷却跳过，14 天后自然重新合格。"""
+
+    POOL = [
+        ("agent", "Agent 编排框架，可接任务与工具。"),
+        ("rag", "知识库检索与引用溯源。"),
+        ("memory", "长期记忆与会话上下文存储。"),
+        ("sandbox", "隔离执行环境与权限边界。"),
+        ("observability", "Agent 运行 trace 与成本评测。"),
+        ("gateway", "模型网关与用量路由。"),
+        ("security", "依赖与代码安全审计。"),
+        ("codeintel", "仓库级代码理解与回归对比。"),
+        ("design", "设计稿到组件改动规格。"),
+        ("document", "文档解析与结构化入库。"),
+        ("comm", "渠道消息聚合与回执。"),
+        ("local", "本地优先桌面形态，数据不出本机。"),
+    ]
+
+    def setUp(self):
+        self._tmp = tempfile.TemporaryDirectory()
+        self.root = Path(self._tmp.name)
+        (self.root / "daily").mkdir()
+        (self.root / "weekly").mkdir()
+
+    def tearDown(self):
+        self._tmp.cleanup()
+
+    def write_daily(self, day, entries):
+        lines = []
+        for index, (repo, tagline, score) in enumerate(entries, 1):
+            lines += [f"### {index}. 爆发型：{repo} — {score}/100", "",
+                      f"- 仓库：[{repo}](https://github.com/{repo})",
+                      f"- 一句话定位：{tagline}",
+                      "- 类型与适合用途：工具 | 适合作为组合组件",
+                      "- 风险：无", ""]
+        (self.root / "daily" / f"{day}.md").write_text("\n".join(lines),
+                                                         encoding="utf-8")
+
+    def write_pool_day(self, day, per_face=24):
+        """写一份足够大的合成项目池：每个能力面 FACE_SUPPLY 个候选，保证供给分项达标。"""
+        entries = []
+        for tag, tagline in self.POOL:
+            for index in range(1, per_face + 1):
+                entries.append(("owner/{}-{}".format(tag, index), tagline, 90))
+        self.write_daily(day, entries)
+
+    def run_day(self, day, repo=None, tagline=None):
+        if repo:
+            self.write_daily(day, [(repo, tagline or "{}{}".format(repo, " 组件。"), 95)])
+        code = analysis.main(["--date", day, "--data-root", str(self.root), "--no-llm"])
+        self.assertEqual(code, 0)
+        return (self.root / "feasibility" / f"{day}.md").read_text(encoding="utf-8")
+
+    def test_repeated_family_is_cooled_down_then_returns(self):
+        self.write_pool_day("2026-09-01")
+        first = self.run_day("2026-09-01")
+        first_families = [match.group(1) for match in
+                          re.finditer(r"plan_family=([^`]+)", first)]
+
+        self.assertTrue(first_families, "首次运行应至少产出 1 个方案")
+        second = self.run_day("2026-09-02", "owner/agent-anchor",
+                              "Agent 编排框架与任务编排。")
+
+        self.assertIn("冷却与重现", second)
+        self.assertIn("冷却期内", second)
+        for family in first_families:
+            self.assertNotIn("plan_family={}".format(family), second)
+
+        later = self.run_day("2026-09-25", "owner/agent-later",
+                             "Agent 编排框架与任务编排。")
+
+        self.assertNotIn("冷却期内", later)
 
 
 if __name__ == "__main__":

@@ -12,17 +12,29 @@
      按 owner/repo 去重；每个项目保留来源（日期/周号）可追溯。
   3. 能力标签聚类（agent/memory/rag/sandbox/observability/gateway/codeintel/
      design/security/document/local/comm），组合模板从全池挑选真实项目，
-     输出"可行性方案"（业务定位 / 目标客户 / 市场机会 / 组合分工 / 风险），
-     并给出 0-100 确定性综合评分（组件可靠度 / 组件供给 / 风险敞口 /
-     今日锚点 / 来源多样性 / 许可证 / 完整度）与高中低档位。
+     输出"可行性方案"（方案判断 / 客户问题 / 组件数据流 / MVP 实验 /
+     最大不确定性 / 下一步动作 / 风险）。
      方案名按能力面拼成（场景 · 差异化能力 · 业务主体），业务身份 plan_family 由
      customer + problem + expected_outcome 派生，与技术词、标题措辞、组件集合解耦。
-  4. 双轨产出：每天 1-3 个方案 = 最多 1 个成熟方向（固定模板，evidence_status=
+  3a. 组合闭环门槛（closure gate）：每个方案必须给出可连接的组件数据流
+     （起点 → 处理 → 终点）、每个组件的输入输出与接入方式。缺接口依据、
+     能力面重复或数据流不连通的组合按"仅标签相关"剔除，不进方案列表。
+  3b. 双评分，互不合并（组件成熟 != 商业可行）：
+       技术组合成熟度 = 组件可靠度 + 组件供给 + 风险敞口 + 许可证 + 完整度；
+       需求证据强度   = 证据等级 + 用户明确表态 + 独立来源 + 新鲜度。
+     需求与市场表述严格标记证据等级：已确认事实 / 项目方自述 / 待验证假设 /
+     无证据；不使用"刚需、愿意付费"等无来源结论。
+  3c. 方案判断四档：值得用户访谈 / 值得技术试验 / 继续观察 / 暂不建议。
+     "暂不建议"的方案不进列表，只在今日结论里计数并说明原因。
+  4. 双轨产出：每天 0-3 个方案 = 最多 1 个成熟方向（固定模板，evidence_status=
      supply-checked）+ 最多 2 个探索方向（今日锚点 + ≥2 个互补组件，to-validate）；
      没有合格探索方向时允许少于 3 个，0 个方案时报告明确写“本轮无合格方案”。
-  5. 可选增强：设置 OPPORTUNITY_LLM_API_KEY（或 OPENAI_API_KEY）时调用
+  5. 跨日去重：同一 plan_family 冷却 7-14 天（COOLDOWN_MIN_DAYS ~ COOLDOWN_DAYS）。
+     冷却期内无条件跳过；冷却中段只有新增关键组件、证据等级提升或客户问题变化
+     才允许提前重现，并在报告里说明理由。
+  6. 可选增强：设置 OPPORTUNITY_LLM_API_KEY（或 OPENAI_API_KEY）时调用
      OpenAI 兼容接口补充视角；失败不影响主流程。
-  6. 输出 data/github-project-digest/feasibility/YYYY-MM-DD.md，
+  7. 输出 data/github-project-digest/feasibility/YYYY-MM-DD.md，
      并追加一行运行记录到同目录 runs.log。
 
 退出码：0 成功；2 输入缺失；1 其他错误。
@@ -116,44 +128,6 @@ COMBO_ROLES = {"agent": "Agent 编排", "memory": "长期记忆", "rag": "检索
                "sandbox": "执行沙箱", "observability": "观测/评测", "gateway": "模型网关",
                "codeintel": "代码理解", "design": "设计/原型", "security": "安全审计",
                "document": "文档处理", "local": "本地形态", "comm": "协作入口"}
-TAG_ANGLE = {
-    "agent": ["可包装成垂直场景的 Agent 托管/订阅产品",
-              "可拆出可复用的 Agent 编排能力做独立服务",
-              "可做成面向特定岗位的 Agent 工具集"],
-    "memory": ["可做成记忆/会话上下文的独立存储服务",
-                "适合作为 Agent 产品的记忆层插件",
-                "可接入 RAG 或 Agent 产品补足记忆短板"],
-    "rag": ["可做成垂直领域知识库（法律/医疗/代码）",
-            "可包装为检索质量与引用溯源见长的知识产品",
-            "可作为 RAG 管线的检索内核对外服务"],
-    "sandbox": ["可提供不可信代码的隔离执行环境",
-                "适合作为 Agent 平台与 CI 的沙箱层",
-                "可做成安全评估用的隔离运行服务"],
-    "observability": ["可做 Agent/LLM 成本与质量观测",
-                      "可嵌入现有观测栈补 Agent 可观测性",
-                      "可做成评测与回归的独立服务"],
-    "gateway": ["可做模型网关/统一接入层",
-                "适合按用量与路由策略提供接入服务",
-                "可做成多模型切换与成本控制的中转层"],
-    "codeintel": ["可做代码理解/审查服务",
-                  "适合作为仓库级代码分析的独立工具",
-                  "可做成 PR 评审与调用链分析的组件"],
-    "design": ["可做 AI 设计交付服务",
-               "适合按生成量/导出量提供设计工具服务",
-               "可嵌入设计工作流作为素材生成层"],
-    "security": ["可做 Agent 安全审计与红队服务",
-                 "适合作为发布前的安全检查环节",
-                 "可做成 MCP/Skill 供应链审计工具"],
-    "document": ["可做文档解析/转换服务",
-                 "适合作为 RAG 上游的入库清洗组件",
-                 "可做成格式转换 API 或批处理工具"],
-    "local": ["可做隐私优先的本地工具商业版",
-              "适合做自托管/离线场景的订阅产品",
-              "可提供支持与定制服务变现"],
-    "comm": ["可做团队协作/通知聚合产品",
-             "适合接入 IM 做消息自动化",
-             "可做垂直行业通信自动化组件"],
-}
 
 # 组合模板：槽位 (标签, 角色)。只有真实项目 ≥2 个且槽位 ≥2 才输出；
 # 槽位按顺序挑选全池中标签分最高的未使用项目。
@@ -169,7 +143,7 @@ TEMPLATES = [
         ],
         "pitch": "把散落在各部门的文档接进私有化知识库，员工提问能拿到带出处的答案，需要动手的事由 Agent 在人工审批后执行。",
         "target": "数据敏感的中大型企业（法律/金融/制造/医疗），对数据出境和合规有硬性要求。",
-        "market": "企业愿意为'数据不出境 + 答案可追溯'付费；近 90 天池里编排、检索、记忆、沙箱、评测组件都已齐备。",
+        "market": "【待验证假设】数据敏感企业是否愿意为“数据不出境 + 答案可追溯”付费，本轮无访谈或付费证据；【已确认事实】近 90 天池内编排、检索、记忆、沙箱、评测组件均有候选，供给已核对。",
         "differentiation": "相比单点 RAG 或 Agent 框架，它把'数据私有化 + 人工审批 + 效果评测'一起交付，不用客户自己拼。",
         "rationale": "池中编排、检索、记忆、沙箱、评测组件都能找到，'问答 + 审批执行'的最小闭环可以全部自托管。",
         "mvp": "先固定 agent + rag + 评测三件套：接入一个部门的文档集，配一条评测集，Agent 只能执行一个需要审批的动作；记忆和沙箱二期再加。",
@@ -185,7 +159,7 @@ TEMPLATES = [
         ],
         "pitch": "让 Agent 任务像 CI 一样跑：进沙箱执行、全程留痕、出审计报告，人工批准后才允许写仓库。",
         "target": "已在使用 coding agent（Codex/Claude Code/Cursor）的研发团队与平台工程组。",
-        "market": "Agent 开始真正干活后，'跑挂了怎么恢复、花了多少钱、有没有越权'成为刚需；近 90 天池里隔离执行和观测组件明显变多。",
+        "market": "【待验证假设】“跑挂了怎么恢复、花了多少钱、有没有越权”的紧迫度，本轮无外部证据；【已确认事实】近 90 天池内隔离执行与观测类候选明显变多，供给已核对。",
         "differentiation": "相比单个 harness 或观测工具，它把隔离执行、trace 评测和审计报告串成一条流水线。",
         "rationale": "长任务 Agent 的失败恢复、可观测、安全执行是池里反复出现的主题，组件已成熟，适合拼成 CI 流水线。",
         "mvp": "受限流水线：沙箱内跑一次任务、记录 trace、输出审计报告，人工审批后才允许写仓库；成本与多 Agent 编排后置。",
@@ -201,7 +175,7 @@ TEMPLATES = [
         ],
         "pitch": "数据全部留在本机、模型可自由切换、记忆可导出的个人 AI 工作台。",
         "target": "重视隐私的个人开发者、知识工作者与小型团队。",
-        "market": "池里本地优先、自托管类项目反复出现（记忆/桌面/网关），个人为'数据不离开本机'付费的趋势在上升。",
+        "market": "【待验证假设】个人或小团队为“数据不离开本机”付费的意愿，本轮无外部证据；【已确认事实】池里本地优先、自托管类项目反复出现（记忆/桌面/网关）。",
         "differentiation": "对比云端工作台，卖点是无云依赖和数据所有权；对比单点记忆工具，卖点是一整套工作台。",
         "rationale": "本地记忆、模型网关、Agent 编排在池里都能找到，拼起来就是个人知识工作台。",
         "mvp": "先用两个组件跑通'本地记忆写入→Agent 读取→输出压缩'，再决定桌面端与多渠道接入。",
@@ -217,7 +191,7 @@ TEMPLATES = [
         ],
         "pitch": "给团队一个统一面板：所有 Agent 的会话、审批、花费和审计记录都在一处，散落的 Agent 变成可管理的资产。",
         "target": "已在使用多个 coding agent 工具、或计划让 Agent 参与团队流程的团队。",
-        "market": "团队里 Agent 工具越用越杂是真实痛点；池中编排、协作入口、成本观测组件刚好都成熟了。",
+        "market": "【待验证假设】“团队里 Agent 工具越用越杂”的痛点强度，本轮无外部证据；【已确认事实】池中编排、协作入口、成本观测组件均有候选。",
         "differentiation": "对比单 Agent 工具，它把多 Agent 的会话、审批、审计、成本收到一个控制面里。",
         "rationale": "编排、协作入口、成本观测组件在池中都齐，面向团队做控制面的条件具备了。",
         "mvp": "接一个 Agent 宿主 + 一个协作渠道 + 审计日志，验证审批、打断、失败恢复三个动作，再扩展多 Agent。",
@@ -232,7 +206,7 @@ TEMPLATES = [
         ],
         "pitch": "入库前解析→转换→质检的知识处理管道，解决 RAG 上游脏数据导致的召回与引用质量问题。",
         "target": "RAG/搜索/文档产品团队，以及自建知识库的企业。",
-        "market": "RAG 效果差，问题大多出在入库前的解析和清洗；池里解析/转换与检索组件都已成熟。",
+        "market": "【待验证假设】“RAG 效果差主要出在入库前脏数据”这一因果判断，本轮无外部证据；【已确认事实】池内解析/转换与检索组件均可拼装为管道。",
         "differentiation": "对比单点解析库或向量库，它把解析、转换、质检串成一条管道，不用工程师自己拼。",
         "rationale": "解析/转换、检索、评测组件都能拼成'入库前处理 + 质检'管道，正好打 RAG 上游脏数据这个常见瓶颈。",
         "mvp": "固定管道：文档→Markdown→索引→评测报告，用自有样本对比接入前后的召回与引用质量。",
@@ -248,7 +222,7 @@ TEMPLATES = [
         ],
         "pitch": "让安全扫描由 Agent 自动跑：扫出问题、给出修复建议、独立验证是否修好，每一步留证据，由人审批放行。",
         "target": "企业安全团队、DevSecOps 平台组。",
-        "market": "Agent 带来新的攻击面（Skill/MCP/供应链），池里安全类项目（红队/审计/沙箱）也在密集出现。",
+        "market": "【待验证假设】Agent 新攻击面（Skill/MCP/供应链）的采购优先级，本轮无外部证据；【已确认事实】池内安全类候选（红队/审计/沙箱）在近 90 天密集出现。",
         "differentiation": "对比传统 SAST 只报问题，它把'扫描 + 修复建议 + 独立验证'做成完整流程，且每一步有证据。",
         "rationale": "池里的安全审计、沙箱、代码理解组件正好能拼出'扫描→修复→验证'这条线。",
         "mvp": "在授权靶场跑'扫描→修复建议→独立验证'三步，保留证据与人工审批，再评估接入正式仓库。",
@@ -263,7 +237,7 @@ TEMPLATES = [
         ],
         "pitch": "把仓库级的审查、重构建议和回归验证串成一条线：Agent 提改动、测试给证据，人只审结论。",
         "target": "中型以上研发团队、平台工程组，以及需要长期维护老代码库的团队。",
-        "market": "AI 写代码越来越快，但'改得对不对、有没有破坏别处'仍靠人盯；池里代码理解与回归评测组件都已可用。",
+        "market": "【待验证假设】“改得对不对、有没有破坏别处”是否值得单独付费，本轮无外部证据；【已确认事实】池内代码理解与回归评测组件均可拼装。",
         "differentiation": "对比单点代码补全或 lint，它把'理解仓库→提改动→跑证据'做成可复核流程，而不只是给建议。",
         "rationale": "代码理解、评测、编排、模型接入在池中都能找到，仓库级审阅闭环可以自建。",
         "mvp": "选一个有测试的仓库：Agent 只提 PR 草稿，必须附回归对比结果，人工只做批准或打回。",
@@ -278,7 +252,7 @@ TEMPLATES = [
         ],
         "pitch": "每次依赖变动都产出可交付的清单与证据：哪些包、什么许可证、哪些漏洞真影响了调用路径。",
         "target": "要过审计的研发团队、企业安全与合规岗，以及对外交付产品的厂商。",
-        "market": "供应链事件和许可证纠纷反复发生，'扫描结果要能给人看、能复测'是硬需求；池里审计与报告组件齐备。",
+        "market": "【待验证假设】合规岗位对“扫描结果要能给人看、能复测”的采购需求，本轮无外部证据；【已确认事实】池内审计、报告、依赖分析与评测组件均有候选。",
         "differentiation": "对比只报 CVE 的扫描器，它把依赖清单、许可证、调用路径影响和复测证据连成一份可审计产物。",
         "rationale": "安全审计、文档生成、依赖分析和评测组件在池中都有，适合拼成面向审计的供应链检查。",
         "mvp": "固定一条流水线：解析依赖→标注许可证与漏洞→给出受影响调用路径→输出报告，在一个仓库上跑通。",
@@ -293,7 +267,7 @@ TEMPLATES = [
         ],
         "pitch": "把散在各处的告警、工单和机器人消息收进一个入口，按规则自动分流、摘要和回执。",
         "target": "值班与运维团队、客服与支持团队，以及靠 IM 协作的中小团队。",
-        "market": "消息渠道越多，漏看和重复处理越常见；池里通信入口、会话记忆和编排组件都已成熟。",
+        "market": "【待验证假设】“消息渠道多、漏看与重复处理”在目标团队里的高频程度，本轮无外部证据；【已确认事实】池内通信入口、会话记忆与编排组件均有候选。",
         "differentiation": "对比单一机器人脚本，它把多渠道接入、上下文记忆和回执审计放在一处，规则可版本化。",
         "rationale": "通信入口、编排、会话记忆与成本观测组件池中都有，能拼出可维护的消息自动化。",
         "mvp": "先接一个渠道做告警分流：自动摘要 + 升级规则 + 处理回执，稳定后再扩渠道。",
@@ -308,7 +282,7 @@ TEMPLATES = [
         ],
         "pitch": "把设计稿和既有组件库对齐：产出的不是一次性代码，而是能进设计系统的组件改动和验收记录。",
         "target": "有设计系统的产品团队、前端平台组，以及外包交付团队。",
-        "market": "'设计还原靠人肉'仍是常态；设计、代码理解与回归组件在池里都能找到，生成质量有验收兜底。",
+        "market": "【待验证假设】“设计还原靠人肉”导致的返工成本，本轮无外部证据；【已确认事实】设计、代码理解、回归组件在池里均可找到。",
         "differentiation": "对比通用设计转代码工具，它绑定现有组件库和验收流程，产出可维护而不是一次性页面。",
         "rationale": "设计、代码理解、编排、评测组件齐备，能把'设计→组件→验收'做成一条可回归的管线。",
         "mvp": "挑 1 个组件库：从设计稿生成 3 个组件改动，附截图对比与回归结果，人工验收后再扩大范围。",
@@ -323,7 +297,7 @@ TEMPLATES = [
         ],
         "pitch": "面向一个垂直领域的检索服务：答案必须带引用出处，检索质量和覆盖率可被评测和回归。",
         "target": "法律/医疗/金融等专业领域的产品团队，以及要对外交付检索能力的厂商。",
-        "market": "通用模型答专业问题不可信，'带出处的检索'才是可交付形态；池里解析、检索与评测组件都已成熟。",
+        "market": "【待验证假设】通用模型答专业问题不足、需要带引用检索服务，本轮无外部证据；【已确认事实】池内解析、检索与评测组件均可自建。",
         "differentiation": "对比通用 RAG 框架，它把引用溯源和检索质量评测当一等功能，而不是事后补。",
         "rationale": "解析、检索、记忆与评测组件在池中都能找到，垂直检索服务的最小闭环可以全部自建。",
         "mvp": "选一个领域语料：解析→索引→带引用问答→评测集打分，先证明引用准确率再谈扩容。",
@@ -348,7 +322,8 @@ def first_sentence(text, limit=96):
     if len(sent) <= limit:
         return sent
     head = sent[:limit].rstrip()
-    cut = max(head.rfind("，"), head.rfind(","), head.rfind("；"), head.rfind(" "))
+    cut = max(head.rfind("，"), head.rfind(","), head.rfind("、"),
+              head.rfind("；"), head.rfind(" "))
     if cut >= limit // 2:
         head = head[:cut]
     return head.rstrip("，,；; ") + "…"
@@ -617,30 +592,97 @@ def _clean_evidence(s):
 TODAY_BONUS = 3  # 今日锚点项目在选槽时的加权
 RECENT_COMPONENT_REUSE_PENALTY = 2
 PORTFOLIO_OVERLAP_PENALTY = 8
-MIN_COMBO_SCORE = 70
+MIN_TECH_SCORE = 70          # 技术组合成熟度合格线（低于此不进方案列表）
 OVERLAP_TOLERANCE = 1        # 允许共享的组件数：少量重叠不淘汰真正不同的方向
 MAX_MATURE_PLANS = 1         # 每天最多 1 个成熟方向（固定模板）
 MAX_EXPLORATORY_PLANS = 2    # 每天最多 2 个探索方向（今日锚点拼接，待验证）
+MIN_PLAN_COMPONENTS = 3      # 闭环门槛：起点 + 处理 + 终点，至少 3 个组件
+COOLDOWN_MIN_DAYS = 7        # 冷却前段：同一 plan_family 无条件跳过
+COOLDOWN_DAYS = 14           # 冷却总长：超过后自然重新合格
+EXPERIMENT_DAYS = 14         # MVP 实验默认观察周期（天）
 TRACK_MATURE = "mature"
 TRACK_EXPLORATORY = "exploratory"
 EVIDENCE_VERIFIED = "supply-checked"   # 成熟方向：池内组件供给已核对
 EVIDENCE_TO_VALIDATE = "to-validate"   # 探索方向：方向与需求都待验证
 
-# 方案综合评分：分项 (名称, 满分)，总分 100；全部为确定性规则，可复现。
-# 语义：可行性 = 组件可靠度 + 供给 + 风险敞口 + 今日新颖度 + 来源多样性 + 许可证 + 完整度。
-SCORE_PARTS = [
-    ("组件可靠度", 35),  # 组件来源评分，短板(min)主导；维护滞后组件每个 -5
-    ("组件供给", 15),    # 最稀缺槽位的池内候选数（分段计分，避免饱和）
-    ("风险敞口", 15),    # 无高风险提示（越狱/凭据/合规/未验证/不可信/alpha/beta/快速迭代）组件占比
-    ("今日锚点", 15),    # 组合中今日新发现项目：1 个 5 分 / 2 个 10 / ≥3 个 15
-    ("来源多样性", 10),  # 组件来源日期去重数占比（来源分散 → 信号独立）
-    ("许可证", 5),       # 宽松许可证（MIT/Apache/BSD/MPL）组件占比
-    ("完整度", 5),       # 组合槽位填满比例
+# 方案判断四档：取代"优先推进最高分方案"。
+JUDGMENT_INTERVIEW = "值得用户访谈"
+JUDGMENT_TECH_TRIAL = "值得技术试验"
+JUDGMENT_WATCH = "继续观察"
+JUDGMENT_DROP = "暂不建议"
+JUDGMENT_ORDER = (JUDGMENT_INTERVIEW, JUDGMENT_TECH_TRIAL, JUDGMENT_WATCH, JUDGMENT_DROP)
+
+# 需求与市场表述的证据等级（强 → 弱）。任何需求结论必须标出等级。
+EVIDENCE_CONFIRMED = "已确认事实"       # 有可复核来源的用户表态（feedback.jsonl）
+EVIDENCE_SELF_REPORTED = "项目方自述"   # 项目 README/发布说明的自我陈述
+EVIDENCE_HYPOTHESIS = "待验证假设"      # 由能力面拼接推断的客户问题
+EVIDENCE_NONE = "无证据"                # 没有来源可引用的需求表述
+EVIDENCE_LEVELS = (EVIDENCE_CONFIRMED, EVIDENCE_SELF_REPORTED,
+                   EVIDENCE_HYPOTHESIS, EVIDENCE_NONE)
+EVIDENCE_LEVEL_RANK = {EVIDENCE_NONE: 0, EVIDENCE_HYPOTHESIS: 1,
+                       EVIDENCE_SELF_REPORTED: 2, EVIDENCE_CONFIRMED: 3}
+
+# 两个 0-100 评分：技术组合成熟度（供给侧）与需求证据强度（需求侧）。
+# 两者不合并：组件成熟不得被当作商业可行。
+TECH_SCORE_PARTS = [
+    ("组件可靠度", 40),  # 组件来源评分，短板(min)主导；维护滞后组件每个 -5
+    ("组件供给", 20),    # 最稀缺槽位的池内候选数（分段计分，避免饱和）
+    ("风险敞口", 20),    # 无高风险提示（越狱/凭据/合规/未验证/不可信/alpha/beta/快速迭代）组件占比
+    ("许可证", 10),      # 宽松许可证（MIT/Apache/BSD/MPL）组件占比
+    ("完整度", 10),      # 组合槽位填满比例
 ]
+DEMAND_SCORE_PARTS = [
+    ("证据等级", 40),    # 方案内最高证据等级：已确认事实 40 / 项目方自述 24 / 待验证假设 10 / 无证据 0
+    ("用户明确表态", 25),  # 用户反馈中直接点名组件：≥2 条 25 / 1 条 15 / 0 条 0
+    ("独立来源", 20),    # 证据来源日期去重数，每个 5 分，上限 20
+    ("新鲜度", 15),      # 最新证据距运行日期：≤7 天 15 / ≤30 天 10 / ≤90 天 5 / 更早 0
+]
+# 无来源的需求结论词：生成与校验都不允许出现（"刚需/愿意付费"类断言）。
+FORBIDDEN_CLAIMS = ("刚需", "愿意付费", "报复性交付", "必然", "一定会", "保证效果",
+                    "市场已验证", "需求已验证")
 NEUTRAL_QUALITY = 70  # 来源报告无评分时的中性基线
 PERMISSIVE_LICENSES = ("MIT", "Apache-2.0", "BSD-", "MPL-2.0")
 HIGH_RISK_WORDS = ("越狱", "jailbreak", "凭据", "credential", "合规",
                    "未验证", "不可信", "alpha", "beta", "快速迭代")
+
+# 组件数据流（闭环门槛用）：每个能力面的输入与输出。
+CAPABILITY_IO = {
+    "document": {"input": "原始文档（PDF/Office/HTML）",
+                 "output": "结构化文本与元数据"},
+    "design": {"input": "设计稿与现有组件库", "output": "组件改动规格与截图对比"},
+    "comm": {"input": "渠道消息、告警或工单", "output": "分流结果与处理回执"},
+    "codeintel": {"input": "仓库、依赖与调用链", "output": "仓库级理解与风险点"},
+    "security": {"input": "代码、依赖或授权靶场范围", "output": "问题清单与验证证据"},
+    "rag": {"input": "结构化文本或自有语料", "output": "带出处的检索片段"},
+    "memory": {"input": "会话与运行记录", "output": "可召回的长期上下文"},
+    "gateway": {"input": "组件的模型调用请求", "output": "统一路由与用量记录"},
+    "agent": {"input": "任务指令与上游片段", "output": "可审批的步骤执行结果"},
+    "sandbox": {"input": "待执行步骤与权限边界", "output": "隔离执行记录与资源/网络边界证据"},
+    "observability": {"input": "一次真实任务的 trace 与产出", "output": "质量与成本评测报告"},
+    "local": {"input": "本机数据与凭据", "output": "不出本机的处理结果"},
+}
+# 交接表：`上游输出` 可作为 `下游输入` 的组合才算一条数据流。
+# 排序用 CAPABILITY_RANK（数值小的更靠上游）；合法性用交接表本身判定。
+CAPABILITY_RANK = {
+    "local": 0, "comm": 1, "document": 2, "design": 2, "security": 2,
+    "codeintel": 3, "memory": 3, "rag": 4, "agent": 5, "gateway": 6,
+    "sandbox": 6, "observability": 7,
+}
+CAPABILITY_HANDOFFS = frozenset({
+    ("comm", "agent"), ("comm", "memory"), ("comm", "observability"),
+    ("document", "rag"), ("document", "memory"), ("document", "agent"),
+    ("document", "codeintel"), ("document", "observability"),
+    ("design", "codeintel"), ("design", "agent"), ("design", "observability"),
+    ("codeintel", "agent"), ("codeintel", "gateway"), ("codeintel", "observability"),
+    ("security", "agent"), ("security", "codeintel"), ("security", "observability"),
+    ("rag", "agent"), ("rag", "gateway"), ("rag", "observability"),
+    ("memory", "agent"), ("memory", "rag"), ("memory", "observability"),
+    ("gateway", "observability"),
+    ("agent", "sandbox"), ("agent", "gateway"), ("agent", "observability"),
+    ("sandbox", "observability"),
+})
+# 部署形态（不参与数据流连通性，但同样要写清输入输出）。
+DEPLOY_FACES = frozenset({"local"})
 
 
 def _license_is_permissive(p):
@@ -649,42 +691,151 @@ def _license_is_permissive(p):
     return bool(m and m.group(1).startswith(PERMISSIVE_LICENSES))
 
 
-def _supply_points(min_supply):
-    """最稀缺槽位候选数分段计分：>=100 满分；50-99 得 12-14；20-49 得 6-11；<20 线性 0-6。"""
+def _supply_points(min_supply, maximum=20):
+    """最稀缺槽位候选数分段计分：>=100 满分；50-99 得 80-95%；20-49 得 40-75%；<20 线性 0-40%。"""
     if min_supply >= 100:
-        return 15
+        return maximum
     if min_supply >= 50:
-        return 12 + round(3 * (min_supply - 50) / 50)
+        return round(maximum * (0.8 + 0.15 * (min_supply - 50) / 50))
     if min_supply >= 20:
-        return 6 + round(6 * (min_supply - 20) / 30)
-    return round(6 * min_supply / 20)
+        return round(maximum * (0.4 + 0.35 * (min_supply - 20) / 30))
+    return round(maximum * 0.4 * min_supply / 20)
 
 
-def combo_score(tpl, picks, today_count, min_supply):
-    """按确定性规则计算方案综合评分，返回 (总分, 分项明细)。"""
+def tech_score(slot_count, picks, min_supply):
+    """技术组合成熟度（0-100）：只回答"组件能不能拼、供给够不够、风险好不好控"。
+
+    返回 (总分, 分项明细)。分值不包含需求侧证据：组件成熟不得被当成商业可行。
+    """
     n = len(picks)
     scores = [p["score"] for p in picks.values() if p.get("score")]
     quality = (sum(scores) / len(scores)) if scores else NEUTRAL_QUALITY
     stalled = sum(1 for p in picks.values() if _maintenance_flag(p))
     # 可靠度短板主导：min 占 5/7、均值占 2/7；维护滞后组件每个再扣 5 分（下限 0）
-    reliable = round(35 * (5 * min(scores) + 2 * quality) / (7 * 100)) if scores \
-        else round(35 * quality / 100)
+    reliable = round(40 * (5 * min(scores) + 2 * quality) / (7 * 100)) if scores \
+        else round(40 * quality / 100)
     reliable = max(0, reliable - 5 * stalled)
     high_risk = sum(1 for p in picks.values()
                     if any(w in (p["fields"].get("risks") or "").lower()
                            for w in HIGH_RISK_WORDS))
-    src_days = len({p["source_date"] for p in picks.values()})
     permissive = sum(1 for p in picks.values() if _license_is_permissive(p))
     parts = [
-        ("组件可靠度", reliable, 35),
-        ("组件供给", _supply_points(min_supply), 15),
-        ("风险敞口", round(15 * (1 - high_risk / n)), 15),
-        ("今日锚点", min(15, 5 * today_count), 15),
-        ("来源多样性", round(10 * src_days / n), 10),
-        ("许可证", round(5 * permissive / n), 5),
-        ("完整度", round(5 * n / len(tpl["slots"])), 5),
+        ("组件可靠度", reliable, 40),
+        ("组件供给", _supply_points(min_supply), 20),
+        ("风险敞口", round(20 * (1 - high_risk / n)), 20),
+        ("许可证", round(10 * permissive / n), 10),
+        ("完整度", round(10 * n / max(1, slot_count)), 10),
     ]
     return sum(v for _, v, _ in parts), parts
+
+
+def load_user_feedback(data_root):
+    """读取用户反馈（feedback.jsonl 中 source=user 的条目），作为需求侧唯一可引用的事实来源。"""
+    path = Path(data_root) / "feedback.jsonl"
+    if not path.is_file():
+        return []
+    records = []
+    for raw in path.read_text(encoding="utf-8").splitlines():
+        raw = raw.strip()
+        if not raw:
+            continue
+        try:
+            entry = json.loads(raw)
+        except json.JSONDecodeError:
+            continue
+        if entry.get("source") != "user":
+            continue
+        entry["repo"] = normalize_repo(entry.get("repo") or "") or ""
+        records.append(entry)
+    return records
+
+
+def interface_evidence(p):
+    """组件的接口依据：源报告里能说明“它能收什么、交什么”的那一句。
+
+    仅命中能力标签、没有任何接口/用途描述的组件属于"仅标签相关"，不能进组合。
+    """
+    for key in ("highlights", "howto", "kind", "quality", "tagline", "value", "reason"):
+        text = _clean_evidence(p["fields"].get(key) or "")
+        if len(text) >= 6:
+            return first_sentence(text, 72)
+    return ""
+
+
+def combo_flow(steps):
+    """组合闭环门槛：把 (能力面, 角色, 项目) 拼成一条可连接的数据流。
+
+    返回 {"ok": bool, "steps": [...], "reason": str}。判定条件：
+      1. 组件数 ≥ MIN_PLAN_COMPONENTS（起点 + 处理 + 终点）；
+      2. 每个组件有源报告的接口依据（否则只是标签相关）；
+      3. 能力面不重复（同一能力面堆叠不构成数据流）；
+      4. 除部署形态外，组件按交接表连成弱连通、无环的数据流，且至少一个起点与一个终点。
+    """
+    if len(steps) < MIN_PLAN_COMPONENTS:
+        return {"ok": False, "steps": [],
+                "reason": "组件少于 {} 个，构不成完整数据流".format(MIN_PLAN_COMPONENTS)}
+    tags = [tag for tag, _, _ in steps]
+    missing = [p["repo"] for _, _, p in steps if not interface_evidence(p)]
+    if missing:
+        return {"ok": False, "steps": [],
+                "reason": "仅标签相关（缺接口依据）：" + "、".join(sorted(missing))}
+    flow_tags = [tag for tag in tags if tag not in DEPLOY_FACES]
+    if len(set(flow_tags)) != len(flow_tags):
+        return {"ok": False, "steps": [],
+                "reason": "能力面重复（{}），组件之间没有可交接的上下游关系".format(
+                    "、".join(sorted({t for t in flow_tags if flow_tags.count(t) > 1})))}
+    if len(flow_tags) < 2:
+        return {"ok": False, "steps": [],
+                "reason": "缺少可连接的处理或收尾组件（只有部署形态）"}
+    edges = {(a, b) for a in flow_tags for b in flow_tags
+             if a != b and (a, b) in CAPABILITY_HANDOFFS}
+    parents = {tag: set() for tag in flow_tags}
+    children = {tag: set() for tag in flow_tags}
+    for a, b in edges:
+        parents[b].add(a)
+        children[a].add(b)
+    # 弱连通性：把有向边当无向边跑一次遍历
+    seen = {flow_tags[0]}
+    frontier = [flow_tags[0]]
+    while frontier:
+        tag = frontier.pop()
+        for other in parents[tag] | children[tag]:
+            if other not in seen:
+                seen.add(other)
+                frontier.append(other)
+    if seen != set(flow_tags):
+        return {"ok": False, "steps": [],
+                "reason": "数据流不连通：" + "、".join(sorted(set(flow_tags) - seen))}
+    # 有向无环性（Kahn）：存在环就无法确定执行顺序，也就没有可描述的接入方式
+    pending = {tag: len(parents[tag]) for tag in flow_tags}
+    ready = [tag for tag, degree in pending.items() if degree == 0]
+    visited = 0
+    while ready:
+        tag = ready.pop()
+        visited += 1
+        for child in children[tag]:
+            pending[child] -= 1
+            if pending[child] == 0:
+                ready.append(child)
+    if visited != len(flow_tags):
+        return {"ok": False, "steps": [], "reason": "数据流存在环，无法确定执行顺序"}
+    ordered = sorted(steps, key=lambda row: (CAPABILITY_RANK[row[0]], row[0]))
+    flow = []
+    for tag, role, p in ordered:
+        io = CAPABILITY_IO.get(tag, {})
+        up = sorted(parents.get(tag, ()))
+        down = sorted(children.get(tag, ()))
+        flow.append({
+            "tag": tag,
+            "role": role,
+            "project": p,
+            "input": io.get("input", "上游产出"),
+            "output": io.get("output", "可交接的产出"),
+            "upstream": up,
+            "downstream": down,
+            "deploy": tag in DEPLOY_FACES,
+        })
+    return {"ok": True, "steps": flow, "reason": ""}
 
 
 def pick_best(projects, tag, exclude, today_ids, reuse_counts=None):
@@ -720,7 +871,7 @@ def load_recent_component_counts(data_root, run_date, days=7):
     return counts
 
 
-def select_combo_portfolio(combos, max_count=3, min_score=MIN_COMBO_SCORE,
+def select_combo_portfolio(combos, max_count=3, min_score=MIN_TECH_SCORE,
                            used_repositories=None):
     """Greedily select a non-padded portfolio with component-overlap penalties.
 
@@ -751,7 +902,7 @@ def select_combo_portfolio(combos, max_count=3, min_score=MIN_COMBO_SCORE,
     return selected
 
 
-def select_tracked_portfolio(combos, min_score=MIN_COMBO_SCORE,
+def select_tracked_portfolio(combos, min_score=MIN_TECH_SCORE,
                              max_mature=MAX_MATURE_PLANS,
                              max_exploratory=MAX_EXPLORATORY_PLANS):
     """双轨选择：最多 1 个成熟方向 + 最多 2 个探索方向，不足不补齐。
@@ -773,31 +924,80 @@ def select_tracked_portfolio(combos, min_score=MIN_COMBO_SCORE,
     return selected
 
 
-def load_recent_families(data_root, run_date, n=2):
-    """读取 run_date 之前最近 n 份可行性报告，返回同时出现的方案身份（family → 展示名）。
+def load_family_history(data_root, run_date, window_days=COOLDOWN_DAYS):
+    """读取冷却窗口内每份报告里的方案身份，返回 family 的历史记录。
 
-    用于'同一方案最多连续出现两天'的新鲜度限制：同一 family 同时出现在最近两份
-    报告里说明已连续出现两天，第三天应跳过。身份优先取报告内的 `**方案身份**` 行，
-    旧报告没有该行时按标题名回退（与 parse_plan_identities 一致）。
+    记录内容：最近一次出现日期、相隔天数、历史组件集合、历史证据状态与业务三元组，
+    用于判定“能否提前重现”。依据是 run_date 之前已存在的报告文件，同一文件集下可复现。
     """
-    files = []
-    for f in sorted((data_root / "feasibility").glob("20??-??-??.md"), reverse=True):
-        m = DAILY_FILE_RE.match(f.name)
-        if m and m.group(1) < run_date:
-            files.append(f)
-        if len(files) >= n:
-            break
-    if len(files) < n:
-        return {}
-    seen_by_file = []
-    for f in files:
-        seen = {}
-        for identity in parse_plan_identities(f.read_text(encoding="utf-8")):
-            seen.setdefault(identity["family"], identity["name"])
-        seen_by_file.append(seen)
-    blocked = set.intersection(*(set(seen) for seen in seen_by_file))
-    # 展示名取较新一份的标题，报告简介里仍能以人话说明跳过了哪个方案
-    return {family: seen_by_file[0][family] for family in blocked}
+    history = {}
+    run_d = date.fromisoformat(run_date)
+    start = run_d - timedelta(days=window_days)
+    for path in sorted((data_root / "feasibility").glob("20??-??-??.md")):
+        match = DAILY_FILE_RE.match(path.name)
+        if not match:
+            continue
+        source_date = date.fromisoformat(match.group(1))
+        if not start <= source_date < run_d:
+            continue
+        for identity in parse_plan_identities(path.read_text(encoding="utf-8")):
+            business = identity.get("business") or {}
+            record = history.setdefault(identity["family"], {
+                "name": identity["name"], "last": source_date,
+                "repositories": set(), "evidence_status": "", "business": {},
+            })
+            if source_date >= record["last"]:
+                record["last"] = source_date
+                record["name"] = identity["name"]
+            record["repositories"].update(identity["repositories"])
+            status = business.get("evidence_status") or ""
+            if EVIDENCE_LEVEL_RANK.get(status, -1) > EVIDENCE_LEVEL_RANK.get(
+                    record["evidence_status"], -1):
+                record["evidence_status"] = status
+            for key in ("customer_id", "problem_id", "outcome_id"):
+                if business.get(key):
+                    record["business"].setdefault(key, set()).add(business[key])
+    for record in history.values():
+        record["days"] = (run_d - record["last"]).days
+    return history
+
+
+def cooldown_decision(family, history, candidate):
+    """跨日去重的冷却判定（返回 (是否跳过, 说明)）。
+
+    规则：同一 plan_family 冷却 COOLDOWN_MIN_DAYS~COOLDOWN_DAYS 天（7-14 天）。
+      - 冷却前段（< 7 天）：无条件跳过；
+      - 冷却中段（7-13 天）：只有新增关键组件、证据等级提升或客户问题变化才允许提前重现；
+      - 超过 14 天：自然重新合格。
+    """
+    record = history.get(family)
+    if not record:
+        return False, ""
+    days = record["days"]
+    if days >= COOLDOWN_DAYS:
+        return False, ""
+    since = "最近一次出现 {} 天前".format(days)
+    if days < COOLDOWN_MIN_DAYS:
+        return True, "冷却期内（{}，起点 {} 天）".format(since, COOLDOWN_MIN_DAYS)
+    reasons = []
+    candidate_repos = {p["id"] for p in candidate.get("picks", {}).values()}
+    new_components = sorted(candidate_repos - record["repositories"])
+    if new_components:
+        reasons.append("新增关键组件 " + "、".join("`{}`".format(r) for r in new_components))
+    status = (candidate.get("business") or {}).get("evidence_status") or ""
+    if EVIDENCE_LEVEL_RANK.get(status, -1) > EVIDENCE_LEVEL_RANK.get(
+            record["evidence_status"], -1):
+        reasons.append("证据等级提升（{}）".format(status))
+    business = candidate.get("business") or {}
+    for key, label in (("customer_id", "客户"), ("problem_id", "客户问题"),
+                       ("outcome_id", "预期结果")):
+        value = business.get(key)
+        known = record["business"].get(key) or set()
+        if value and known and value not in known:
+            reasons.append("{}变化（{}）".format(label, value))
+    if reasons:
+        return False, "提前重现（{}；{}）".format(since, "；".join(reasons))
+    return True, "冷却中（{}，未新增关键组件/证据/客户问题）".format(since)
 
 
 def top_tag(p):
@@ -1095,25 +1295,268 @@ def exploratory_business(faces, supply=None):
 
 
 def _combo_role(p):
-    """角色名用项目真实定位（tagline 首句），避免能力面标签与项目错配。"""
+    """角色名用项目真实定位（tagline 首句）。
+
+    没有真实定位文本的项目无法说明输入输出，返回空串，调用方按"仅标签相关"跳过。
+    """
     tagline = (p["fields"].get("tagline") or "").strip()
-    if tagline:
-        role = first_sentence(tagline, 60)
-        if role and role != p["repo"]:
-            return role
-    return COMBO_ROLES.get(top_tag(p), top_tag(p))
+    if not tagline:
+        return ""
+    role = first_sentence(tagline, 18)
+    return role if role and role != p["repo"] else ""
+
+
+def plan_evidence(combo, feedback, run_date):
+    """需求证据强度（0-100）：只统计可指出来源的证据，并按等级分类。
+
+    等级：已确认事实（用户反馈）/ 项目方自述（组件接口与亮点描述）/
+    待验证假设（由能力面推导的客户问题）/ 无证据（付费意愿与市场规模）。
+    """
+    picks = combo["picks"]
+    repos = {p["id"] for p in picks.values()}
+    business = combo.get("business") or {}
+    confirmed, self_reported, dates = [], [], []
+    confirmed_repos = set()
+    for record in feedback or []:
+        repo = record.get("repo") or ""
+        if not repo or repo not in repos:
+            continue
+        detail = clip(_clean_evidence(record.get("detail") or ""), 90)
+        confirmed.append("用户反馈 {}（`{}`）：{}".format(
+            record.get("date") or "日期未记录", repo, detail))
+        confirmed_repos.add(repo)
+        if DATE_RE.fullmatch(record.get("date") or ""):
+            dates.append(record["date"])
+    for p in picks.values():
+        evidence = interface_evidence(p)
+        if evidence:
+            self_reported.append("`{}`（{}）：{}".format(
+                p["repo"], p["source_date"], evidence))
+            dates.append(p["source_date"])
+    if confirmed:
+        level = EVIDENCE_CONFIRMED
+    elif self_reported:
+        level = EVIDENCE_SELF_REPORTED
+    elif business.get("problem"):
+        level = EVIDENCE_HYPOTHESIS
+    else:
+        level = EVIDENCE_NONE
+    known_dates = sorted({d for d in dates if DATE_RE.fullmatch(d)})
+    sources = len({d for d in dates})
+    last = date.fromisoformat(known_dates[-1]) if known_dates else None
+    age = (date.fromisoformat(run_date) - last).days if last else None
+    if age is None:
+        freshness = 0
+    elif age <= 7:
+        freshness = 15
+    elif age <= 30:
+        freshness = 10
+    elif age <= 90:
+        freshness = 5
+    else:
+        freshness = 0
+    hits = len(confirmed_repos)
+    level_points = {EVIDENCE_CONFIRMED: 40, EVIDENCE_SELF_REPORTED: 24,
+                    EVIDENCE_HYPOTHESIS: 10, EVIDENCE_NONE: 0}[level]
+    speech_points = 25 if hits >= 2 else (15 if hits == 1 else 0)
+    parts = [
+        ("证据等级", level_points, 40),
+        ("用户明确表态", speech_points, 25),
+        ("独立来源", min(20, 5 * sources), 20),
+        ("新鲜度", freshness, 15),
+    ]
+    items = []
+    if not confirmed:
+        items.append((EVIDENCE_CONFIRMED, "本轮组件均未被 feedback.jsonl 直接点名"))
+    if not self_reported:
+        items.append((EVIDENCE_SELF_REPORTED, "组件缺少源报告的接口描述，无法引用"))
+    items.append((EVIDENCE_HYPOTHESIS, "客户问题「{}」与预期结果「{}」由能力面与客户画像推导，"
+                                       "本轮无访谈证据".format(business.get("problem", "未定义"),
+                                                              business.get("expected_outcome", "未定义"))))
+    items.append((EVIDENCE_NONE, "付费意愿、采购预算与市场规模：本轮无来源"))
+    return {
+        "level": level,
+        "score": sum(v for _, v, _ in parts),
+        "parts": parts,
+        "confirmed": confirmed,
+        "self_reported": self_reported,
+        "items": items,
+        "sources": sources,
+        "latest": known_dates[-1] if known_dates else "",
+    }
+
+
+def plan_judgment(tech, demand, risk_points):
+    """方案判断四档（返回 (判断, 依据)）：取代"优先推进最高分方案"。"""
+    level = demand["level"]
+    score = demand["score"]
+    if level == EVIDENCE_NONE:
+        return JUDGMENT_DROP, "需求侧无任何可引用证据（证据等级：{}）".format(level)
+    if risk_points <= 5:
+        return JUDGMENT_DROP, "高风险提示组件占比 ≥75%（风险敞口 {}/20）".format(risk_points)
+    if score >= 60:
+        return JUDGMENT_INTERVIEW, "需求侧已有可引用证据（{}，{}/100）".format(level, score)
+    if tech >= 80:
+        return JUDGMENT_TECH_TRIAL, "技术组合成熟度 {}/100，需求侧仅 {}/100（{}）".format(
+            tech, score, level)
+    return JUDGMENT_WATCH, "技术组合成熟度 {}/100 与需求证据强度 {}/100 均未到推进线".format(
+        tech, score)
+
+
+EXPERIMENT_DATA = {
+    "document": "自有文档集（去敏，≥20 份真实文件，含 2 种以上格式）",
+    "rag": "自有语料 + 20 条已知答案的问题清单",
+    "agent": "3 条真实任务的步骤记录（含失败案例）",
+    "sandbox": "1 个不可信任务的样本与权限边界清单",
+    "observability": "上一轮任务的 trace 与产出样本",
+    "security": "1 个授权靶场或自有仓库的依赖清单",
+    "codeintel": "1 个带测试的自有仓库（固定 commit）",
+    "design": "1 个现有组件库 + 3 张设计稿",
+    "comm": "1 个真实渠道的近 200 条历史消息（去敏）",
+    "memory": "一段真实会话记录（去敏）",
+    "gateway": "组件清单内的模型调用记录",
+    "local": "1 台隔离设备或独立用户账号",
+}
+EXPERIMENT_SUCCESS = {
+    "document": "解析成功率 ≥ 90%（抽检 20 份）",
+    "rag": "带出处问答抽检 50 条，引用可核对率 ≥ 90%",
+    "agent": "端到端任务连续跑通 ≥ 20 次，失败可恢复率 100%",
+    "sandbox": "隔离边界越界 0 次，资源/网络记录可复核",
+    "observability": "产出可复现的评测集与回归报告各 1 份",
+    "security": "扫描发现的问题 100% 有独立验证结论",
+    "codeintel": "改动附回归对比，人工打回率 ≤ 20%",
+    "design": "组件改动进入设计系统验收，返工 ≤ 1 轮",
+    "comm": "分流正确率 ≥ 90%，回执可追溯",
+    "memory": "上下文召回准确率 ≥ 90%（抽检 30 条）",
+    "gateway": "用量与路由记录可对齐，成本偏差 ≤ 10%",
+    "local": "全流程无向外部出网请求（可抓包验证）",
+}
+EXPERIMENT_FAILURE = (
+    "核心链路两轮内跑不通，或需要改组件源码才能继续",
+    "上述成功指标低于阈值的一半，或抽检样本无法复现",
+    "组件在实验期内维护停滞（>90 天无有效活动）或许可证不合规",
+    "必须引入额外闭源/付费组件才能闭环",
+)
+EXPERIMENT_STOP = (
+    "周期结束未达到成功指标 → 停止，不进入开发投入",
+    "命中任一条失败指标 → 立即停止并记录原因",
+    "需求侧找不到 3 位可访谈的目标客户 → 停在技术试验阶段",
+)
+
+
+def build_experiment(combo):
+    """可证伪的 MVP 实验：测试场景/数据/周期/成功指标/失败指标/停止条件。"""
+    faces = [step["tag"] for step in combo.get("flow", [])]
+    flow_faces = [tag for tag in faces if tag not in DEPLOY_FACES] or faces
+    data = "；".join(dict.fromkeys(EXPERIMENT_DATA.get(tag, "自有样本（去敏）")
+                                   for tag in flow_faces)) or "自有样本（去敏）"
+    success = [EXPERIMENT_SUCCESS[tag] for tag in flow_faces if tag in EXPERIMENT_SUCCESS]
+    if not success:
+        success = ["按实验前登记的阈值判定（必须先写阈值再跑）"]
+    business = combo.get("business") or {}
+    scenario = business.get("workflow") or "按客户问题描述的最小链路"
+    return {
+        "scenario": "在自有环境按「{}」跑通一条最小链路，客户与数据都不出实验环境".format(scenario),
+        "data": data,
+        "days": EXPERIMENT_DAYS,
+        "success": success[:3],
+        "failure": list(EXPERIMENT_FAILURE),
+        "stop": list(EXPERIMENT_STOP),
+    }
+
+
+def max_uncertainty(combo, evidence):
+    """最大不确定性：先写需求侧（证据最弱），再写组件侧最短板。"""
+    business = combo.get("business") or {}
+    lines = []
+    if evidence["level"] in (EVIDENCE_NONE, EVIDENCE_HYPOTHESIS):
+        lines.append("需求侧：客户问题「{}」是否真实存在、由谁付费，本轮证据等级为「{}」"
+                     "（{}/100）".format(business.get("problem", "未定义"),
+                                         evidence["level"], evidence["score"]))
+    elif evidence["level"] == EVIDENCE_SELF_REPORTED:
+        lines.append("需求侧：现有证据全部来自项目方自述，未经第三方或客户确认")
+    else:
+        lines.append("需求侧：已有用户明确表态，但只覆盖部分组件，未覆盖采购与预算")
+    weakest = min(combo["picks"].values(), key=lambda p: (p.get("score") or 0, p["id"]))
+    risk = first_sentence(_clean_evidence(weakest["fields"].get("risks") or ""), 90)
+    risk = risk.rstrip("。；， ")
+    lines.append("组件侧：最弱一环 `{}`（本组评分 {}/100）{}；它决定实验能不能跑完".format(
+        weakest["repo"], weakest.get("score") or 0,
+        "；来源报告风险：" + risk if risk else "；来源报告未给出风险提示"))
+    return lines
+
+
+def next_actions(combo):
+    """下一步动作：按方案判断给出具体动作，不再写"优先推进"类总结。"""
+    business = combo.get("business") or {}
+    judgment = combo.get("judgment")
+    actions = []
+    if judgment == JUDGMENT_INTERVIEW:
+        actions.append("先找 3 位「{}」做 30 分钟访谈，确认客户问题与预期结果，"
+                       "访谈记录写入 feedback.jsonl".format(business.get("customer", "目标客户")))
+    elif judgment == JUDGMENT_TECH_TRIAL:
+        actions.append("先做技术试验（{} 天，见 MVP 实验），不对需求侧做任何承诺"
+                       .format(EXPERIMENT_DAYS))
+    else:
+        actions.append("先补证据：找 3 位「{}」做问题访谈，或从日报/周报里找可引用信号"
+                       .format(business.get("customer", "目标客户")))
+    actions.append("核验 2-3 个核心组件：许可证、维护状态、来源报告里的真实风险")
+    actions.append("实验结束后把结论写回 feedback.jsonl，并把该方向送入 {} 天冷却期"
+                   .format(COOLDOWN_DAYS))
+    return actions
+
+
+def sanitize_claims(text):
+    """把无来源断言（刚需/愿意付费等）从生成文本里删掉，并留可见痕迹便于回查。"""
+    result = text or ""
+    for word in FORBIDDEN_CLAIMS:
+        if word in result:
+            result = result.replace(word, "（无来源断言，已删除）")
+    return result
+
+
+def finalize_combo(combo, steps, feedback, run_date):
+    """给候选组合补上闭环门槛、双评分、证据等级、判断与实验；不达标返回 None。"""
+    flow = combo_flow(steps)
+    if not flow["ok"]:
+        combo["rejected_reason"] = flow["reason"]
+        return None
+    combo["flow"] = flow["steps"]
+    tech, tech_parts = tech_score(len(steps), combo["picks"], combo["min_supply"])
+    evidence = plan_evidence(combo, feedback, run_date)
+    risk_points = next(v for name, v, _ in tech_parts if name == "风险敞口")
+    judgment, reason = plan_judgment(tech, evidence, risk_points)
+    combo.update({
+        "tech_score": tech,
+        "tech_parts": tech_parts,
+        "demand": evidence,
+        "demand_score": evidence["score"],
+        "demand_parts": evidence["parts"],
+        "judgment": judgment,
+        "judgment_reason": reason,
+        "experiment": build_experiment(combo),
+        "uncertainty": max_uncertainty(combo, evidence),
+        "actions": next_actions(combo),
+    })
+    # 兼容旧字段：score/score_parts 现为技术组合成熟度的别名，选择器仍用它排序
+    combo["score"] = tech
+    combo["score_parts"] = tech_parts
+    return combo
 
 
 def build_exploratory_combos(projects, today_projects, today_ids, blocked_families=None,
-                            limit=MAX_EXPLORATORY_PLANS):
+                            limit=MAX_EXPLORATORY_PLANS, feedback=None, run_date=None,
+                            rejected=None):
     """生成探索方向（最多 limit 个）：1 个今日锚点 + ≥2 个互补组件，全部来自今日日报。
 
     方向以"最能区分的能力面"为种子（池内覆盖率最低优先），每个种子给出一个业务
     语义（客户问题 + 预期结果）；同一业务语义只保留评分最高的一个，避免同一方向
-    换标题重复出现。探索方向一律标注待验证。
+    换标题重复出现。探索方向一律标注待验证，且必须通过闭环门槛。
     """
     blocked_families = blocked_families or {}
-    anchors = [p for p in today_projects if p["tags"]]
+    run_date = run_date or date.today().isoformat()
+    feedback = feedback if feedback is not None else []
+    anchors = [p for p in today_projects if p["tags"] and _combo_role(p)]
     if len(anchors) < 3:
         return []              # 需要 1 个锚点 + ≥2 个互补组件
     anchors.sort(key=lambda p: (p["stars"], p["id"]), reverse=True)
@@ -1123,8 +1566,11 @@ def build_exploratory_combos(projects, today_projects, today_ids, blocked_famili
     candidates = []
     seen_keys = set()
     for seed_face in seed_faces[:6]:
-        combo = _exploratory_combo(projects, anchors, seed_face, today_ids, supply)
-        if combo is None or combo["plan_family"] in blocked_families:
+        combo = _exploratory_combo(projects, anchors, seed_face, today_ids, supply,
+                                  feedback, run_date)
+        if combo is None:
+            continue
+        if combo["plan_family"] in blocked_families:
             continue
         key = business_key(combo["business"])
         if key and key in seen_keys:
@@ -1132,65 +1578,60 @@ def build_exploratory_combos(projects, today_projects, today_ids, blocked_famili
         if key:
             seen_keys.add(key)
         candidates.append(combo)
-    # 稳定排序：评分 → 今日锚点数 → 组件数 → Stars → 名称，全部为确定性字段
-    candidates.sort(key=lambda c: (c["score"], c["today_count"], c["total"], c["stars"],
-                                c["name"]), reverse=True)
+    # 稳定排序：技术组合成熟度 → 今日锚点数 → 组件数 → Stars → 名称
+    candidates.sort(key=lambda c: (c["tech_score"], c["today_count"], c["total"],
+                                c["stars"], c["name"]), reverse=True)
     return candidates[:limit]
 
 
-def _exploratory_combo(projects, anchors, seed_face, today_ids, supply):
-    """按一个能力面种子拼一个探索方向：种子锚点 + 尽可能互补的今日组件。"""
+def _exploratory_combo(projects, anchors, seed_face, today_ids, supply, feedback=None,
+                      run_date=None):
+    """按一个能力面种子拼一个探索方向：种子锚点 + 尽可能互补的今日组件。
+
+    闭环门槛不通过时返回 None，并把原因记到 combo 上供调用方统计。
+    """
+    run_date = run_date or date.today().isoformat()
     seed = next(p for p in anchors if top_tag(p) == seed_face)
-    picks = {COMBO_ROLES[seed_face]: seed}
+    steps = [(seed_face, _combo_role(seed), seed)]
     covered = {seed_face}
     used_ids = {seed["id"]}
     for p in anchors:          # anchors 已按 Stars + id 排序，结果确定
         tag = top_tag(p)
         if tag in covered or p["id"] in used_ids:
             continue
-        role = COMBO_ROLES[tag]
-        while role in picks:
+        role = _combo_role(p)
+        if not role:           # 没有真实定位的项目无法说明接口，不参与组合
+            continue
+        while any(role == existing for _, existing, _ in steps):
             role += "（二）"
-        picks[role] = p
+        steps.append((tag, role, p))
         covered.add(tag)
         used_ids.add(p["id"])
-        if len(picks) >= 5:
+        if len(steps) >= 5:
             break
-    if len(picks) < 3:
+    if len(steps) < MIN_PLAN_COMPONENTS:
         return None            # 必须有 ≥2 个互补组件
-    roles = {}
-    for role, p in picks.items():
-        candidate = _combo_role(p)
-        while candidate in roles.values():
-            candidate += "（二）"
-        roles[role] = candidate
-    picks = {roles[role]: p for role, p in picks.items()}
-    slot_tags = [top_tag(p) for p in picks.values()]
+    slot_tags = [tag for tag, _, _ in steps]
     faces = frozenset(slot_tags)
     supply_by_face = {t: sum(1 for p in projects if t in p["tags"]) for t in set(slot_tags)}
     min_supply = min(supply_by_face.values())
-    today_count = len(picks)
+    today_count = len(steps)
     business = exploratory_business(faces, supply)
     name = anchor_plan_name(faces, supply)
-    score, score_parts = combo_score(
-        {"slots": [(t, r) for r, t in zip(picks.keys(), slot_tags)]},
-        picks, today_count, min_supply)
-    roles_text = "、".join("{}（`{}`）".format(r, p["repo"]) for r, p in picks.items())
+    roles_text = "、".join("{}（`{}`）".format(role, p["repo"]) for _, role, p in steps)
     combo = {
-        "score": score,
-        "score_parts": score_parts,
         "name": name,
         "origin": "anchor",
         "track": TRACK_EXPLORATORY,
         "business": business,
         "pitch": "按'{}'方向，把今日新发现的 {} 个项目先拼成可试用组合：{}。"
                   "方向与需求都待验证，先各自试用、记录产出，再判断能否打通。".format(
-                      name, len(picks), roles_text),
+                      name, len(steps), roles_text),
         "target": business["customer"],
-        "market": "（待验证假设）客户问题：{}；预期结果：{}。今日 {} 个锚点分属 {} 等能力面，"
+        "market": "【待验证假设】客户问题：{}；预期结果：{}。【已确认事实】今日 {} 个锚点分属 {} 等能力面，"
                    "池中对应候选 {} 个——这只说明组件可拼装，不代表市场需求成立；"
                    "先小范围试用再判断。".format(
-                       business["problem"], business["expected_outcome"], len(picks),
+                       business["problem"], business["expected_outcome"], len(steps),
                        "、".join(TAG_CN[t] for t in slot_tags if t in TAG_CN), min_supply),
         "differentiation": "完全由今日新发现驱动，组件全部来自今日日报；与固定模板方向不同，"
                            "属于待验证的探索方向。",
@@ -1198,37 +1639,41 @@ def _exploratory_combo(projects, anchors, seed_face, today_ids, supply):
                       "先按业务语义里的客户问题做小范围试用。".format(len(faces)),
         "mvp": "先分别试用各组件并记录可用产出，再打通 {} 之间的最小数据流或协作流；"
                "其余按试用反馈取舍。".format(
-                   "、".join("`{}`".format(p["repo"]) for p in list(picks.values())[:3])),
-        "picks": picks,
+                   "、".join("`{}`".format(p["repo"]) for _, _, p in steps[:3])),
+        "picks": {role: p for _, role, p in steps},
         "slot_supply": supply_by_face,
         "min_supply": min_supply,
-        "total": len(picks),
+        "total": len(steps),
         "today_count": today_count,
-        "stars": sum(p["stars"] for p in picks.values()),
+        "stars": sum(p["stars"] for _, _, p in steps),
     }
-    repositories = [p["id"] for p in picks.values()]
+    combo["steps"] = steps
+    repositories = [p["id"] for _, _, p in steps]
     combo["plan_family"] = business_family(business["customer_id"], business["problem_id"],
                                            business["outcome_id"])
     combo["variant"] = plan_variant(repositories)
-    return combo
+    return finalize_combo(combo, steps, feedback, run_date)
 
 
-def build_combos(projects, today_ids=None, blocked_families=None, reuse_counts=None):
+def build_combos(projects, today_ids=None, blocked_families=None, reuse_counts=None,
+                 feedback=None, run_date=None, rejected=None):
     """成熟方向：先按固定模板确定业务方向，再为各方向分配组件。
 
     与旧版“各模板先抢同一个全局最优组件、再在组合阶段互相扣分”不同：组件按方向
     顺序分配，优先避开已被前面方向占用的仓库，只有没有替代品时才允许复用，
     因此不同方向不会都落在同一个底座项目上。
+    每个方向还要通过闭环门槛（数据流/接口依据/能力面不重复），否则不进方案列表。
     """
     today_ids = today_ids or set()
     blocked_families = blocked_families or {}
     reuse_counts = reuse_counts or {}
+    run_date = run_date or date.today().isoformat()
     combos = []
     allocated = set()
     for tpl in TEMPLATES:
         family = plan_family(tpl["name"])
         if family in blocked_families:
-            continue  # 新鲜度规则：同一方案最多连续出现两天，第三天跳过
+            continue  # 冷却规则：同一 plan_family 在冷却期内跳过
         picks = {}
         used = set()
         for tag, role in tpl["slots"]:
@@ -1239,9 +1684,8 @@ def build_combos(projects, today_ids=None, blocked_families=None, reuse_counts=N
                 continue
             picks[role] = p
             used.add(p["id"])
-        if len(picks) < 2 or len(used) < 2:
+        if len(picks) < MIN_PLAN_COMPONENTS or len(used) < MIN_PLAN_COMPONENTS:
             continue
-        slot_tags = {s[0] for s in tpl["slots"]}
         # 每个槽位的候选项目数：直接回答"每个位置有多少现成组件可选"
         slot_supply = {tag: sum(1 for p in projects if tag in p["tags"])
                        for tag, _ in tpl["slots"]}
@@ -1250,11 +1694,8 @@ def build_combos(projects, today_ids=None, blocked_families=None, reuse_counts=N
         if today_count == 0:
             continue  # 以今日发现为主：组合必须包含至少一个今日锚点项目
         allocated.update(used)   # 已被本方向占用的仓库，后续方向优先避开
-        # 综合评分：分项按确定性规则计算，总分 = 分项之和，保证明细可加总。
-        score, score_parts = combo_score(tpl, picks, today_count, min_supply)
+        steps = [(tag, role, picks[role]) for tag, role in tpl["slots"] if role in picks]
         combo = {
-            "score": score,
-            "score_parts": score_parts,
             "origin": "template",
             "track": TRACK_MATURE,
             "business": dict(TEMPLATE_BUSINESS[tpl["name"]]),
@@ -1275,23 +1716,16 @@ def build_combos(projects, today_ids=None, blocked_families=None, reuse_counts=N
         repositories = [p["id"] for p in picks.values()]
         combo["plan_family"] = family
         combo["variant"] = plan_variant(repositories)
-        combos.append(combo)
+        finished = finalize_combo(combo, steps, feedback, run_date)
+        if finished is None:
+            if rejected is not None:  # 闭环门槛不通过（仅标签相关/数据流不连通）
+                rejected.append((combo["name"], combo.get("rejected_reason", "")))
+            continue
+        combos.append(finished)
     # 保持历史可复现：组合排序维持原规则（今日锚点多者优先，其次组件数与 Stars）；
-    # 评分不参与排序，仅作展示与行动建议的推荐依据。
+    # 评分不参与排序，仅作展示与判断依据。
     combos.sort(key=lambda c: (c["today_count"], c["total"], c["stars"]), reverse=True)
     return combos
-
-
-def build_single_angles(projects):
-    rows = []
-    for p in sorted(projects, key=lambda p: p["stars"], reverse=True):
-        if not p["tags"]:
-            continue
-        top = max(p["tags"].items(), key=lambda kv: kv[1])[0]
-        evidence = (p["fields"].get("value") or p["fields"].get("reason")
-                    or p["fields"].get("tagline") or "")
-        rows.append((p, top, _clean_evidence(evidence)))
-    return rows[:8]
 
 
 def llm_enhance(projects, combos, no_llm):
@@ -1322,9 +1756,11 @@ def llm_enhance(projects, combos, no_llm):
         + json.dumps(compact, ensure_ascii=False, indent=1)
         + "\n我已用确定性规则给出组合草案：\n" + combo_text
         + "\n请输出两部分：\n"
-        "1) ## 可行业务方向：3-5 个（目标客户、最小可行范围、为什么现在可行），只使用上面给出的项目；\n"
-        "2) ## 多项目组合开发方案：3-5 个（组合清单、各项目分工、MVP 边界、主要风险）。\n"
+        "1) ## 可行业务方向：只保留 1-3 个最值得验证的方向（目标客户、最小可行范围、需要什么证据才算成立），只使用上面给出的项目；\n"
+        "2) ## 多项目组合开发方案：1-3 个（组合清单、各项目分工、MVP 边界、主要风险）。\n"
         "要求：不得虚构不存在的项目；不要重复我已列出的组合（除非补充新理由）；"
+        "不得使用刚需、愿意付费、市场已验证等无来源结论，需求表述必须标注证据等级"
+        "（已确认事实/项目方自述/待验证假设/无证据）；允许说“本轮无合格方向”；"
         "用中文，输出 Markdown。"
     )
     body = {
@@ -1371,11 +1807,26 @@ def business_semantics_line(combo):
     return " · ".join("`{}={}`".format(key, value) for key, value in fields if value)
 
 
-def render(projects, today_projects, combos, singles, run_date, cutoff,
-           anchor_date, n_daily_files, n_weekly_files, llm_text, blocked=None,
-           no_plan_reason=None):
+def score_line(name, score, parts):
+    """单侧评分行：**NN/100（档位）**（分项 明细）。"""
+    grade = "高" if score >= 85 else ("中" if score >= 70 else "低")
+    detail = " · ".join("{} {}/{}".format(k, v, w) for k, v, w in parts)
+    return "{} **{}/100（{}）**（{}）".format(name, score, grade, detail)
+
+
+def render(projects, today_projects, combos, run_date, cutoff, anchor_date,
+           n_daily_files, n_weekly_files, llm_text, cooldown_notes=None,
+           dropped=None, rejected=None, no_plan_reason=None):
+    """按新的阅读顺序渲染报告：
+
+    今日结论 → 方案判断 → 客户问题 → 组件数据流 → 双评分 → MVP 实验 →
+    最大不确定性 → 下一步动作。不再生成“单点项目机会”与笼统“行动建议”。
+    """
     n = len(projects)
     today_ids = {p["id"] for p in today_projects}
+    cooldown_notes = cooldown_notes or []
+    dropped = dropped or []
+    rejected = rejected or []
     L = []
     A = L.append
     A(f"# GitHub 项目组合可行性方案｜{run_date}")
@@ -1384,41 +1835,68 @@ def render(projects, today_projects, combos, singles, run_date, cutoff,
       "结合最近 90 天项目池拼出的多项目组合可行性研究草稿；不包含代码，不是公开结论，"
       "落地前需逐个组件复核。")
     A("> 输入：今日锚点 `daily/{}.md`（{} 个项目）；组合池：最近 90 天（{} ~ {}）"
-      "{} 个唯一项目（日报 {} 份 / 周报 {} 份）。方案 1-3 个：最多 1 个成熟方向"
+      "{} 个唯一项目（日报 {} 份 / 周报 {} 份）。方案 0-3 个：最多 1 个成熟方向"
       "（固定模板命中）+ 最多 2 个探索方向（今日锚点拼接，待验证）；"
-      "没有合格探索方向时少于 3 个。".format(
+      "不足不补，允许当天没有合格方案。".format(
           anchor_date, len(today_projects), cutoff, run_date,
           n, n_daily_files, n_weekly_files))
-    A("> 评分（0-100，确定性规则，用于方案横向比较，不代表商业结论）："
-      "组件可靠度 35 · 组件供给 15 · 风险敞口 15 · 今日锚点 15 · "
-      "来源多样性 10 · 许可证 5 · 完整度 5；档位：≥85 高，70-84 中，<70 低。")
+    A("> 阅读顺序：今日结论 → 方案判断 → 客户问题 → 组件数据流 → 双评分 → "
+      "MVP 实验 → 最大不确定性 → 下一步动作。")
+    A("> 闭环门槛：每个方案必须给出可连接的组件数据流、每个组件的输入输出与接入方式；"
+      "仅标签相关（缺接口依据、能力面重复、数据流不连通）的组合不构成方案。")
+    A("> 双评分（0-100，确定性规则，两者不合并）："
+      "技术组合成熟度 = 组件可靠度 40 · 组件供给 20 · 风险敞口 20 · 许可证 10 · 完整度 10；"
+      "需求证据强度 = 证据等级 40 · 用户明确表态 25 · 独立来源 20 · 新鲜度 15。"
+      "组件成熟不等于商业可行。")
+    A("> 证据等级：已确认事实 / 项目方自述 / 待验证假设 / 无证据；需求与市场表述按等级标注，"
+      "不使用刚需、愿意付费等无来源结论。")
+    A("> 方案判断四档：值得用户访谈 / 值得技术试验 / 继续观察 / 暂不建议；"
+      "“暂不建议”不列入方案列表，只在今日结论里计数。")
+    A("> 冷却规则：同一 plan_family 冷却 {}–{} 天；冷却中段只有新增关键组件、"
+      "证据等级提升或客户问题变化才提前重现。".format(COOLDOWN_MIN_DAYS, COOLDOWN_DAYS))
     A("> 验证路径（固定）：每个组件按来源报告的'上手建议/真实风险'复核"
       "（固定版本、隔离环境、自有数据复测）。")
-    if blocked:
-        A("> 新鲜度规则：以下方案已连续出现两天，本轮跳过（同一方案最多连续两天）：{}。".format(
-            "、".join(sorted(blocked.values()))))
     if any(c.get("track") == TRACK_EXPLORATORY for c in combos):
         A("> 探索方向：由今日锚点直接拼接，组件全部来自今日日报；已标注为待验证，"
           "只说明组件可拼装，不代表市场需求成立。")
+    A("")
+    A("## 今日结论")
+    A("")
+    mature_n = sum(1 for c in combos if c.get("track") == TRACK_MATURE)
+    exploratory_n = sum(1 for c in combos if c.get("track") == TRACK_EXPLORATORY)
+    if combos:
+        A("- 本轮方案 {} 个：成熟方向 {} 个 + 探索方向 {} 个（上限 1 + 2，不足不补）。".format(
+            len(combos), mature_n, exploratory_n))
+        counts = {label: sum(1 for c in combos if c.get("judgment") == label)
+                  for label in JUDGMENT_ORDER[:-1]}
+        A("- 判断分布：{}。".format(" · ".join(
+            "{} {} 个".format(label, counts[label]) for label in JUDGMENT_ORDER[:-1])))
+    else:
+        A("- 本轮无合格方案：{}。".format(
+            no_plan_reason or "成熟方向与探索方向都未达到合格线，不构成组合产出"))
+    if dropped:
+        A("- 暂不建议（未列入）：{}。".format("；".join(
+            "{}（{}）".format(name, reason) for name, reason in dropped)))
+    if rejected:
+        A("- 闭环门槛未过（未列入）：{}。".format("；".join(
+            "{}（{}）".format(name, reason) for name, reason in rejected)))
+    if cooldown_notes:
+        A("- 冷却与重现：{}。".format("；".join(cooldown_notes)))
+    A("- 原则：宁可少而可信；当天没有合格方案是合法结果，不为每日产出凑数。")
     A("")
     A("## 可行性方案")
     A("")
     if not combos:
         A("（本轮无合格方案：{}。）".format(
             no_plan_reason or "成熟方向与探索方向都未达到合格线，不构成组合产出"))
-        if blocked:
-            A("")
-            A("（被新鲜度规则跳过：{}。）".format("、".join(sorted(blocked.values()))))
+        A("")
     for i, c in enumerate(combos, 1):
-        A("### {}. {}（组合 {} 个项目，今日锚点 {} 个）".format(
-            i, c["name"], c["total"], c["today_count"]))
+        A("### {}. {}".format(i, c["name"]))
         A("")
-        parts_str = " · ".join("{} {}/{}".format(k, v, w) for k, v, w in c["score_parts"])
-        grade = "高" if c["score"] >= 85 else ("中" if c["score"] >= 70 else "低")
-        A("**方案评分**：**{}/100（{}）**（{}）".format(c["score"], grade, parts_str))
+        A("**方案判断**：{}（依据：{}）".format(
+            c.get("judgment", JUDGMENT_WATCH), c.get("judgment_reason", "")))
         A("")
-        A("**方案身份**：`plan_family={}` · `variant={}`".format(
-            c["plan_family"], c["variant"]))
+        A("**业务定位**：{}".format(c["pitch"]))
         A("")
         A("**业务轨道**：{}".format(track_label(c)))
         A("")
@@ -1426,21 +1904,55 @@ def render(projects, today_projects, combos, singles, run_date, cutoff,
         if semantics:
             A("**业务语义**：{}".format(semantics))
             A("")
-        if c.get("track") == TRACK_EXPLORATORY:
-            A("**待验证说明**：组件可拼装 ≠ 需求成立；本方向需先小范围试用并记录产出，"
-              "再判断是否值得投入。")
-            A("")
-        A("**业务定位**：{}".format(c["pitch"]))
+        A("**方案身份**：`plan_family={}` · `variant={}`".format(
+            c["plan_family"], c["variant"]))
         A("")
-        A("**目标客户**：{}".format(c["target"]))
+        business = c.get("business") or {}
+        A("**目标客户**：{}".format(c["target"].rstrip("。；，")))
         A("")
-        A("**市场机会**：{}".format(c["market"]))
+        A("**客户问题**：客户问题「{}」；预期结果「{}」；交付形态 {}。".format(
+            business.get("problem", "未定义"),
+            business.get("expected_outcome", "未定义"),
+            business.get("delivery", "未定义")))
+        A("")
+        A("**市场机会**：{}".format(sanitize_claims(c["market"])))
+        A("")
+        evidence = c.get("demand") or {}
+        A("**需求证据**（{}/100，最高等级：{}）：".format(
+            evidence.get("score", 0), evidence.get("level", EVIDENCE_NONE)))
+        A("")
+        for level in (EVIDENCE_CONFIRMED, EVIDENCE_SELF_REPORTED):
+            for item in evidence.get("confirmed" if level == EVIDENCE_CONFIRMED
+                                     else "self_reported", []):
+                A("- 【{}】{}".format(level, item))
+        for level, text in evidence.get("items", []):
+            if level in (EVIDENCE_HYPOTHESIS, EVIDENCE_NONE):
+                A("- 【{}】{}".format(level, text))
+        A("")
+        A("**组件数据流**（起点 → 处理 → 终点）：")
+        A("")
+        A("| 顺序 | 组件 | 角色 | 输入 | 输出 | 上下游 |")
+        A("|---|---|---|---|---|---|")
+        for idx, step in enumerate(c.get("flow", []), 1):
+            p = step["project"]
+            relations = []
+            if step["upstream"]:
+                relations.append("上游：" + "、".join(step["upstream"]))
+            if step["downstream"]:
+                relations.append("下游：" + "、".join(step["downstream"]))
+            if step["deploy"]:
+                relations.append("部署形态")
+            A("| {} | [`{}`]({}) | {} | {} | {} | {} |".format(
+                idx, p["repo"], p["url"], esc(step["role"]), esc(step["input"]),
+                esc(step["output"]), "；".join(relations) or "—"))
+        A("")
+        A("**接入方式**：{}".format(business.get("delivery", "未定义")))
         A("")
         today_picks = ["`{}`".format(p["repo"]) for p in c["picks"].values()
                        if p["id"] in today_ids]
         supply_str = " · ".join("{} {}".format(t, c2)
                                  for t, c2 in c["slot_supply"].items())
-        A("**可行性依据**：{} 本组合含今日发现项目 {} 个（{}）；"
+        A("**组合依据**：{} 本组合含今日发现项目 {} 个（{}）；"
           "池中各能力面候选充足（{}），最稀缺槽位也有 {} 个候选。".format(
               c["rationale"], c["today_count"], "、".join(today_picks),
               supply_str, c["min_supply"]))
@@ -1456,9 +1968,33 @@ def render(projects, today_projects, combos, singles, run_date, cutoff,
                 role, p["repo"], p["url"],
                 esc(first_sentence(_clean_evidence(basis), 72))))
         A("")
-        A("**差异化**：{}".format(c["differentiation"]))
+        A("**差异化**：{}".format(sanitize_claims(c["differentiation"])))
         A("")
-        A("**MVP 范围（做什么，不含代码）**：{}".format(c["mvp"]))
+        A("**双评分**：{} · {}".format(
+            score_line("技术组合成熟度", c.get("tech_score", c.get("score", 0)),
+                       c.get("tech_parts", c.get("score_parts", []))),
+            score_line("需求证据强度", c.get("demand_score", 0),
+                       c.get("demand_parts", []))))
+        A("")
+        experiment = c.get("experiment") or {}
+        A("**MVP 实验**：")
+        A("")
+        A("- 测试场景：{}".format(experiment.get("scenario", "")))
+        A("- 测试数据：{}".format(experiment.get("data", "")))
+        A("- 周期：{} 天".format(experiment.get("days", EXPERIMENT_DAYS)))
+        A("- 成功指标：{}".format("；".join(experiment.get("success", []))))
+        A("- 失败指标：{}".format("；".join(experiment.get("failure", []))))
+        A("- 停止条件：{}".format("；".join(experiment.get("stop", []))))
+        A("")
+        A("**最大不确定性**：")
+        A("")
+        for line in c.get("uncertainty", []):
+            A("- {}".format(line))
+        A("")
+        A("**下一步动作**：")
+        A("")
+        for idx, action in enumerate(c.get("actions", []), 1):
+            A("{}. {}".format(idx, action))
         A("")
         risks = []
         for role, p in c["picks"].items():
@@ -1469,34 +2005,14 @@ def render(projects, today_projects, combos, singles, run_date, cutoff,
             A("**主要风险（来源报告）**：")
             A("")
             A("\n".join(risks))
-        A("")
-    A("## 单点项目机会（供参考）")
-    A("")
-    angle_count: dict[str, int] = {}
-    for p, top, evidence in singles:
-        idx = angle_count.get(top, 0)
-        angle_count[top] = idx + 1
-        variants = TAG_ANGLE[top]
-        angle = variants[idx % len(variants)] if isinstance(variants, list) else variants
-        A("- `{}`（`#{}`）→ {}。依据：{}".format(
-            p["repo"], top, angle, first_sentence(evidence, 100)))
-    A("")
-    A("## 行动建议")
-    A("")
-    if combos:
-        top = max(combos, key=lambda c: c["score"])
-        A("1. 优先推进评分最高的组合：「{}」（{} / 100，{} 组件，今日锚点 {} 个）。".format(
-            top["name"], top["score"], top["total"], top["today_count"]))
-    A("2. 每个组合先核验 2-3 个核心组件：许可证、维护状态、来源报告中的真实风险。")
-    A("3. 投入开发前，先用目标客户访谈或小范围试用验证需求假设，再决定组合取舍。")
-    A("4. 本方案由定时任务自动生成并保留历史；每周新增周报与日报后重跑，信号会自动更新。")
-    A("")
+            A("")
     if llm_text:
         A("## LLM 增强视角（可选配置）")
         A("")
-        A("> 以下内容由配置的模型生成，未逐项核验，仅供扩展思路。")
+        A("> 以下内容由配置的模型生成，未逐项核验，仅供扩展思路；"
+          "其中的需求表述不得当作已验证结论。")
         A("")
-        A(llm_text.strip())
+        A(sanitize_claims(llm_text.strip()))
         A("")
     return "\n".join(L)
 
@@ -1536,27 +2052,48 @@ def main(argv=None):
               f"daily_files={n_daily} weekly_files={n_weekly}")
         return 0
 
-    # 新鲜度规则对所有运行生效（含补跑历史日期）：连续出现两天的方案第三天跳过。
+    # 跨日去重：同一 plan_family 冷却 7-14 天（load_family_history + cooldown_decision）。
     # 依据是 run_date 之前已存在的报告文件，同一文件集下结果可复现。
-    blocked = load_recent_families(args.data_root, args.date)
+    history = load_family_history(args.data_root, args.date)
+    feedback = load_user_feedback(args.data_root)
     reuse_counts = load_recent_component_counts(args.data_root, args.date)
+    rejected = []
     # 双轨产出：成熟方向（固定模板，先定方向再分配组件）+ 探索方向（今日锚点拼接，待验证）
-    mature_candidates = build_combos(projects, today_ids, blocked, reuse_counts)
+    mature_candidates = build_combos(projects, today_ids, None, reuse_counts,
+                                     feedback, args.date, rejected=rejected)
     exploratory_candidates = build_exploratory_combos(projects, today_projects,
-                                                     today_ids, blocked)
-    combos = select_tracked_portfolio(mature_candidates + exploratory_candidates)
+                                                     today_ids, None,
+                                                     feedback=feedback, run_date=args.date,
+                                                     rejected=rejected)
+    # 冷却判定：冷却期内无条件跳过；冷却中段只有新增关键组件/证据/客户问题才允许提前重现
+    candidates = []
+    cooldown_notes = []
+    dropped_candidates = []
+    for candidate in mature_candidates + exploratory_candidates:
+        blocked_now, note = cooldown_decision(candidate["plan_family"], history, candidate)
+        if blocked_now:
+            cooldown_notes.append("{}：{}".format(candidate["name"], note))
+            continue
+        if note:
+            cooldown_notes.append("{}：{}".format(candidate["name"], note))
+        if candidate.get("judgment") == JUDGMENT_DROP:
+            # 暂不建议：技术可拼但需求侧无任何可引用证据（或高风险组件过半）→ 不进方案列表
+            dropped_candidates.append(
+                (candidate["name"], candidate.get("judgment_reason", "")))
+            continue
+        candidates.append(candidate)
+    combos = select_tracked_portfolio(candidates)
     no_plan_reason = ""
     if not combos:
-        no_plan_reason = ("成熟方向候选 {} 个、探索方向候选 {} 个，均未达到合格线（≥{} 分）"
-                          "或缺少今日锚点".format(len(mature_candidates),
-                                                len(exploratory_candidates),
-                                                MIN_COMBO_SCORE))
+        no_plan_reason = ("成熟方向候选 {} 个、探索方向候选 {} 个，扣除冷却与暂不建议后均未达到"
+                          "合格线（技术组合成熟度 ≥{}）或缺少今日锚点".format(
+                              len(mature_candidates), len(exploratory_candidates),
+                              MIN_TECH_SCORE))
         print(f"警告: 本轮无合格方案（{no_plan_reason}）", file=sys.stderr)
-    singles = build_single_angles(projects)
     llm_text = llm_enhance(projects, combos, args.no_llm)
-    report = render(projects, today_projects, combos, singles, args.date,
+    report = render(projects, today_projects, combos, args.date,
                     cutoff.isoformat(), anchor_date, n_daily, n_weekly, llm_text,
-                    blocked, no_plan_reason)
+                    cooldown_notes, dropped_candidates, rejected, no_plan_reason)
 
     out_dir = args.data_root / "feasibility"
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -1568,13 +2105,21 @@ def main(argv=None):
     mature_n = sum(1 for c in combos if c.get("track") == TRACK_MATURE)
     exploratory_n = sum(1 for c in combos if c.get("track") == TRACK_EXPLORATORY)
     with runs.open("a", encoding="utf-8") as fh:
-        blocked_note = f" blocked={'、'.join(sorted(blocked))}" if blocked else ""
+        cooldown_note = " cooldown={}".format(len(cooldown_notes)) if cooldown_notes else ""
+        dropped_note = " dropped={}".format(len(dropped_candidates)) \
+            if dropped_candidates else ""
+        rejected_note = " rejected={}".format(len(rejected)) if rejected else ""
         plan_note = "" if combos else " no-qualified-plan"
+        judgments = "、".join("{}={}".format(label, sum(1 for c in combos
+                                                    if c.get("judgment") == label))
+                              for label in JUDGMENT_ORDER[:-1]
+                              if any(c.get("judgment") == label for c in combos))
         fh.write(f"{ts} OK anchor={anchor_date} window=90d cutoff={cutoff.isoformat()} "
                  f"daily={n_daily} weekly={n_weekly} projects={len(projects)} "
                  f"candidates={len(mature_candidates) + len(exploratory_candidates)} "
                  f"combos={len(combos)} mature={mature_n} exploratory={exploratory_n} "
-                 f"output={out_path.name}{blocked_note}{plan_note}\n")
+                 f"output={out_path.name}{cooldown_note}{dropped_note}{rejected_note}"
+                 f"{plan_note}" + (f" judgments={judgments}" if judgments else "") + "\n")
     if combos:
         print(f"OK: {out_path}（项目池 {len(projects)}，方案 {len(combos)}："
               f"成熟 {mature_n} + 探索 {exploratory_n}）")

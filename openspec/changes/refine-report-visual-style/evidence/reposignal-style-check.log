@@ -1,0 +1,11 @@
+
+> repo-signal@0.1.0 check
+> ASTRO_TELEMETRY_DISABLED=1 astro check
+
+16:19:29 [types] Generated 81ms
+16:19:29 [check] Getting diagnostics for Astro files in /Users/elvis/Desktop/repo-signal...
+Result (41 files): 
+- 0 errors
+- 0 warnings
+- 0 hints
+

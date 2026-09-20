@@ -25,7 +25,7 @@ const gradeClass = (grade: string | null) =>
       {report.noticeHtml && <div class="feasibility-notice prose" set:html={report.noticeHtml}></div>}
       <div class="report-ledger" aria-label="本期摘要">
         <span><strong>{report.plans.length}</strong> 个组合方案</span>
-        <span>研究草稿 · 落地前需复核</span>
+        <span>双评分 · 判断四档 · 冷却 7–14 天</span>
         <span>更新于 <strong>{report.date}</strong></span>
       </div>
     </header>
@@ -38,7 +38,43 @@ const gradeClass = (grade: string | null) =>
               <span>方案 {String(index + 1).padStart(2, "0")}</span>
               <h2 id={`${plan.id}-title`}>{plan.title}</h2>
             </header>
-            {plan.score != null && (
+            {plan.judgment && (
+              <p class="feasibility-judgment" aria-label={`方案判断 ${plan.judgment}`}>
+                <span class="feasibility-judgment__label">方案判断</span>
+                <span class="feasibility-judgment__value">{plan.judgment}</span>
+                {plan.judgmentReason && <span class="feasibility-judgment__reason">{plan.judgmentReason}</span>}
+              </p>
+            )}
+            {plan.techScore && plan.demandScore ? (
+              <div class="feasibility-scores" aria-label="双评分">
+                {[plan.techScore, plan.demandScore].map((side) => (
+                  <div class="feasibility-score" aria-label={`${side.name} ${side.score} 分，档位 ${side.grade}`}>
+                    <div class="feasibility-score__total">
+                      <span class={`feasibility-score__number feasibility-score__number--${gradeClass(side.grade)}`}>
+                        {side.score}<small>/100</small>
+                      </span>
+                      <span class={`feasibility-score__grade feasibility-score__grade--${gradeClass(side.grade)}`}>{side.grade}</span>
+                    </div>
+                    <div class="feasibility-score__body">
+                      <p class="feasibility-score__name">{side.name}</p>
+                      {side.parts.length > 0 && (
+                        <ul class="feasibility-score__parts">
+                          {side.parts.map((part) => (
+                            <li>
+                              <span class="feasibility-score__part-name">{part.name}</span>
+                              <span class="feasibility-score__bar" aria-hidden="true">
+                                <i style={`width:${Math.round((part.points / part.max) * 100)}%`}></i>
+                              </span>
+                              <span class="feasibility-score__part-value">{part.points}/{part.max}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : plan.score != null ? (
               <div class="feasibility-score" aria-label={`方案评分 ${plan.score} 分，档位 ${plan.grade}`}>
                 <div class="feasibility-score__total">
                   <span class={`feasibility-score__number feasibility-score__number--${gradeClass(plan.grade)}`}>
@@ -60,11 +96,11 @@ const gradeClass = (grade: string | null) =>
                   </ul>
                 )}
               </div>
-            )}
+            ) : null}
             <dl class="feasibility-summary">
-              <div><dt>业务定位</dt><dd>{plan.positioning || "源报告未单独标注"}</dd></div>
+              <div><dt>方案判断</dt><dd>{plan.judgment || plan.positioning || "源报告未单独标注"}</dd></div>
               <div><dt>目标客户</dt><dd>{plan.audience || "源报告未单独标注"}</dd></div>
-              <div><dt>市场机会</dt><dd>{plan.marketOpportunity || "源报告未单独标注"}</dd></div>
+              <div><dt>需求证据</dt><dd>{plan.evidenceLevel || plan.marketOpportunity || "源报告未单独标注"}</dd></div>
             </dl>
             <div class="feasibility-plan__body prose" set:html={plan.bodyHtml}></div>
           </section>

@@ -1,25 +1,4 @@
-# daily-feasibility-reports Specification
-
-## Purpose
-TBD - created by archiving change add-daily-feasibility-reports. Update Purpose after archive.
-## Requirements
-### Requirement: Build only dated feasibility reports
-系统 SHALL 在构建时只把 `data/github-project-digest/feasibility/YYYY-MM-DD.md` 识别为可行性报告，并按日期倒序提供归档。
-
-#### Scenario: Directory contains reports and supporting files
-- **WHEN** feasibility 目录同时包含日期 Markdown、`KUN-TASK.md` 和日志文件
-- **THEN** 系统只加载日期 Markdown，且最新日期排在归档首位
-
-### Requirement: Provide feasibility index and dated routes
-系统 SHALL 提供 `/feasibility/` 索引页和 `/feasibility/<YYYY-MM-DD>/` 详情页，并让索引页在有数据时链接最新一期、无数据时显示明确空状态。
-
-#### Scenario: Reader opens feasibility index with reports available
-- **WHEN** 仓库至少存在一份日期可行性报告
-- **THEN** 页面提供指向最新日期详情页的链接
-
-#### Scenario: Reader opens a dated feasibility report
-- **WHEN** 读者访问一个已生成的日期路由
-- **THEN** 页面显示该日方案并提供同类日期归档导航和 canonical 地址
+## MODIFIED Requirements
 
 ### Requirement: Preserve research context with hybrid structured rendering
 系统 MUST 保留源报告的研究草稿提示，并 SHALL 将每个三级标题方案独立展示：新格式方案结构化呈现方案判断、双评分（技术组合成熟度 / 需求证据强度）与摘要字段（方案判断 / 目标客户 / 需求证据），历史格式方案继续以业务定位 / 目标客户 / 市场机会与单一评分呈现；两种格式的组合表、风险、MVP、验证路径正文均保真呈现。
@@ -40,12 +19,7 @@ TBD - created by archiving change add-daily-feasibility-reports. Update Purpose 
 - **WHEN** 方案只含 `**方案评分**` 行
 - **THEN** 页面按原有单一评分面板呈现，不要求双评分字段
 
-### Requirement: Keep feasibility reports out of project search
-系统 MUST 保持现有全局项目搜索范围，不将可行性方案里的重复仓库创建为搜索结果。
-
-#### Scenario: Same repository appears in several feasibility reports
-- **WHEN** 搜索索引在构建时生成
-- **THEN** 不会因可行性报告产生额外重复搜索项
+## ADDED Requirements
 
 ### Requirement: Require a connected component data flow for every plan
 生成器 MUST 只把通过闭环门槛的组合写成方案：组件数量 ≥3、每个组件都有源报告中的接口依据、组合内能力面不重复、除部署形态外的组件按交接表构成弱连通且无环的数据流，并且存在至少一个上游与一个下游。报告 SHALL 输出每个组件的输入、输出、上下游关系与整体接入方式。
@@ -123,4 +97,3 @@ TBD - created by archiving change add-daily-feasibility-reports. Update Purpose 
 #### Scenario: Reader opens a historical report
 - **WHEN** 站点加载 2026-09-20 之前生成的报告
 - **THEN** 旧章节（单一评分、单点机会、行动建议）继续按原格式渲染，不显示双评分面板
-
