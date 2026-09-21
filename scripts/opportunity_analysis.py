@@ -31,12 +31,12 @@
      ≥2 个互补组件，to-validate）；
      没有合格探索方向时允许少于 3 个，0 个方案时报告明确写“本轮无合格方案”。
   5. 跨日去重：同一 plan_family 冷却 7-14 天（COOLDOWN_MIN_DAYS ~ COOLDOWN_DAYS）。
-     冷却期内无条件跳过；冷却中段只有新增关键组件、证据等级提升或客户问题变化
-     才允许提前重现，并在报告里说明理由。
+     冷却期内无条件跳过；冷却中段只有新增关键组件或证据等级提升才允许提前重现，
+     并在报告里说明理由。
   6. 可选增强：设置 OPPORTUNITY_LLM_API_KEY（或 OPENAI_API_KEY）时调用
      OpenAI 兼容接口补充视角；失败不影响主流程。
   7. 输出 data/github-project-digest/feasibility/YYYY-MM-DD.md，
-     并追加一行运行记录到同目录 runs.log。
+     追加运行记录到同目录 runs.log，并把方案身份写入同目录 plan-history.jsonl。
 
 退出码：0 成功；2 输入缺失；1 其他错误。
 """
@@ -388,7 +388,8 @@ def parse_plan_business(block):
     if not match:
         return None
     fields = {}
-    for item in match.group(1).split("·"):
+    payload = match.group(1).removesuffix("-->").strip()
+    for item in payload.split("·"):
         item = item.strip().strip("`").strip()
         if "=" not in item:
             continue
@@ -942,41 +943,142 @@ def select_tracked_portfolio(combos, min_score=MIN_TECH_SCORE,
     return selected
 
 
-def load_family_history(data_root, run_date, window_days=COOLDOWN_DAYS):
-    """读取冷却窗口内每份报告里的方案身份，返回 family 的历史记录。
+def plan_history_path(data_root):
+    return Path(data_root) / "feasibility" / "plan-history.jsonl"
 
-    记录内容：最近一次出现日期、相隔天数、历史组件集合、历史证据状态与业务三元组，
-    用于判定“能否提前重现”。依据是 run_date 之前已存在的报告文件，同一文件集下可复现。
+
+def _write_plan_history(path, records):
+    """写回记录：省略空值字段，文件只保留有效信息。"""
+    cleaned = [
+        {key: value for key, value in item.items() if value not in ("", [], None)}
+        for item in records
+    ]
+    cleaned.sort(key=lambda item: (item.get("date", ""), item.get("family", "")))
+    path.write_text(
+        "".join(json.dumps(item, ensure_ascii=False) + "\n" for item in cleaned),
+        encoding="utf-8",
+    )
+
+
+def record_plan_history(data_root, run_date, combos):
+    """把本次产出的方案身份写入 plan-history.jsonl。
+
+    记录 date / name / plan_family / variant / track / 组件集合与证据状态（无值
+    的字段省略），供跨日冷却读取；同一日期的旧记录先清除再写入，重跑不会产生重复。
+    """
+    path = plan_history_path(data_root)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    records = []
+    if path.is_file():
+        for line in path.read_text(encoding="utf-8").splitlines():
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                record = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            if record.get("date") != run_date:
+                records.append(record)
+    for combo in combos:
+        business = combo.get("business") or {}
+        records.append({
+            "date": run_date,
+            "name": combo.get("name", ""),
+            "family": combo.get("plan_family", ""),
+            "variant": combo.get("variant", ""),
+            "track": combo.get("track", ""),
+            "repositories": sorted(p["id"] for p in combo.get("picks", {}).values()),
+            "evidence_status": business.get("evidence_status", ""),
+        })
+    _write_plan_history(path, records)
+
+
+def rebuild_plan_history(data_root):
+    """从历史报告一次性重建 plan-history.jsonl（迁移/审计用）。"""
+    path = plan_history_path(data_root)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    records = []
+    for report in sorted((data_root / "feasibility").glob("20??-??-??.md")):
+        match = DAILY_FILE_RE.match(report.name)
+        if not match:
+            continue
+        for identity in parse_plan_identities(report.read_text(encoding="utf-8")):
+            family = identity.get("family") or ""
+            if not family:
+                continue
+            business = identity.get("business") or {}
+            records.append({
+                "date": match.group(1),
+                "name": identity.get("name", ""),
+                "family": family,
+                "variant": identity.get("variant", ""),
+                "track": identity.get("track") or "",
+                "repositories": sorted(identity.get("repositories", [])),
+                "evidence_status": business.get("evidence_status", ""),
+            })
+    _write_plan_history(path, records)
+    return len(records)
+
+
+def load_family_history(data_root, run_date, window_days=COOLDOWN_DAYS):
+    """读取冷却窗口内的方案历史（`feasibility/plan-history.jsonl`）。
+
+    记录内容：最近一次出现日期、相隔天数、历史组件集合与历史证据状态，用于判定
+    “能否提前重现”。依据是 run_date 之前的记录，同一文件集下可复现；没有
+    plan-history.jsonl 时回退为扫描历史报告（兼容旧数据）。
     """
     history = {}
     run_d = date.fromisoformat(run_date)
     start = run_d - timedelta(days=window_days)
-    for path in sorted((data_root / "feasibility").glob("20??-??-??.md")):
-        match = DAILY_FILE_RE.match(path.name)
-        if not match:
-            continue
-        source_date = date.fromisoformat(match.group(1))
-        if not start <= source_date < run_d:
-            continue
-        for identity in parse_plan_identities(path.read_text(encoding="utf-8")):
-            business = identity.get("business") or {}
-            record = history.setdefault(identity["family"], {
-                "name": identity["name"], "last": source_date,
-                "repositories": set(), "evidence_status": "", "business": {},
-            })
-            if source_date >= record["last"]:
-                record["last"] = source_date
-                record["name"] = identity["name"]
-            record["repositories"].update(identity["repositories"])
-            status = business.get("evidence_status") or ""
-            if EVIDENCE_LEVEL_RANK.get(status, -1) > EVIDENCE_LEVEL_RANK.get(
-                    record["evidence_status"], -1):
-                record["evidence_status"] = status
-            for key in ("customer_id", "problem_id", "outcome_id"):
-                if business.get(key):
-                    record["business"].setdefault(key, set()).add(business[key])
-    for record in history.values():
-        record["days"] = (run_d - record["last"]).days
+
+    entries = []
+    path = plan_history_path(data_root)
+    if path.is_file():
+        for line in path.read_text(encoding="utf-8").splitlines():
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                record = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            if not record.get("family") or not DATE_RE.fullmatch(record.get("date") or ""):
+                continue
+            source_date = date.fromisoformat(record["date"])
+            if start <= source_date < run_d:
+                entries.append((source_date, record))
+    else:
+        for report in sorted((data_root / "feasibility").glob("20??-??-??.md")):
+            match = DAILY_FILE_RE.match(report.name)
+            if not match:
+                continue
+            source_date = date.fromisoformat(match.group(1))
+            if not start <= source_date < run_d:
+                continue
+            for identity in parse_plan_identities(report.read_text(encoding="utf-8")):
+                business = identity.get("business") or {}
+                entries.append((source_date, {
+                    "name": identity.get("name", ""),
+                    "family": identity.get("family", ""),
+                    "repositories": identity.get("repositories", []),
+                    "evidence_status": business.get("evidence_status", ""),
+                }))
+    for source_date, record in entries:
+        entry = history.setdefault(record["family"], {
+            "name": record.get("name", ""), "last": source_date,
+            "repositories": set(), "evidence_status": "",
+        })
+        if source_date >= entry["last"]:
+            entry["last"] = source_date
+            entry["name"] = record.get("name", "")
+        entry["repositories"].update(record.get("repositories", []))
+        status = record.get("evidence_status") or ""
+        if EVIDENCE_LEVEL_RANK.get(status, -1) > EVIDENCE_LEVEL_RANK.get(
+                entry["evidence_status"], -1):
+            entry["evidence_status"] = status
+    for entry in history.values():
+        entry["days"] = (run_d - entry["last"]).days
     return history
 
 
@@ -985,7 +1087,7 @@ def cooldown_decision(family, history, candidate):
 
     规则：同一 plan_family 冷却 COOLDOWN_MIN_DAYS~COOLDOWN_DAYS 天（7-14 天）。
       - 冷却前段（< 7 天）：无条件跳过；
-      - 冷却中段（7-13 天）：只有新增关键组件、证据等级提升或客户问题变化才允许提前重现；
+      - 冷却中段（7-13 天）：只有新增关键组件或证据等级提升才允许提前重现；
       - 超过 14 天：自然重新合格。
     """
     record = history.get(family)
@@ -1006,16 +1108,9 @@ def cooldown_decision(family, history, candidate):
     if EVIDENCE_LEVEL_RANK.get(status, -1) > EVIDENCE_LEVEL_RANK.get(
             record["evidence_status"], -1):
         reasons.append("证据等级提升（{}）".format(status))
-    business = candidate.get("business") or {}
-    for key, label in (("customer_id", "客户"), ("problem_id", "客户问题"),
-                       ("outcome_id", "预期结果")):
-        value = business.get(key)
-        known = record["business"].get(key) or set()
-        if value and known and value not in known:
-            reasons.append("{}变化（{}）".format(label, value))
     if reasons:
         return False, "提前重现（{}；{}）".format(since, "；".join(reasons))
-    return True, "冷却中（{}，未新增关键组件/证据/客户问题）".format(since)
+    return True, "冷却中（{}，未新增关键组件或证据等级提升）".format(since)
 
 
 def top_tag(p):
@@ -1695,7 +1790,7 @@ def _make_exploratory_combo(steps, seed, seed_face, today_ids, supply, feedback,
                       "、".join(TAG_CN[t] for t in slot_tags if t in TAG_CN), min_supply),
         "differentiation": "完全由今日锚点驱动；与固定模板方向不同，属于待验证的探索方向。",
         "rationale": "能力面尽量互补（{} 个）；该方向未经过市场验证，"
-                     "先按业务语义里的客户问题做小范围试用。".format(len(faces)),
+                     "先按客户问题做小范围试用。".format(len(faces)),
         "mvp": "先分别试用各组件并记录可用产出，再打通 {} 之间的最小数据流或协作流；"
                "其余按试用反馈取舍。".format(
                    "、".join("`{}`".format(p["repo"]) for _, _, p in steps[:3])),
@@ -1939,14 +2034,6 @@ def render(projects, today_projects, combos, run_date, cutoff, anchor_date,
         A("")
         A("**业务轨道**：{}".format(track_label(c)))
         A("")
-        semantics = business_semantics_line(c)
-        if semantics:
-            A("**业务语义**：{}".format(semantics))
-            A("")
-        A("**方案身份**：`plan_family={}` · `variant={}`".format(
-            c["plan_family"], c["variant"]))
-        A("")
-        business = c.get("business") or {}
         A("**目标客户**：{}".format(c["target"].rstrip("。；，")))
         A("")
         A("**市场机会**：{}".format(sanitize_claims(c["market"])))
@@ -2038,11 +2125,18 @@ def main(argv=None):
     ap.add_argument("--no-llm", action="store_true", help="跳过 LLM 增强")
     ap.add_argument("--check", action="store_true",
                     help="只校验输入并打印项目池摘要，不写报告（当天日报缺失时退出码 2）")
+    ap.add_argument("--rebuild-history", action="store_true",
+                    help="从历史报告重建 plan-history.jsonl 后退出（一次性迁移）")
     args = ap.parse_args(argv)
 
     if not DATE_RE.fullmatch(args.date):
         print(f"错误: 日期必须是 YYYY-MM-DD：{args.date!r}", file=sys.stderr)
         return 2
+
+    if args.rebuild_history:
+        count = rebuild_plan_history(args.data_root)
+        print(f"OK: rebuilt plan-history.jsonl（{count} 条记录）")
+        return 0
 
     today_projects, projects, n_daily, n_weekly, anchor_date = load_project_pool(
         args.data_root, args.date)
@@ -2110,6 +2204,7 @@ def main(argv=None):
     out_dir.mkdir(parents=True, exist_ok=True)
     out_path = args.output or (out_dir / f"{args.date}.md")
     out_path.write_text(report + "\n", encoding="utf-8")
+    record_plan_history(args.data_root, args.date, combos)
 
     runs = out_dir / "runs.log"
     ts = datetime.now().isoformat(timespec="seconds")

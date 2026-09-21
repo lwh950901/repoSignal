@@ -1,3 +1,4 @@
+import json
 import re
 import tempfile
 import unittest
@@ -652,7 +653,7 @@ class DualTrackRenderingTests(unittest.TestCase):
         return analysis.render([project], [project], [combo], "2026-09-14",
                                "2026-06-16", "2026-09-14", 1, 0, None)
 
-    def test_render_exposes_track_and_machine_readable_business_semantics(self):
+    def test_render_exposes_track_and_hides_machine_metadata(self):
         project = self.project("owner/tool", {"agent": 5}, "任务闭环工具。")
         history = self.project("owner/history", {"rag": 5}, "历史检索工具。")
         combo = self.combo("exploratory", project)
@@ -662,11 +663,11 @@ class DualTrackRenderingTests(unittest.TestCase):
         report = self.render(combo, project)
 
         self.assertIn("**业务轨道**：探索方向（待验证）", report)
-        self.assertIn("`track=exploratory`", report)
-        self.assertIn("`problem=资料散落各处，答案没有出处可查`", report)
         self.assertIn("**方案判断**：", report)
         self.assertIn("（探索方向待验证）", report)
         self.assertIn("另有 1 个互补组件来自最近 90 天项目池", report)
+        self.assertNotIn("track=exploratory", report)
+        self.assertNotIn("plan_family=", report)
         self.assertNotIn("组件全部来自今日日报", report)
 
     def test_render_marks_mature_track_without_validation_notice(self):
@@ -950,13 +951,14 @@ class ReportStructureTests(unittest.TestCase):
         self.assertNotIn("## 行动建议", report)
         self.assertNotIn("优先推进评分最高的组合", report)
 
-    def test_machine_metadata_is_visible_in_rendered_markdown(self):
-        report = analysis.render([], [], [self.combo()], "2026-09-14", "2026-06-16",
+    def test_report_contains_no_machine_metadata(self):
+        combo = self.combo()
+        report = analysis.render([], [], [combo], "2026-09-14", "2026-06-16",
                                  "2026-09-14", 1, 0, None)
 
-        self.assertIn("**方案身份**：", report)
-        self.assertIn("**业务语义**：", report)
-        self.assertNotIn("<!-- **", report)
+        self.assertNotIn("**业务语义**", report)
+        self.assertNotIn("**方案身份**", report)
+        self.assertNotIn("plan_family=", report)
 
     def test_zero_plan_report_lists_skipped_and_dropped_candidates(self):
         report = analysis.render([], [], [], "2026-09-14", "2026-06-16", "2026-09-14",
@@ -1150,6 +1152,52 @@ class DailyAnchorRequirementTests(unittest.TestCase):
         self.assertIn("## 今日结论", second)
 
 
+class PlanHistoryTests(unittest.TestCase):
+    """plan-history.jsonl：记录、读取与重建。"""
+
+    def test_record_plan_history_rewrites_same_date_and_feeds_cooldown(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            combo = make_combo(plan_steps([("document", "文档解析"), ("rag", "检索"),
+                                           ("agent", "编排")]))
+            analysis.record_plan_history(root, "2026-09-10", [combo])
+            analysis.record_plan_history(root, "2026-09-10", [combo])
+            path = root / "feasibility" / "plan-history.jsonl"
+            records = [json.loads(line) for line in
+                       path.read_text(encoding="utf-8").splitlines() if line.strip()]
+            self.assertEqual(len(records), 1)
+            self.assertEqual(records[0]["family"], combo["plan_family"])
+            self.assertNotIn("customer_id", records[0])
+            self.assertTrue(all(records[0].values()))
+
+            history = analysis.load_family_history(root, "2026-09-12")
+            blocked, note = analysis.cooldown_decision(
+                combo["plan_family"], history,
+                {"picks": {"角色": {"id": "owner/new"}}, "business": {}})
+
+        self.assertTrue(blocked)
+        self.assertIn("冷却期内", note)
+
+    def test_rebuild_plan_history_from_reports(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "feasibility").mkdir()
+            (root / "feasibility" / "2026-09-10.md").write_text(
+                "## 可行性方案\n\n### 1. 本地优先 · 知识增强 · Agent 工作台\n\n"
+                "**方案身份**：`plan_family=biz-1a2b3c4d5e6f` · `variant=v1`\n",
+                encoding="utf-8",
+            )
+            count = analysis.rebuild_plan_history(root)
+            records = [json.loads(line) for line in
+                       (root / "feasibility" / "plan-history.jsonl")
+                       .read_text(encoding="utf-8").splitlines() if line.strip()]
+
+            self.assertEqual(count, 1)
+            self.assertEqual(records[0]["family"], "biz-1a2b3c4d5e6f")
+            self.assertEqual(records[0]["date"], "2026-09-10")
+            self.assertEqual(set(records[0]), {"date", "name", "family", "variant"})
+
+
 class CooldownIntegrationTests(unittest.TestCase):
     """端到端：同一 plan_family 在 7 天内被冷却跳过，14 天后自然重新合格。"""
 
@@ -1203,20 +1251,29 @@ class CooldownIntegrationTests(unittest.TestCase):
         self.assertEqual(code, 0)
         return (self.root / "feasibility" / f"{day}.md").read_text(encoding="utf-8")
 
+    def read_history(self, source_date=None):
+        path = self.root / "feasibility" / "plan-history.jsonl"
+        records = [json.loads(line) for line in
+                   path.read_text(encoding="utf-8").splitlines() if line.strip()]
+        if source_date is None:
+            return records
+        return [record for record in records if record["date"] == source_date]
+
     def test_repeated_family_is_cooled_down_then_returns(self):
         self.write_pool_day("2026-09-01")
         first = self.run_day("2026-09-01")
-        first_families = [match.group(1) for match in
-                          re.finditer(r"plan_family=([^`]+)", first)]
+        first_families = [record["family"] for record in self.read_history("2026-09-01")]
 
         self.assertTrue(first_families, "首次运行应至少产出 1 个方案")
+        self.assertNotIn("plan_family=", first)   # 报告不再包含机器元数据
         second = self.run_day("2026-09-02", "owner/agent-anchor",
                               "Agent 编排框架与任务编排。")
 
         self.assertIn("冷却与重现", second)
         self.assertIn("冷却期内", second)
+        second_families = {record["family"] for record in self.read_history("2026-09-02")}
         for family in first_families:
-            self.assertNotIn("plan_family={}".format(family), second)
+            self.assertNotIn(family, second_families)
 
         later = self.run_day("2026-09-25", "owner/agent-later",
                              "Agent 编排框架与任务编排。")
