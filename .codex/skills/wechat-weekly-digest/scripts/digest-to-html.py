@@ -15,7 +15,6 @@ H1 = '<h1 style="font-size:22px;font-weight:bold;color:#0b3d66;margin:0 0 24px;"
 H2 = '<h2 style="font-size:18px;font-weight:bold;color:#0b3d66;border-left:4px solid #ff7a1a;padding-left:10px;margin:30px 0 6px;">{}</h2>'
 P = '<p style="margin:10px 0;">{}</p>'
 INTRO = '<p style="font-size:14px;color:#5c6b7a;margin:10px 0;">{}</p>'
-SUBTITLE = '<p style="font-size:15px;font-weight:bold;color:#0b3d66;margin:12px 0 14px;">{}</p>'
 NOTE = ('<p style="font-size:15px;color:#5c6b7a;background:#eef3f7;border-left:3px solid #c7d3de;'
         'padding:10px 12px;margin:10px 0;"><strong style="color:#999;">注意：</strong> {}</p>')
 READMORE = '<p style="font-size:14px;color:#8a95a1;margin:10px 0;"><strong>阅读全文：</strong> {}</p>'
@@ -307,11 +306,6 @@ def main():
         elif line.startswith('---'):
             close_card()
             out.append(HR)
-            feas_intro = False
-        elif line.startswith('**本期标题：**'):
-            # 本期标题独立成副标题行，不排挤 h1 之后的导语名额
-            close_card()
-            out.append(SUBTITLE.format(inline(line)))
             feas_intro = False
         elif line.startswith('**关于仓库雷达**'):
             out.append(CARD_OPEN)

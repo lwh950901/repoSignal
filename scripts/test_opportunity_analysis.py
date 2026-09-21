@@ -43,6 +43,32 @@ def make_combo(steps, business=None, track=analysis.TRACK_MATURE, run_date="2026
     return analysis.finalize_combo(combo, steps, feedback or [], run_date)
 
 
+class DailyParsingTests(unittest.TestCase):
+    def test_reusable_section_starts_a_new_project(self):
+        markdown = """# GitHub 项目日报｜2026-09-21
+
+### 学习型：owner/learner
+- 一句话定位：提供带接口的学习工具。
+- 实时指标：100 Stars · MIT
+
+### 可复用型：owner/reusable
+- 一句话定位：提供可复用的数据处理接口。
+- 实时指标：200 Stars · Apache-2.0
+"""
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "2026-09-21.md"
+            path.write_text(markdown, encoding="utf-8")
+
+            projects = analysis.parse_daily(path)
+
+        self.assertEqual([p["repo_raw"] for p in projects],
+                         ["owner/learner", "owner/reusable"])
+        self.assertEqual([p["kind"] for p in projects], ["学习型", "可复用型"])
+        self.assertEqual(projects[0]["fields"]["tagline"], "提供带接口的学习工具。")
+        self.assertEqual(projects[1]["fields"]["tagline"],
+                         "提供可复用的数据处理接口。")
+
+
 class PlanIdentityTests(unittest.TestCase):
     def test_fixed_template_keeps_family_when_components_change(self):
         name = "本地优先个人 AI 工作台（组合 5 个项目，今日锚点 2 个）"
@@ -184,6 +210,8 @@ class FeasibilityRenderingTests(unittest.TestCase):
             "可先小范围试用并记录产出。 |",
             report,
         )
+        self.assertNotIn("**组件数据流**", report)
+        self.assertNotIn("**接入方式**", report)
 
 
 class AnchorBusinessNamingTests(unittest.TestCase):
@@ -446,13 +474,28 @@ class ExploratoryTrackTests(unittest.TestCase):
             self.project("owner/local", {"local": 4}, "本地优先桌面助手。", stars=100),
         ]
 
-    def test_needs_one_anchor_plus_two_complementary_projects(self):
-        projects = self.anchors()[:2]
+    def test_one_today_anchor_can_use_pool_complements(self):
+        today = self.project("owner/today-agent", {"agent": 6},
+                             "Agent 编排框架。", stars=500)
+        history = [
+            self.project("owner/history-document", {"document": 5},
+                         "文档解析接口。", stars=300),
+            self.project("owner/history-rag", {"rag": 5},
+                         "知识检索接口。", stars=100),
+        ]
 
+        combos = analysis.build_exploratory_combos(
+            [today] + history, [today], {today["id"]}, reuse_counts={})
+
+        self.assertEqual(len(combos), 1)
+        combo = combos[0]
+        self.assertEqual(combo["today_count"], 1)
+        self.assertEqual(combo["anchor_id"], today["id"])
+        self.assertEqual(combo["business"]["problem_id"],
+                         analysis.BUSINESS_PROBLEMS["agent"]["problem_id"])
         self.assertEqual(
-            analysis.build_exploratory_combos(projects, projects,
-                                              {p["id"] for p in projects}),
-            [],
+            {p["id"] for p in combo["picks"].values()},
+            {today["id"], "owner/history-document", "owner/history-rag"},
         )
 
     def test_exploratory_combo_is_business_identified_and_to_validate(self):
@@ -461,8 +504,8 @@ class ExploratoryTrackTests(unittest.TestCase):
         combos = analysis.build_exploratory_combos(projects, projects,
                                                   {p["id"] for p in projects})
 
-        self.assertEqual(len(combos), 1)
-        combo = combos[0]
+        self.assertGreaterEqual(len(combos), 1)
+        combo = next(c for c in combos if c["anchor_face"] == "agent")
         self.assertEqual(combo["track"], analysis.TRACK_EXPLORATORY)
         self.assertEqual(combo["total"], 3)
         self.assertEqual(combo["today_count"], 3)
@@ -473,7 +516,8 @@ class ExploratoryTrackTests(unittest.TestCase):
             self.assertTrue(combo["business"][key], key)
         self.assertIn("待验证", combo["market"])
         self.assertIn("不代表市场需求成立", combo["market"])
-        self.assertEqual(combo["name"], "本地优先 · 知识增强 · Agent 工作台")
+        self.assertEqual(combo["business"]["problem_id"],
+                         analysis.BUSINESS_PROBLEMS["agent"]["problem_id"])
 
     def test_family_follows_business_direction_not_components(self):
         first = self.anchors()
@@ -491,12 +535,71 @@ class ExploratoryTrackTests(unittest.TestCase):
 
     def test_blocked_family_suppresses_the_direction(self):
         projects = self.anchors()
-        family = analysis.build_exploratory_combos(
-            projects, projects, {p["id"] for p in projects})[0]["plan_family"]
+        initial = analysis.build_exploratory_combos(
+            projects, projects, {p["id"] for p in projects})
+        blocked = {combo["plan_family"]: {} for combo in initial}
 
         combos = analysis.build_exploratory_combos(
             projects, projects, {p["id"] for p in projects},
-            blocked_families={family})
+            blocked_families=blocked)
+
+        self.assertEqual(combos, [])
+
+    def test_prefers_today_complement_then_low_reuse_history(self):
+        today_agent = self.project("owner/today-agent", {"agent": 6},
+                                   "Agent 编排框架。", stars=500)
+        today_rag = self.project("owner/today-rag", {"rag": 1},
+                                 "今日知识检索接口。", stars=1)
+        history_rag = self.project("owner/history-rag", {"rag": 9},
+                                   "历史知识检索接口。", stars=5000)
+        frequent_document = self.project("owner/frequent-document", {"document": 6},
+                                         "常用文档解析接口。", stars=5000)
+        fresh_document = self.project("owner/fresh-document", {"document": 5},
+                                      "新鲜文档解析接口。", stars=10)
+        projects = [today_agent, today_rag, history_rag,
+                    frequent_document, fresh_document]
+
+        combos = analysis.build_exploratory_combos(
+            projects, [today_agent, today_rag],
+            {today_agent["id"], today_rag["id"]},
+            reuse_counts={frequent_document["id"]: 3},
+        )
+
+        combo = next(c for c in combos if c["anchor_id"] == today_agent["id"])
+        selected_ids = {p["id"] for p in combo["picks"].values()}
+        self.assertIn(today_rag["id"], selected_ids)
+        self.assertIn(fresh_document["id"], selected_ids)
+        self.assertNotIn(history_rag["id"], selected_ids)
+        self.assertNotIn(frequent_document["id"], selected_ids)
+
+    def test_no_connected_pool_components_returns_empty(self):
+        today = self.project("owner/today-gateway", {"gateway": 6},
+                             "模型网关接口。", stars=500)
+        history = [
+            self.project("owner/history-memory", {"memory": 5},
+                         "长期记忆接口。", stars=300),
+            self.project("owner/history-sandbox", {"sandbox": 5},
+                         "隔离执行接口。", stars=100),
+        ]
+
+        combos = analysis.build_exploratory_combos(
+            [today] + history, [today], {today["id"]}, reuse_counts={})
+
+        self.assertEqual(combos, [])
+
+    def test_deploy_only_anchor_cannot_start_a_direction(self):
+        """只有部署形态定位的今日项目不在主数据流里，不能作为探索锚点。"""
+        today_local = self.project("owner/today-local", {"local": 6},
+                                   "本地优先桌面助手。", stars=900)
+        history = [
+            self.project("owner/history-agent", {"agent": 6},
+                         "Agent 编排框架。", stars=500),
+            self.project("owner/history-rag", {"rag": 5},
+                         "知识库检索。", stars=300),
+        ]
+
+        combos = analysis.build_exploratory_combos(
+            [today_local] + history, [today_local], {today_local["id"]}, reuse_counts={})
 
         self.assertEqual(combos, [])
 
@@ -551,14 +654,20 @@ class DualTrackRenderingTests(unittest.TestCase):
 
     def test_render_exposes_track_and_machine_readable_business_semantics(self):
         project = self.project("owner/tool", {"agent": 5}, "任务闭环工具。")
+        history = self.project("owner/history", {"rag": 5}, "历史检索工具。")
+        combo = self.combo("exploratory", project)
+        combo["anchor_id"] = project["id"]
+        combo["picks"]["历史检索"] = history
 
-        report = self.render(self.combo("exploratory", project), project)
+        report = self.render(combo, project)
 
         self.assertIn("**业务轨道**：探索方向（待验证）", report)
         self.assertIn("`track=exploratory`", report)
         self.assertIn("`problem=资料散落各处，答案没有出处可查`", report)
         self.assertIn("**方案判断**：", report)
-        self.assertIn("探索方向：由今日锚点直接拼接", report)
+        self.assertIn("（探索方向待验证）", report)
+        self.assertIn("另有 1 个互补组件来自最近 90 天项目池", report)
+        self.assertNotIn("组件全部来自今日日报", report)
 
     def test_render_marks_mature_track_without_validation_notice(self):
         project = self.project("owner/tool", {"agent": 5}, "任务闭环工具。")
@@ -568,7 +677,7 @@ class DualTrackRenderingTests(unittest.TestCase):
         report = self.render(combo, project)
 
         self.assertIn("**业务轨道**：成熟方向（组件供给已核对）", report)
-        self.assertNotIn("探索方向：由今日锚点直接拼接", report)
+        self.assertNotIn("探索方向待验证", report)
 
     def test_render_states_when_no_plan_qualified(self):
         report = analysis.render([], [], [], "2026-09-14", "2026-06-16",
@@ -599,6 +708,18 @@ class ClosureGateTests(unittest.TestCase):
         self.assertFalse(flow["ok"])
         self.assertIn("仅标签相关", flow["reason"])
         self.assertIn(blank["repo"], flow["reason"])
+
+    def test_rejects_indexes_and_other_non_executable_content(self):
+        steps = plan_steps([("document", "文档解析"), ("rag", "检索"),
+                            ("agent", "编排")])
+        index = steps[0][2]
+        index["repo"] = index["id"] = "owner/awesome-tools"
+        index["fields"]["tagline"] = "开源工具资源索引。"
+
+        flow = analysis.combo_flow(steps)
+
+        self.assertFalse(flow["ok"])
+        self.assertIn("非执行组件", flow["reason"])
 
     def test_rejects_duplicate_capability_faces(self):
         steps = plan_steps([("agent", "编排 A"), ("agent", "编排 B"),
@@ -745,7 +866,7 @@ class ExperimentAndEvidenceTests(unittest.TestCase):
         self.assertTrue(experiment["stop"])
         self.assertTrue(any("停止" in item for item in experiment["stop"]))
 
-    def test_report_prints_the_experiment_and_uncertainty_blocks(self):
+    def test_report_prints_the_experiment_block_and_next_actions(self):
         combo = self.combo()
         report = analysis.render([combo["picks"]["文档解析"]], [], [combo],
                                  "2026-09-14", "2026-06-16", "2026-09-14", 1, 0, None)
@@ -753,18 +874,20 @@ class ExperimentAndEvidenceTests(unittest.TestCase):
         for label in ("- 测试场景：", "- 测试数据：", "- 周期：", "- 成功指标：",
                       "- 失败指标：", "- 停止条件："):
             self.assertIn(label, report)
-        self.assertIn("**最大不确定性**：", report)
         self.assertIn("**下一步动作**：", report)
+        self.assertNotIn("核验 2-3 个核心组件", report)
+        self.assertNotIn("**最大不确定性**：", report)
+        self.assertNotIn("**客户问题**：", report)
 
     def test_demand_statements_carry_evidence_levels(self):
         combo = self.combo()
         report = analysis.render([], [], [combo], "2026-09-14", "2026-06-16",
                                  "2026-09-14", 1, 0, None)
 
-        self.assertIn("**需求证据**", report)
-        self.assertIn("【项目方自述】", report)
+        self.assertIn("**需求证据**：", report)
+        self.assertIn("（最高等级：项目方自述）", report)
         self.assertIn("【待验证假设】", report)
-        self.assertIn("【无证据】", report)
+        self.assertNotIn("- 【项目方自述】", report)
 
     def test_templates_and_report_avoid_unfounded_claims(self):
         for tpl in analysis.TEMPLATES:
@@ -812,8 +935,9 @@ class ReportStructureTests(unittest.TestCase):
         combo = self.combo()
         report = analysis.render([], [], [combo], "2026-09-14", "2026-06-16",
                                  "2026-09-14", 1, 0, None)
-        order = ["## 今日结论", "**方案判断**：", "**客户问题**：", "**组件数据流**",
-                 "**双评分**：", "**MVP 实验**：", "**最大不确定性**：", "**下一步动作**："]
+        order = ["## 今日结论", "**方案判断**：", "**业务定位**：", "**目标客户**：",
+                 "**市场机会**：", "**需求证据**：", "**组合依据**：", "**组合方案**：",
+                 "**双评分**：", "**MVP 实验**：", "**下一步动作**："]
         positions = [report.index(marker) for marker in order]
 
         self.assertEqual(positions, sorted(positions))
@@ -825,6 +949,14 @@ class ReportStructureTests(unittest.TestCase):
         self.assertNotIn("## 单点项目机会", report)
         self.assertNotIn("## 行动建议", report)
         self.assertNotIn("优先推进评分最高的组合", report)
+
+    def test_machine_metadata_is_visible_in_rendered_markdown(self):
+        report = analysis.render([], [], [self.combo()], "2026-09-14", "2026-06-16",
+                                 "2026-09-14", 1, 0, None)
+
+        self.assertIn("**方案身份**：", report)
+        self.assertIn("**业务语义**：", report)
+        self.assertNotIn("<!-- **", report)
 
     def test_zero_plan_report_lists_skipped_and_dropped_candidates(self):
         report = analysis.render([], [], [], "2026-09-14", "2026-06-16", "2026-09-14",

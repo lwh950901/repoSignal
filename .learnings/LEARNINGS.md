@@ -1,5 +1,33 @@
 # Learnings
 
+## [LRN-20260921-001] correction
+
+**Logged**: 2026-09-21T20:30:00+08:00
+**Priority**: high
+**Status**: resolved
+**Area**: backend
+
+### Summary
+可行性方案扩大内部候选池不等于授权扩大公开报告内容；算法变更应默认保持输出合同与阅读密度不变。
+
+### Details
+用户要求解决可行性方向过少和重复问题，确认了“今日锚点 + 最近 90 天池互补组件”的候选机制。实现时未经逐项确认，又把该机制写入报告简介、业务定位、市场机会、组合依据和差异化，造成同一内部过程反复出现。用户纠正的重点是报告多出不必要内容，而不是方案数量或组合算法。正确边界是：候选来源、复用惩罚和锚点规则属于内部选择逻辑；公开正文只保留业务结论、必要证据和一次组件说明，除非用户明确要求，否则不得因算法变化新增解释段落或重复来源分类。
+
+### Suggested Action
+恢复并锁定原报告输出合同；删除“探索池如何工作”的重复可见文案，组件来源只在一个既有字段中简短标识。以后修改生成算法时先做输出 diff，任何新增字段、段落或重复信息都单独列出并获得确认。
+
+### Metadata
+- Source: user_feedback
+- Related Files: scripts/opportunity_analysis.py, data/github-project-digest/feasibility/KUN-TASK.md, data/github-project-digest/feasibility/2026-09-21.md
+- Tags: feasibility, output-contract, scope-control, correction
+- Pattern-Key: feasibility.algorithm_change_preserve_output_contract
+
+### Resolution
+- **Resolved**: 2026-09-21T21:20:00+08:00
+- **Notes**: 已按“以今天之前（今晨提交）为准”全量回归可见输出：移除探索池文案，简介、元数据、组件表恢复今晨形态；组件来源只在「组合依据」一处简短标注。`KUN-TASK.md` 与 Kun 定时任务提示词同步；纯内部机制（池组装、解析修复、非执行过滤）保留。78 项 unittest 通过，当日报告已重出。
+
+---
+
 ## [LRN-20260809-005] correction
 
 **Logged**: 2026-08-09T16:12:13+08:00
@@ -565,3 +593,31 @@ W37 的“本地优先 · 多模型 · Agent 工作台”已有源报告提供�
 - Source: conversation
 - Related Files: docs/automation-prompts/github-daily.md, scripts/daily_digest_checkpoint.py, src/lib/digests.ts
 - Pattern-Key: harden.automation-prompt-sync
+
+---
+
+## [LRN-20260921-002] correction
+
+**Logged**: 2026-09-21T00:00:00+08:00
+**Priority**: critical
+**Status**: resolved
+**Area**: config
+
+### Summary
+用户要求优化定时任务文案时，只能修改任务配置，不得据此重写报告或生成器。
+
+### Details
+本次把“优化任务”错误扩大成了“修改报告格式、生成器与测试”，并直接重写了当天报告。任务提示词、执行程序和生成产物是三个不同作用域；除非用户明确授权，优化任务内容不代表授权修改程序或重做产物。
+
+### Suggested Action
+收到“优化任务/定时任务内容”时，先锁定任务配置文件或 automation prompt；不得修改生成脚本、测试和既有报告。若任务文案要求的输出与程序不一致，只指出差异并等待单独授权。
+
+### Metadata
+- Source: user_feedback
+- Related Files: data/github-project-digest/feasibility/KUN-TASK.md
+- Tags: scope, automation, prompt, feasibility
+- Pattern-Key: harden.task-scope-boundary
+
+### Resolution
+- **Resolved**: 2026-09-21T00:00:00+08:00
+- **Notes**: 撤销报告、生成器和测试的越界修改，仅保留任务文案优化。

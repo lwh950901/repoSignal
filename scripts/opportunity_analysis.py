@@ -27,7 +27,8 @@
   3c. 方案判断四档：值得用户访谈 / 值得技术试验 / 继续观察 / 暂不建议。
      "暂不建议"的方案不进列表，只在今日结论里计数并说明原因。
   4. 双轨产出：每天 0-3 个方案 = 最多 1 个成熟方向（固定模板，evidence_status=
-     supply-checked）+ 最多 2 个探索方向（今日锚点 + ≥2 个互补组件，to-validate）；
+     supply-checked）+ 最多 2 个探索方向（今日可执行锚点 + 最近 90 天池内
+     ≥2 个互补组件，to-validate）；
      没有合格探索方向时允许少于 3 个，0 个方案时报告明确写“本轮无合格方案”。
   5. 跨日去重：同一 plan_family 冷却 7-14 天（COOLDOWN_MIN_DAYS ~ COOLDOWN_DAYS）。
      冷却期内无条件跳过；冷却中段只有新增关键组件、证据等级提升或客户问题变化
@@ -49,6 +50,7 @@ import sys
 import urllib.error
 import urllib.request
 from datetime import date, datetime, timedelta
+from itertools import combinations
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -71,7 +73,7 @@ REPO_LINE_RE = re.compile(
 FIELD_LINE_RE = re.compile(r"^-\s*([^：:]{1,14})[：:]\s*(.*)$")
 DAILY_SECTION_RE = re.compile(
     r"^###\s+(?:(?P<num>\d+)\.\s*)?"
-    r"(?:(?P<kind>额外发现|爆发型|实用型|潜力型|学习型)[：:]\s*)?"
+    r"(?:(?P<kind>额外发现|爆发型|实用型|潜力型|学习型|可复用型)[：:]\s*)?"
     r"(?P<repo>[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+)"
     r"(?:\s*[—–-]\s*(?P<score>\d+)/100)?"
 )
@@ -595,7 +597,7 @@ PORTFOLIO_OVERLAP_PENALTY = 8
 MIN_TECH_SCORE = 70          # 技术组合成熟度合格线（低于此不进方案列表）
 OVERLAP_TOLERANCE = 1        # 允许共享的组件数：少量重叠不淘汰真正不同的方向
 MAX_MATURE_PLANS = 1         # 每天最多 1 个成熟方向（固定模板）
-MAX_EXPLORATORY_PLANS = 2    # 每天最多 2 个探索方向（今日锚点拼接，待验证）
+MAX_EXPLORATORY_PLANS = 2    # 每天最多 2 个探索方向（今日锚点 + 90 天池互补组件）
 MIN_PLAN_COMPONENTS = 3      # 闭环门槛：起点 + 处理 + 终点，至少 3 个组件
 COOLDOWN_MIN_DAYS = 7        # 冷却前段：同一 plan_family 无条件跳过
 COOLDOWN_DAYS = 14           # 冷却总长：超过后自然重新合格
@@ -644,6 +646,8 @@ NEUTRAL_QUALITY = 70  # 来源报告无评分时的中性基线
 PERMISSIVE_LICENSES = ("MIT", "Apache-2.0", "BSD-", "MPL-2.0")
 HIGH_RISK_WORDS = ("越狱", "jailbreak", "凭据", "credential", "合规",
                    "未验证", "不可信", "alpha", "beta", "快速迭代")
+NON_EXECUTABLE_MARKERS = ("awesome list", "资源索引", "工具索引", "项目索引",
+                          "纯内容", "内容型", "教程")
 
 # 组件数据流（闭环门槛用）：每个能力面的输入与输出。
 CAPABILITY_IO = {
@@ -762,6 +766,15 @@ def interface_evidence(p):
     return ""
 
 
+def is_executable_project(p):
+    """资源索引、Awesome List、教程和纯内容仓库不当作可运行组件。"""
+    text = " ".join([p.get("repo", "")] + [str(value) for value in p.get("fields", {}).values()])
+    lowered = text.lower()
+    repo_name = p.get("repo", "").rsplit("/", 1)[-1].lower()
+    return not (repo_name.startswith("awesome-")
+                or any(marker in lowered for marker in NON_EXECUTABLE_MARKERS))
+
+
 def combo_flow(steps):
     """组合闭环门槛：把 (能力面, 角色, 项目) 拼成一条可连接的数据流。
 
@@ -774,6 +787,10 @@ def combo_flow(steps):
     if len(steps) < MIN_PLAN_COMPONENTS:
         return {"ok": False, "steps": [],
                 "reason": "组件少于 {} 个，构不成完整数据流".format(MIN_PLAN_COMPONENTS)}
+    non_executable = [p["repo"] for _, _, p in steps if not is_executable_project(p)]
+    if non_executable:
+        return {"ok": False, "steps": [],
+                "reason": "非执行组件（索引/教程/纯内容）：" + "、".join(sorted(non_executable))}
     tags = [tag for tag, _, _ in steps]
     missing = [p["repo"] for _, _, p in steps if not interface_evidence(p)]
     if missing:
@@ -840,7 +857,8 @@ def combo_flow(steps):
 
 def pick_best(projects, tag, exclude, today_ids, reuse_counts=None):
     reuse_counts = reuse_counts or {}
-    cands = [p for p in projects if p["id"] not in exclude and p["tags"].get(tag, 0) > 0]
+    cands = [p for p in projects if p["id"] not in exclude
+             and p["tags"].get(tag, 0) > 0 and is_executable_project(p)]
     if not cands:
         return None
     # 维护滞后项目整体排在健康项目之后；近期反复入选的组件逐次扣分，
@@ -1004,6 +1022,20 @@ def top_tag(p):
     """项目能力面最高分的标签；同分时取 TAG_RULES 中靠前的标签，保证确定性。"""
     order = {t: i for i, t in enumerate(TAG_RULES)}
     return max(p["tags"].items(), key=lambda kv: (kv[1], -order.get(kv[0], 99)))[0]
+
+
+def flow_top_tag(p):
+    """项目在主数据流里的最高分能力面：跳过部署形态面（DEPLOY_FACES）。
+
+    今日锚点必须参与主数据流，只有部署形态定位的项目不能作探索锚点，
+    因此这里可能返回空串，由调用方跳过。
+    """
+    order = {t: i for i, t in enumerate(TAG_RULES)}
+    faces = [(tag, value) for tag, value in p["tags"].items()
+             if value > 0 and tag not in DEPLOY_FACES]
+    if not faces:
+        return ""
+    return max(faces, key=lambda kv: (kv[1], -order.get(kv[0], 99)))[0]
 
 
 # 组合命名（展示层）：名称 = <场景限定> · <差异化能力> · <业务主体>，三段均来自能力面，
@@ -1270,16 +1302,20 @@ def business_family(customer_id, problem_id, outcome_id):
     return "biz-" + _stable_digest("\n".join((customer_id, problem_id, outcome_id)))
 
 
-def exploratory_business(faces, supply=None):
+def exploratory_business(faces, supply=None, primary_tag=None):
     """探索方向的业务语义：客户取场景面，客户问题与预期结果取差异化能力面。
 
+    primary_tag 用于今日锚点驱动的探索方向：客户问题与预期结果必须由今日锚点
+    决定，90 天池中的历史组件只能补齐数据流，不能改变业务身份。
     返回的语义是待验证假设（evidence_status=to-validate），不代表需求已成立。
     """
     core_tag, scene_tag, cap_tag = anchor_face_segments(faces, supply)
-    primary = cap_tag or core_tag or "agent"
+    primary = primary_tag if primary_tag in BUSINESS_PROBLEMS else cap_tag or core_tag or "agent"
     problem = BUSINESS_PROBLEMS[primary]
-    customer = BUSINESS_CUSTOMERS.get(scene_tag) or BUSINESS_CUSTOMERS.get(core_tag, {})
-    delivery = BUSINESS_DELIVERY.get(scene_tag) or BUSINESS_DELIVERY.get(core_tag, {})
+    customer = (BUSINESS_CUSTOMERS.get(primary_tag) if primary_tag else None) \
+        or BUSINESS_CUSTOMERS.get(scene_tag) or BUSINESS_CUSTOMERS.get(core_tag, {})
+    delivery = (BUSINESS_DELIVERY.get(primary_tag) if primary_tag else None) \
+        or BUSINESS_DELIVERY.get(scene_tag) or BUSINESS_DELIVERY.get(core_tag, {})
     return {
         "customer_id": customer.get("id", BUSINESS_CUSTOMER_FALLBACK["id"]),
         "customer": customer.get("text", BUSINESS_CUSTOMER_FALLBACK["text"]),
@@ -1500,9 +1536,6 @@ def next_actions(combo):
     else:
         actions.append("先补证据：找 3 位「{}」做问题访谈，或从日报/周报里找可引用信号"
                        .format(business.get("customer", "目标客户")))
-    actions.append("核验 2-3 个核心组件：许可证、维护状态、来源报告里的真实风险")
-    actions.append("实验结束后把结论写回 feedback.jsonl，并把该方向送入 {} 天冷却期"
-                   .format(COOLDOWN_DAYS))
     return actions
 
 
@@ -1536,41 +1569,52 @@ def finalize_combo(combo, steps, feedback, run_date):
         "judgment_reason": reason,
         "experiment": build_experiment(combo),
         "uncertainty": max_uncertainty(combo, evidence),
-        "actions": next_actions(combo),
     })
+    combo["actions"] = next_actions(combo)
     # 兼容旧字段：score/score_parts 现为技术组合成熟度的别名，选择器仍用它排序
     combo["score"] = tech
     combo["score_parts"] = tech_parts
     return combo
 
 
+def _exploratory_pick(projects, tag, exclude, today_ids, reuse_counts):
+    """为探索组合选一个组件：同能力面先选今日项目，不足时才使用 90 天池。"""
+    eligible = [p for p in projects if p["id"] not in exclude
+                and p["tags"].get(tag, 0) > 0
+                and is_executable_project(p) and interface_evidence(p) and _combo_role(p)]
+    today = [p for p in eligible if p["id"] in today_ids]
+    return pick_best(today or eligible, tag, exclude, today_ids, reuse_counts)
+
+
 def build_exploratory_combos(projects, today_projects, today_ids, blocked_families=None,
                             limit=MAX_EXPLORATORY_PLANS, feedback=None, run_date=None,
-                            rejected=None):
-    """生成探索方向（最多 limit 个）：1 个今日锚点 + ≥2 个互补组件，全部来自今日日报。
+                            rejected=None, reuse_counts=None):
+    """生成探索方向：每个今日可执行项目作种子，由最近 90 天池补齐数据流。
 
-    方向以"最能区分的能力面"为种子（池内覆盖率最低优先），每个种子给出一个业务
-    语义（客户问题 + 预期结果）；同一业务语义只保留评分最高的一个，避免同一方向
-    换标题重复出现。探索方向一律标注待验证，且必须通过闭环门槛。
+    今日锚点决定客户问题与业务身份，必须参与主数据流（只有部署形态定位的项目
+    不能作锚点），历史组件只能补齐缺失能力面。所有候选仍需通过既有闭环门槛；
+    没有可连接补充组件时返回空，不为了凑数放宽标准。
     """
     blocked_families = blocked_families or {}
     run_date = run_date or date.today().isoformat()
     feedback = feedback if feedback is not None else []
-    anchors = [p for p in today_projects if p["tags"] and _combo_role(p)]
-    if len(anchors) < 3:
-        return []              # 需要 1 个锚点 + ≥2 个互补组件
-    anchors.sort(key=lambda p: (p["stars"], p["id"]), reverse=True)
-    supply = {t: sum(1 for p in projects if t in p["tags"]) for t in TAG_RULES}
-    seed_faces = sorted({top_tag(p) for p in anchors},
-                        key=lambda t: (supply.get(t, 0), ANCHOR_CORE_PRIORITY.index(t)))
+    reuse_counts = reuse_counts or {}
+    eligible_pool = [p for p in projects
+                     if p["tags"] and _combo_role(p) and interface_evidence(p)
+                     and is_executable_project(p)]
+    anchors = [p for p in today_projects
+               if p["id"] in today_ids and p in eligible_pool and flow_top_tag(p)]
+    if not anchors:
+        return []
+    supply = {tag: sum(1 for p in eligible_pool if p["tags"].get(tag, 0) > 0)
+              for tag in TAG_RULES}
+    anchors.sort(key=lambda p: (supply.get(flow_top_tag(p), 0), -p["stars"], p["id"]))
     candidates = []
     seen_keys = set()
-    for seed_face in seed_faces[:6]:
-        combo = _exploratory_combo(projects, anchors, seed_face, today_ids, supply,
-                                  feedback, run_date)
-        if combo is None:
-            continue
-        if combo["plan_family"] in blocked_families:
+    for seed in anchors:
+        combo = _exploratory_combo(projects, seed, today_ids, supply, feedback, run_date,
+                                   reuse_counts)
+        if combo is None or combo["plan_family"] in blocked_families:
             continue
         key = business_key(combo["business"])
         if key and key in seen_keys:
@@ -1578,65 +1622,80 @@ def build_exploratory_combos(projects, today_projects, today_ids, blocked_famili
         if key:
             seen_keys.add(key)
         candidates.append(combo)
-    # 稳定排序：技术组合成熟度 → 今日锚点数 → 组件数 → Stars → 名称
-    candidates.sort(key=lambda c: (c["tech_score"], c["today_count"], c["total"],
-                                c["stars"], c["name"]), reverse=True)
+    candidates.sort(key=lambda c: (c["tech_score"], c["today_count"],
+                                   -c["recent_reuse_count"], c["total"],
+                                   c["stars"], c["name"]), reverse=True)
     return candidates[:limit]
 
 
-def _exploratory_combo(projects, anchors, seed_face, today_ids, supply, feedback=None,
-                      run_date=None):
-    """按一个能力面种子拼一个探索方向：种子锚点 + 尽可能互补的今日组件。
-
-    闭环门槛不通过时返回 None，并把原因记到 combo 上供调用方统计。
-    """
+def _exploratory_combo(projects, seed, today_ids, supply, feedback=None, run_date=None,
+                      reuse_counts=None):
+    """围绕一个今日项目枚举 3–5 个能力面的连通组合，返回最高质量候选。"""
     run_date = run_date or date.today().isoformat()
-    seed = next(p for p in anchors if top_tag(p) == seed_face)
-    steps = [(seed_face, _combo_role(seed), seed)]
-    covered = {seed_face}
-    used_ids = {seed["id"]}
-    for p in anchors:          # anchors 已按 Stars + id 排序，结果确定
-        tag = top_tag(p)
-        if tag in covered or p["id"] in used_ids:
-            continue
-        role = _combo_role(p)
-        if not role:           # 没有真实定位的项目无法说明接口，不参与组合
-            continue
-        while any(role == existing for _, existing, _ in steps):
-            role += "（二）"
-        steps.append((tag, role, p))
-        covered.add(tag)
-        used_ids.add(p["id"])
-        if len(steps) >= 5:
-            break
-    if len(steps) < MIN_PLAN_COMPONENTS:
-        return None            # 必须有 ≥2 个互补组件
+    reuse_counts = reuse_counts or {}
+    seed_face = flow_top_tag(seed)
+    if not seed_face:
+        return None
+    available_faces = [tag for tag in TAG_RULES if tag != seed_face
+                       and any(p["id"] != seed["id"] and p["tags"].get(tag, 0) > 0
+                               and is_executable_project(p) and interface_evidence(p)
+                               and _combo_role(p) for p in projects)]
+    candidates = []
+    for complement_count in range(2, min(4, len(available_faces)) + 1):
+        for complement_faces in combinations(available_faces, complement_count):
+            steps = [(seed_face, _combo_role(seed), seed)]
+            used_ids = {seed["id"]}
+            for tag in complement_faces:
+                project = _exploratory_pick(projects, tag, used_ids, today_ids, reuse_counts)
+                if project is None:
+                    break
+                role = _combo_role(project)
+                while any(role == existing for _, existing, _ in steps):
+                    role += "（二）"
+                steps.append((tag, role, project))
+                used_ids.add(project["id"])
+            if len(steps) != complement_count + 1:
+                continue
+            combo = _make_exploratory_combo(steps, seed, seed_face, today_ids, supply,
+                                            feedback, run_date, reuse_counts)
+            if combo is not None:
+                candidates.append(combo)
+    if not candidates:
+        return None
+    return max(candidates, key=lambda c: (c["tech_score"], c["today_count"],
+                                          -c["recent_reuse_count"], c["total"],
+                                          c["stars"], c["variant"]))
+
+
+def _make_exploratory_combo(steps, seed, seed_face, today_ids, supply, feedback, run_date,
+                            reuse_counts):
     slot_tags = [tag for tag, _, _ in steps]
     faces = frozenset(slot_tags)
-    supply_by_face = {t: sum(1 for p in projects if t in p["tags"]) for t in set(slot_tags)}
+    supply_by_face = {tag: supply.get(tag, 0) for tag in faces}
     min_supply = min(supply_by_face.values())
-    today_count = len(steps)
-    business = exploratory_business(faces, supply)
+    today_count = sum(1 for _, _, p in steps if p["id"] in today_ids)
+    history_count = len(steps) - today_count
+    business = exploratory_business(faces, supply, primary_tag=seed_face)
     name = anchor_plan_name(faces, supply)
-    roles_text = "、".join("{}（`{}`）".format(role, p["repo"]) for _, role, p in steps)
     combo = {
         "name": name,
         "origin": "anchor",
         "track": TRACK_EXPLORATORY,
         "business": business,
-        "pitch": "按'{}'方向，把今日新发现的 {} 个项目先拼成可试用组合：{}。"
-                  "方向与需求都待验证，先各自试用、记录产出，再判断能否打通。".format(
-                      name, len(steps), roles_text),
+        "anchor_id": seed["id"],
+        "anchor_face": seed_face,
+        "pitch": "按'{}'方向，把今日锚点与互补组件先拼成可试用组合；"
+                 "方向与需求都待验证，先各自试用、记录产出，再判断能否打通。".format(
+                     name),
         "target": business["customer"],
-        "market": "【待验证假设】客户问题：{}；预期结果：{}。【已确认事实】今日 {} 个锚点分属 {} 等能力面，"
-                   "池中对应候选 {} 个——这只说明组件可拼装，不代表市场需求成立；"
-                   "先小范围试用再判断。".format(
-                       business["problem"], business["expected_outcome"], len(steps),
-                       "、".join(TAG_CN[t] for t in slot_tags if t in TAG_CN), min_supply),
-        "differentiation": "完全由今日新发现驱动，组件全部来自今日日报；与固定模板方向不同，"
-                           "属于待验证的探索方向。",
-        "rationale": "全部组件来自今日日报，能力面尽量互补（{} 个）；该方向未经过市场验证，"
-                      "先按业务语义里的客户问题做小范围试用。".format(len(faces)),
+        "market": "【待验证假设】客户问题：{}；预期结果：{}。【已确认事实】今日锚点与互补组件分属 {} 等能力面，"
+                  "池中对应候选 {} 个——这只说明组件可拼装，不代表市场需求成立；"
+                  "先小范围试用再判断。".format(
+                      business["problem"], business["expected_outcome"],
+                      "、".join(TAG_CN[t] for t in slot_tags if t in TAG_CN), min_supply),
+        "differentiation": "完全由今日锚点驱动；与固定模板方向不同，属于待验证的探索方向。",
+        "rationale": "能力面尽量互补（{} 个）；该方向未经过市场验证，"
+                     "先按业务语义里的客户问题做小范围试用。".format(len(faces)),
         "mvp": "先分别试用各组件并记录可用产出，再打通 {} 之间的最小数据流或协作流；"
                "其余按试用反馈取舍。".format(
                    "、".join("`{}`".format(p["repo"]) for _, _, p in steps[:3])),
@@ -1646,8 +1705,9 @@ def _exploratory_combo(projects, anchors, seed_face, today_ids, supply, feedback
         "total": len(steps),
         "today_count": today_count,
         "stars": sum(p["stars"] for _, _, p in steps),
+        "recent_reuse_count": sum(reuse_counts.get(p["id"], 0) for _, _, p in steps),
+        "steps": steps,
     }
-    combo["steps"] = steps
     repositories = [p["id"] for _, _, p in steps]
     combo["plan_family"] = business_family(business["customer_id"], business["problem_id"],
                                            business["outcome_id"])
@@ -1760,7 +1820,8 @@ def llm_enhance(projects, combos, no_llm):
         "2) ## 多项目组合开发方案：1-3 个（组合清单、各项目分工、MVP 边界、主要风险）。\n"
         "要求：不得虚构不存在的项目；不要重复我已列出的组合（除非补充新理由）；"
         "不得使用刚需、愿意付费、市场已验证等无来源结论，需求表述必须标注证据等级"
-        "（已确认事实/项目方自述/待验证假设/无证据）；允许说“本轮无合格方向”；"
+        "（已确认事实/项目方自述/待验证假设/无证据）；"
+        "允许说“本轮无合格方向”；"
         "用中文，输出 Markdown。"
     )
     body = {
@@ -1831,34 +1892,12 @@ def render(projects, today_projects, combos, run_date, cutoff, anchor_date,
     A = L.append
     A(f"# GitHub 项目组合可行性方案｜{run_date}")
     A("")
-    A("> 由定时任务自动生成（`scripts/opportunity_analysis.py`）：以今日日报项目为锚点、"
-      "结合最近 90 天项目池拼出的多项目组合可行性研究草稿；不包含代码，不是公开结论，"
-      "落地前需逐个组件复核。")
-    A("> 输入：今日锚点 `daily/{}.md`（{} 个项目）；组合池：最近 90 天（{} ~ {}）"
-      "{} 个唯一项目（日报 {} 份 / 周报 {} 份）。方案 0-3 个：最多 1 个成熟方向"
-      "（固定模板命中）+ 最多 2 个探索方向（今日锚点拼接，待验证）；"
-      "不足不补，允许当天没有合格方案。".format(
-          anchor_date, len(today_projects), cutoff, run_date,
-          n, n_daily_files, n_weekly_files))
-    A("> 阅读顺序：今日结论 → 方案判断 → 客户问题 → 组件数据流 → 双评分 → "
-      "MVP 实验 → 最大不确定性 → 下一步动作。")
-    A("> 闭环门槛：每个方案必须给出可连接的组件数据流、每个组件的输入输出与接入方式；"
-      "仅标签相关（缺接口依据、能力面重复、数据流不连通）的组合不构成方案。")
-    A("> 双评分（0-100，确定性规则，两者不合并）："
-      "技术组合成熟度 = 组件可靠度 40 · 组件供给 20 · 风险敞口 20 · 许可证 10 · 完整度 10；"
-      "需求证据强度 = 证据等级 40 · 用户明确表态 25 · 独立来源 20 · 新鲜度 15。"
-      "组件成熟不等于商业可行。")
-    A("> 证据等级：已确认事实 / 项目方自述 / 待验证假设 / 无证据；需求与市场表述按等级标注，"
-      "不使用刚需、愿意付费等无来源结论。")
-    A("> 方案判断四档：值得用户访谈 / 值得技术试验 / 继续观察 / 暂不建议；"
-      "“暂不建议”不列入方案列表，只在今日结论里计数。")
-    A("> 冷却规则：同一 plan_family 冷却 {}–{} 天；冷却中段只有新增关键组件、"
-      "证据等级提升或客户问题变化才提前重现。".format(COOLDOWN_MIN_DAYS, COOLDOWN_DAYS))
-    A("> 验证路径（固定）：每个组件按来源报告的'上手建议/真实风险'复核"
-      "（固定版本、隔离环境、自有数据复测）。")
-    if any(c.get("track") == TRACK_EXPLORATORY for c in combos):
-        A("> 探索方向：由今日锚点直接拼接，组件全部来自今日日报；已标注为待验证，"
-          "只说明组件可拼装，不代表市场需求成立。")
+    A("> 自动生成的组合研究草稿：以今日日报 `daily/{}.md`（{} 个项目）为锚点，"
+      "结合最近 90 天项目池，输出 0–3 个多项目组合方向{}；不是公开结论，"
+      "落地前逐个组件复核。".format(
+          anchor_date, len(today_projects),
+          "（探索方向待验证）" if any(c.get("track") == TRACK_EXPLORATORY
+                                      for c in combos) else ""))
     A("")
     A("## 今日结论")
     A("")
@@ -1910,51 +1949,27 @@ def render(projects, today_projects, combos, run_date, cutoff, anchor_date,
         business = c.get("business") or {}
         A("**目标客户**：{}".format(c["target"].rstrip("。；，")))
         A("")
-        A("**客户问题**：客户问题「{}」；预期结果「{}」；交付形态 {}。".format(
-            business.get("problem", "未定义"),
-            business.get("expected_outcome", "未定义"),
-            business.get("delivery", "未定义")))
-        A("")
         A("**市场机会**：{}".format(sanitize_claims(c["market"])))
         A("")
         evidence = c.get("demand") or {}
-        A("**需求证据**（{}/100，最高等级：{}）：".format(
-            evidence.get("score", 0), evidence.get("level", EVIDENCE_NONE)))
-        A("")
-        for level in (EVIDENCE_CONFIRMED, EVIDENCE_SELF_REPORTED):
-            for item in evidence.get("confirmed" if level == EVIDENCE_CONFIRMED
-                                     else "self_reported", []):
-                A("- 【{}】{}".format(level, item))
-        for level, text in evidence.get("items", []):
-            if level in (EVIDENCE_HYPOTHESIS, EVIDENCE_NONE):
-                A("- 【{}】{}".format(level, text))
-        A("")
-        A("**组件数据流**（起点 → 处理 → 终点）：")
-        A("")
-        A("| 顺序 | 组件 | 角色 | 输入 | 输出 | 上下游 |")
-        A("|---|---|---|---|---|---|")
-        for idx, step in enumerate(c.get("flow", []), 1):
-            p = step["project"]
-            relations = []
-            if step["upstream"]:
-                relations.append("上游：" + "、".join(step["upstream"]))
-            if step["downstream"]:
-                relations.append("下游：" + "、".join(step["downstream"]))
-            if step["deploy"]:
-                relations.append("部署形态")
-            A("| {} | [`{}`]({}) | {} | {} | {} | {} |".format(
-                idx, p["repo"], p["url"], esc(step["role"]), esc(step["input"]),
-                esc(step["output"]), "；".join(relations) or "—"))
-        A("")
-        A("**接入方式**：{}".format(business.get("delivery", "未定义")))
+        evidence_bits = list(evidence.get("confirmed", [])) + [
+            text for level, text in evidence.get("items", [])
+            if level in (EVIDENCE_HYPOTHESIS, EVIDENCE_NONE)]
+        A("**需求证据**：{}/100（最高等级：{}）；{}。".format(
+            evidence.get("score", 0), evidence.get("level", EVIDENCE_NONE),
+            "；".join(evidence_bits) if evidence_bits else "本轮无访谈证据"))
         A("")
         today_picks = ["`{}`".format(p["repo"]) for p in c["picks"].values()
                        if p["id"] in today_ids]
+        history_picks = [p for p in c["picks"].values() if p["id"] not in today_ids]
         supply_str = " · ".join("{} {}".format(t, c2)
                                  for t, c2 in c["slot_supply"].items())
-        A("**组合依据**：{} 本组合含今日发现项目 {} 个（{}）；"
+        source_note = ""
+        if c.get("track") == TRACK_EXPLORATORY and history_picks:
+            source_note = "，另有 {} 个互补组件来自最近 90 天项目池".format(len(history_picks))
+        A("**组合依据**：{} 本组合含今日发现项目 {} 个（{}）{}；"
           "池中各能力面候选充足（{}），最稀缺槽位也有 {} 个候选。".format(
-              c["rationale"], c["today_count"], "、".join(today_picks),
+              c["rationale"], c["today_count"], "、".join(today_picks), source_note,
               supply_str, c["min_supply"]))
         A("")
         A("**组合方案**：")
@@ -1986,21 +2001,16 @@ def render(projects, today_projects, combos, run_date, cutoff, anchor_date,
         A("- 失败指标：{}".format("；".join(experiment.get("failure", []))))
         A("- 停止条件：{}".format("；".join(experiment.get("stop", []))))
         A("")
-        A("**最大不确定性**：")
-        A("")
-        for line in c.get("uncertainty", []):
-            A("- {}".format(line))
-        A("")
         A("**下一步动作**：")
         A("")
         for idx, action in enumerate(c.get("actions", []), 1):
             A("{}. {}".format(idx, action))
         A("")
         risks = []
-        for role, p in c["picks"].items():
+        for p in c["picks"].values():
             r = (p["fields"].get("risks") or "").strip()
             if r:
-                risks.append("- `{}`（{}）：{}".format(p["repo"], role, first_sentence(r, 100)))
+                risks.append("- `{}`：{}".format(p["repo"], first_sentence(r, 100)))
         if risks:
             A("**主要风险（来源报告）**：")
             A("")
@@ -2058,11 +2068,12 @@ def main(argv=None):
     feedback = load_user_feedback(args.data_root)
     reuse_counts = load_recent_component_counts(args.data_root, args.date)
     rejected = []
-    # 双轨产出：成熟方向（固定模板，先定方向再分配组件）+ 探索方向（今日锚点拼接，待验证）
+    # 双轨产出：成熟方向（固定模板）+ 探索方向（今日锚点 + 90 天池互补组件）
     mature_candidates = build_combos(projects, today_ids, None, reuse_counts,
                                      feedback, args.date, rejected=rejected)
     exploratory_candidates = build_exploratory_combos(projects, today_projects,
                                                      today_ids, None,
+                                                     reuse_counts=reuse_counts,
                                                      feedback=feedback, run_date=args.date,
                                                      rejected=rejected)
     # 冷却判定：冷却期内无条件跳过；冷却中段只有新增关键组件/证据/客户问题才允许提前重现

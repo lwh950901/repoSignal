@@ -1,5 +1,106 @@
 # Errors
 
+## [ERR-20260921-003] perl-css-color-delimiter
+
+**Logged**: 2026-09-21T00:00:00+08:00
+**Priority**: low
+**Status**: resolved
+**Area**: tests
+
+### Summary
+W38 HTML 的机械样式替换使用 `#` 作为 Perl 正则分隔符，与 CSS 十六进制颜色冲突。
+
+### Error
+```text
+Unknown regexp modifier "/0"
+Can't find string terminator '"' anywhere before EOF
+```
+
+### Context
+- 操作：把“介绍”标签改为 `#0b3d66` 并补充表格断词样式。
+- 根因：替换文本自身包含 `#0b3d66`，提前结束了 `s#...#...#g` 表达式。
+- 命令链在第一个替换处终止，W38 HTML 未发生修改。
+
+### Suggested Fix
+涉及 CSS 十六进制颜色的 Perl 替换统一使用 `~` 等不会出现在样式值里的分隔符。
+
+### Metadata
+- Reproducible: yes
+- Related Files: data/weixin/2026-W38.html
+
+### Resolution
+- **Resolved**: 2026-09-21T00:00:00+08:00
+- **Notes**: 改用 `s~pattern~replacement~g` 重新执行。
+
+---
+
+## [ERR-20260921-002] project-skill-rsync-sandbox
+
+**Logged**: 2026-09-21T00:00:00+08:00
+**Priority**: low
+**Status**: resolved
+**Area**: config
+
+### Summary
+同步周刊生成脚本到项目级 `.codex/skills` 时，`rsync` 无法创建临时文件或更新时间戳。
+
+### Error
+```text
+rsync: error: mkstempat: Operation not permitted
+rsync: error: digest-to-html.py: utimensat (2): Operation not permitted
+```
+
+### Context
+- 命令：`rsync -a scripts/digest-to-html.py .codex/skills/wechat-weekly-digest/scripts/digest-to-html.py`
+- 目标位于项目内，但当前沙箱将 `.codex` 目录作为受限读取路径处理。
+- `&&` 阻止了后续批量替换，因此模板和 W38 HTML 当时尚未被修改。
+
+### Suggested Fix
+更新项目级 skill 内容时使用精确的 `apply_patch`，再用 `cmp` 验证同步结果；不要依赖 `rsync` 的临时文件与时间戳写入。
+
+### Metadata
+- Reproducible: yes
+- Related Files: scripts/digest-to-html.py, .codex/skills/wechat-weekly-digest/scripts/digest-to-html.py
+
+### Resolution
+- **Resolved**: 2026-09-21T00:00:00+08:00
+- **Notes**: 使用同一补丁更新主脚本与 skill 副本，后续通过 `cmp` 验证一致。
+
+---
+
+## [ERR-20260921-001] wechat-html-audit-shell-quoting
+
+**Logged**: 2026-09-21T00:00:00+08:00
+**Priority**: low
+**Status**: resolved
+**Area**: tests
+
+### Summary
+微信 HTML 最终审计的一条内联 Python 命令因 shell 单引号嵌套失败。
+
+### Error
+```text
+zsh:14: unmatched '
+```
+
+### Context
+- 操作：组合正文一致性校验与 HTML 样式计数。
+- 根因：`python3 -c` 的单引号脚本中又包含了单引号字符串。
+- 失败发生在命令解析阶段，没有修改项目内容，也没有产出可用的校验结论。
+
+### Suggested Fix
+复杂的多行 Python 审计应使用无嵌套引号的临时脚本或 heredoc，避免继续压缩为 shell 单行命令。
+
+### Metadata
+- Reproducible: yes
+- Related Files: data/weixin/2026-W38.html
+
+### Resolution
+- **Resolved**: 2026-09-21T00:00:00+08:00
+- **Notes**: 改用独立临时审计脚本重新执行最终核对。
+
+---
+
 ## [ERR-20260702-001] github_project_scan
 
 **Logged**: 2026-07-02T08:32:31+08:00
