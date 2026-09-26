@@ -1,12 +1,16 @@
 {
-  "attempt": 1,
-  "candidateCount": 61,
+  "attempt": 2,
+  "candidateCount": 65,
   "date": "2026-09-24",
-  "deadlineAt": "2026-09-23T22:38:19+00:00",
+  "deadlineAt": "2026-09-26T08:54:17+00:00",
   "errors": [],
-  "lastProgressAt": "2026-09-23T21:08:38+00:00",
-  "stage": "shortlist_ready",
-  "startedAt": "2026-09-23T21:08:19+00:00",
-  "updatedAt": "2026-09-23T21:10:02+00:00",
-  "verifiedCount": 0
+  "historyEntries": 396,
+  "lastProgressAt": "2026-09-26T07:45:36+00:00",
+  "previousStartedAt": "2026-09-23T21:08:19+00:00",
+  "report": "daily/2026-09-24.md",
+  "selectedCount": 3,
+  "stage": "complete",
+  "startedAt": "2026-09-26T07:24:17+00:00",
+  "updatedAt": "2026-09-26T07:45:36+00:00",
+  "verifiedCount": 3
 }

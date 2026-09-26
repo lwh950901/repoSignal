@@ -1,8 +1,8 @@
 {
-  "attempt": 1,
-  "candidateCount": 12,
+  "attempt": 2,
+  "candidateCount": 16,
   "date": "2026-09-26",
-  "deadlineAt": "2026-09-25T22:30:49+00:00",
+  "deadlineAt": "2026-09-26T08:54:17+00:00",
   "errors": [
     "growth: Tip: set GITHUB_TOKEN=<token> for higher GitHub API limits.\nGitHub API rate limit reached; reset at 2026-09-25T21:01:22+00:00. Set GITHUB_TOKEN for higher limits or retry later. Use --wait-on-rate-limit to wait automatically.",
     "mature: Tip: set GITHUB_TOKEN=<token> for higher GitHub API limits.\nGitHub API rate limit reached; reset at 2026-09-25T21:01:22+00:00. Set GITHUB_TOKEN for higher limits or retry later. Use --wait-on-rate-limit to wait automatically.",
@@ -10,9 +10,13 @@
     "learning_rag: Tip: set GITHUB_TOKEN=<token> for higher GitHub API limits.\nGitHub API rate limit reached; reset at 2026-09-25T21:01:22+00:00. Set GITHUB_TOKEN for higher limits or retry later. Use --wait-on-rate-limit to wait automatically.",
     "developer_tools: Tip: set GITHUB_TOKEN=<token> for higher GitHub API limits.\nGitHub API rate limit reached; reset at 2026-09-25T21:01:22+00:00. Set GITHUB_TOKEN for higher limits or retry later. Use --wait-on-rate-limit to wait automatically."
   ],
-  "lastProgressAt": "2026-09-25T21:01:08+00:00",
-  "stage": "shortlist_ready",
-  "startedAt": "2026-09-25T21:00:49+00:00",
-  "updatedAt": "2026-09-25T21:01:15+00:00",
-  "verifiedCount": 0
+  "historyEntries": 402,
+  "lastProgressAt": "2026-09-26T07:45:37+00:00",
+  "previousStartedAt": "2026-09-25T21:00:49+00:00",
+  "report": "daily/2026-09-26.md",
+  "selectedCount": 3,
+  "stage": "complete",
+  "startedAt": "2026-09-26T07:24:17+00:00",
+  "updatedAt": "2026-09-26T07:45:37+00:00",
+  "verifiedCount": 3
 }

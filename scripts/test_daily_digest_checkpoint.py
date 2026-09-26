@@ -334,6 +334,46 @@ class DailyDigestCheckpointTest(unittest.TestCase):
 
         self.assertEqual("complete", result["stage"])
 
+    def test_finalize_allows_explicit_shortage_report_without_picks(self):
+        self.write_candidates()
+        draft = self.root / "shortage.md"
+        picks = self.root / "shortage.json"
+        draft.write_text(
+            f"# GitHub 优质项目每日发现｜{DATE}\n\n"
+            "> 今日重点：候选不足，今天没有达到主推荐门槛的项目。\n\n"
+            "## 今日结论\n\n候选不足：已核验的项目未达到质量门槛。\n\n"
+            "## 主推荐\n\n今日暂无符合条件的主推荐。\n\n"
+            "## 今天最值得亲自试用\n\n今日暂无建议试用的项目。\n",
+            encoding="utf-8",
+        )
+        picks.write_text("[]\n", encoding="utf-8")
+
+        self.assertEqual(0, checkpoint.preflight_run(DATE, self.root, draft, picks)["selectedCount"])
+        result = checkpoint.finalize_run(DATE, self.root, draft, picks)
+
+        self.assertEqual("complete", result["stage"])
+        self.assertEqual([], result["missing"])
+        self.assertEqual(0, result["selectedCount"])
+        self.assertEqual("", (self.root / "history.jsonl").read_text(encoding="utf-8"))
+
+    def test_shortage_report_requires_explanation_and_allows_one_verified_pick(self):
+        self.write_candidates()
+        draft = self.root / "partial.md"
+        picks = self.root / "partial.json"
+        partial = report_text(slots=["学习型"], repos=[REPOS[3]]).replace(
+            "## 今日结论\n\n测试。",
+            "## 今日结论\n\n爆发型位置阻塞；候选不足：仅一项达到主推荐门槛。",
+        )
+        draft.write_text(partial, encoding="utf-8")
+        picks.write_text(
+            json.dumps([selection(REPOS[3], "学习型", 1)], ensure_ascii=False),
+            encoding="utf-8",
+        )
+
+        self.assertEqual("complete", checkpoint.finalize_run(DATE, self.root, draft, picks)["stage"])
+        with self.assertRaisesRegex(checkpoint.ValidationError, "候选不足"):
+            checkpoint.validate_report(partial.replace("候选不足", "已筛选"), DATE)
+
     def test_finalize_rejects_unapproved_recent_duplicate(self):
         self.write_candidates()
         prior = {

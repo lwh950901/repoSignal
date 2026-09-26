@@ -324,11 +324,19 @@ def validate_report(text: str, run_date: str) -> list[dict[str, Any]]:
                 f"主推荐标题格式错误：{heading}；应为 ### 1. 类型：owner/repo — 85/100"
             )
     matches = list(HEADING_RE.finditer(section))
-    if not 4 <= len(matches) <= 5:
-        raise ValidationError(f"正式推荐数量必须为 4–5，实际识别 {len(matches)} 项")
+    if len(matches) > 5:
+        raise ValidationError(f"正式推荐数量最多为 5，实际识别 {len(matches)} 项")
+    if len(matches) < 4:
+        conclusion = text.split("## 今日结论", 1)[-1].split("\n## ", 1)[0]
+        if "候选不足" not in conclusion:
+            raise ValidationError("少于 4 项主推荐时，今日结论必须说明候选不足")
 
     slots = [match.group("slot") for match in matches]
-    if BURST_BLOCKED_MARKER in text:
+    if len(matches) < 4:
+        allowed = BLOCKED_BURST_SLOTS if BURST_BLOCKED_MARKER in text else EXPECTED_SLOTS
+        if slots != [slot for slot in allowed if slot in slots]:
+            raise ValidationError("候选不足时，推荐类型必须按固定顺序且不得重复")
+    elif BURST_BLOCKED_MARKER in text:
         if slots != BLOCKED_BURST_SLOTS:
             raise ValidationError("爆发型位置阻塞时，推荐顺序必须为实用型、潜力型、学习型、可复用型")
     elif slots != EXPECTED_SLOTS[: len(slots)] + (["可复用型"] if len(slots) == 5 else []):
@@ -411,9 +419,11 @@ def inspect_run(run_date: str, root: Path) -> dict[str, Any]:
     candidate_repos = {_norm_repo(item.get("repo")) for item in candidates}
     recent = [repo for repo in _recent_repos(run_date, history) if repo in candidate_repos]
     report_items: list[dict[str, Any]] = []
+    report_valid = False
     if report_path.exists():
         try:
             report_items = validate_report(report_path.read_text(encoding="utf-8"), run_date)
+            report_valid = True
         except (OSError, ValidationError) as exc:
             errors.append(str(exc))
     else:
@@ -421,7 +431,7 @@ def inspect_run(run_date: str, root: Path) -> dict[str, Any]:
 
     stage = "needs_discovery" if not candidates else "candidates_ready"
     selected_count = 0
-    if report_items:
+    if report_valid:
         stage = "report_ready"
         report_repos = {item["repo_norm"] for item in report_items}
         selected = {
@@ -467,8 +477,8 @@ def inspect_run(run_date: str, root: Path) -> dict[str, Any]:
 
 def _load_selections(path: Path) -> list[dict[str, Any]]:
     value = _read_json(path)
-    if not isinstance(value, list) or not 4 <= len(value) <= 5:
-        raise ValidationError("选择 JSON 必须是包含 4–5 项的数组")
+    if not isinstance(value, list) or len(value) > 5:
+        raise ValidationError("选择 JSON 必须是包含 0–5 项的数组")
     if not all(isinstance(item, dict) for item in value):
         raise ValidationError("选择 JSON 的每一项必须是对象")
     return value

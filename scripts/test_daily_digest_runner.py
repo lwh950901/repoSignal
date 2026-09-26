@@ -250,7 +250,7 @@ mode = os.environ.get('FAKE_SCANNER_MODE', 'ok')
 if mode == 'tls_once' and '--insecure' not in args:
     print('certificate verify failed', file=sys.stderr)
     raise SystemExit(1)
-if mode == 'all_fail' or (mode == 'partial' and 'robotics' in query):
+if mode == 'all_fail' or (mode == 'partial' and 'local ai' in query):
     print('GitHub API error 403: rate limit', file=sys.stderr)
     raise SystemExit(1)
 slug = hashlib.sha1(query.encode()).hexdigest()[:10]
@@ -286,6 +286,28 @@ print(json.dumps([{
             return []
         return [json.loads(line) for line in self.log.read_text().splitlines()]
 
+    def test_scanner_environment_uses_valid_keychain_token_without_printing_it(self):
+        responses = [
+            runner.subprocess.CompletedProcess([], 0, "", ""),
+            runner.subprocess.CompletedProcess([], 0, "private-token\n", ""),
+        ]
+        captured = StringIO()
+        with patch.dict(os.environ, {"GH_TOKEN": "stale", "GITHUB_TOKEN": "stale"}):
+            with patch.object(runner.subprocess, "run", side_effect=responses) as calls:
+                with redirect_stdout(captured):
+                    scanner_env = runner._scanner_environment()
+
+        self.assertEqual("private-token", scanner_env["GITHUB_TOKEN"])
+        self.assertNotIn("GH_TOKEN", calls.call_args_list[0].kwargs["env"])
+        self.assertNotIn("GITHUB_TOKEN", calls.call_args_list[0].kwargs["env"])
+        self.assertEqual("", captured.getvalue())
+
+    def test_scanner_environment_rejects_invalid_keychain_login(self):
+        failure = runner.subprocess.CompletedProcess([], 1, "", "invalid token")
+        with patch.object(runner.subprocess, "run", return_value=failure):
+            with self.assertRaisesRegex(RuntimeError, "gh auth login"):
+                runner._scanner_environment()
+
     def ledger(self):
         path = self.root / "candidates" / f"{DATE}.jsonl"
         return [json.loads(line) for line in path.read_text().splitlines()]
@@ -300,6 +322,11 @@ print(json.dumps([{
         self.assertEqual(6, len(self.calls()))
         observed_lanes = {lane for item in self.ledger() for lane in item["lanes"]}
         self.assertEqual(set(runner.DISCOVERY_QUERIES), observed_lanes)
+
+    def test_discovery_queries_cover_distinct_project_families(self):
+        queries = " ".join(runner.DISCOVERY_QUERIES.values()).lower()
+        for topic in ("coding agent", "workflow automation", "mcp server", "llm evaluation", "local ai"):
+            self.assertIn(topic, queries)
 
     def test_tls_error_retries_once_with_insecure(self):
         result = runner.discover(

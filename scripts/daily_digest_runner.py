@@ -30,12 +30,12 @@ SLOT_LANES = {
 }
 UNCLEAR_LICENSES = {"", "NOASSERTION", "OTHER", "UNKNOWN", "NONE"}
 DISCOVERY_QUERIES = {
-    "growth": "agent workflow stars:>5000 pushed:>={recent60} archived:false",
-    "mature": "self-hosted automation stars:>1000 pushed:>={recent90} archived:false",
-    "emerging": "AI application created:>={recent60} stars:>200 archived:false",
-    "learning_rag": "RAG learning agent pushed:>={recent180} archived:false",
-    "developer_tools": "developer tool AI pushed:>={recent90} archived:false",
-    "cross_domain": "robotics edge AI pushed:>={recent90} archived:false",
+    "growth": "coding agent stars:>5000 pushed:>={recent60} archived:false",
+    "mature": "workflow automation stars:>1000 pushed:>={recent90} archived:false",
+    "emerging": "ai agents framework stars:>200 pushed:>={recent60} archived:false",
+    "learning_rag": "llm evaluation stars:>100 pushed:>={recent180} archived:false",
+    "developer_tools": "mcp server stars:>100 pushed:>={recent90} archived:false",
+    "cross_domain": "local ai stars:>100 pushed:>={recent90} archived:false",
 }
 DEFAULT_SCANNER = (
     Path.home()
@@ -305,6 +305,40 @@ def _discover_lane(
     return {"lane": lane, "items": items, "error": None}
 
 
+def _scanner_environment() -> dict[str, str]:
+    """Pass the current GitHub CLI login only to this scanner run."""
+    auth_env = dict(os.environ)
+    auth_env.pop("GH_TOKEN", None)
+    auth_env.pop("GITHUB_TOKEN", None)
+    try:
+        status = subprocess.run(
+            ["gh", "auth", "status", "-h", "github.com"],
+            capture_output=True,
+            text=True,
+            timeout=15,
+            env=auth_env,
+            check=False,
+        )
+        if status.returncode != 0:
+            raise RuntimeError("GitHub CLI 登录无效；请运行 gh auth login -h github.com")
+        credential = subprocess.run(
+            ["gh", "auth", "token", "-h", "github.com"],
+            capture_output=True,
+            text=True,
+            timeout=15,
+            env=auth_env,
+            check=False,
+        )
+    except (OSError, subprocess.TimeoutExpired) as exc:
+        raise RuntimeError("无法读取 GitHub CLI 登录；请运行 gh auth login -h github.com") from exc
+    token = credential.stdout.strip()
+    if credential.returncode != 0 or not token:
+        raise RuntimeError("GitHub CLI 令牌不可用；请运行 gh auth login -h github.com")
+    scanner_env = dict(auth_env)
+    scanner_env["GITHUB_TOKEN"] = token
+    return scanner_env
+
+
 def discover(
     run_date: str,
     data_root: Path,
@@ -328,6 +362,11 @@ def discover(
     remaining_seconds = (deadline - datetime.now(timezone.utc)).total_seconds()
     if remaining_seconds <= 0:
         raise RuntimeError("90 分钟截止时间已到，禁止开始发现")
+    try:
+        scanner_env = env if env is not None else _scanner_environment()
+    except RuntimeError as exc:
+        checkpoint.record_progress(run_date, root, "authentication_failed", error=str(exc))
+        raise
     per_lane_timeout = max(1.0, min(float(timeout_seconds), remaining_seconds))
     values = _query_values(run_date)
     queries = {
@@ -338,7 +377,7 @@ def discover(
     with ThreadPoolExecutor(max_workers=len(queries)) as executor:
         futures = {
             executor.submit(
-                _discover_lane, lane, query, scanner, per_lane_timeout, env, deadline
+                _discover_lane, lane, query, scanner, per_lane_timeout, scanner_env, deadline
             ): lane
             for lane, query in queries.items()
         }

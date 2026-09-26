@@ -621,3 +621,26 @@ W37 的“本地优先 · 多模型 · Agent 工作台”已有源报告提供�
 ### Resolution
 - **Resolved**: 2026-09-21T00:00:00+08:00
 - **Notes**: 撤销报告、生成器和测试的越界修改，仅保留任务文案优化。
+## [LRN-20260926-001] correction
+
+**Logged**: 2026-09-26T15:48:14+08:00
+**Priority**: high
+**Status**: resolved
+**Area**: backend
+
+### Summary
+补档候选去重必须把历史仓库名统一转成小写，预检应在正式落盘前运行。
+
+### Details
+GitHub 搜索结果使用小写 owner/repo，历史账本保留原大小写。临时人工筛选只对新仓库名做了 lower，导致三个已在 90 天内推荐过的项目被误判为新项目；`daily_digest_checkpoint.py preflight` 正确拦下并替换了它们。
+
+### Suggested Action
+比较仓库名时两侧都做大小写规范化，按日期计算 90 天窗口；历史日报必须先 preflight，再 finalize。
+
+### Metadata
+- Source: error
+- Related Files: data/github-project-digest/history.jsonl, scripts/daily_digest_checkpoint.py
+- Tags: github, deduplication, backfill
+- Pattern-Key: harden.github-repo-normalization
+
+---

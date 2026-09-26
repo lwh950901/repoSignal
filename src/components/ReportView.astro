@@ -40,7 +40,8 @@ const introHtml = report.introduction ? marked.parse(report.introduction) as str
       </div>
     ) : (
       <div class="empty-state">
-        <p>这期报告暂时没有可结构化展示的项目。</p>
+        <p>{report.type === "daily" ? report.theme : "这期报告暂时没有可结构化展示的项目。"}</p>
+        {report.type === "daily" && introHtml && <div class="prose" set:html={introHtml}></div>}
         <details>
           <summary>阅读原始报告</summary>
           <div class="prose" set:html={report.html}></div>

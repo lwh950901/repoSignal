@@ -42,7 +42,7 @@ class DailyAutomationContractTest(unittest.TestCase):
             "daily_digest_runner.py shortlist",
             "最多 6 条",
             "每条最多 12 个",
-            "只对最终 4–5 项",
+            "只对最终最多 5 项",
             "每项最多 2 个",
             "4,000 tokens",
             "15 分钟",
@@ -76,6 +76,12 @@ class DailyAutomationContractTest(unittest.TestCase):
         self.assertRegex(self.text, r"不自动补跑|禁止自动补跑")
         self.assertIn("日报自动化的职责在 finalize 和验证完成后结束", self.text)
         self.assertRegex(self.text, r"resume[^\n]*(?:人工|手动)|(?:人工|手动)[^\n]*resume")
+
+    def test_prompt_uses_local_auth_and_completes_shortage_reports(self):
+        self.assertIn("通过 `gh auth status/token` 校验并读取本机认证", self.text)
+        self.assertIn("令牌仅传入扫描器进程", self.text)
+        self.assertIn("候选不足时允许 0–3 项", self.text)
+        self.assertIn("仍需完成日报", self.text)
 
     def test_prompt_pins_frontend_compatible_report_fields(self):
         self.assertIn("> 今日重点：", self.text)
