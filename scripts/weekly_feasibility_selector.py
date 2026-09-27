@@ -15,6 +15,9 @@ except ImportError:  # Direct execution from scripts/.
 
 
 SCORE_RE = re.compile(r"\*\*方案评分\*\*[：:]\*\*(\d+)/100（([^）]+)）\*\*")
+DUAL_SCORE_RE = re.compile(
+    r"\*\*双评分\*\*[：:]\s*技术组合成熟度\s*\*\*(\d+)/100（([^）]+)）\*\*"
+)
 HEADING_RE = re.compile(r"^###\s+(?:可行性方案\s+\d+[：:]\s*|\d+\.\s+)(.+)$", re.MULTILINE)
 MIN_SCORE = 70
 MAX_PLANS = 3
@@ -57,7 +60,7 @@ def _plan_blocks(markdown):
 
 def _parse_candidate(block, source_date):
     heading = HEADING_RE.search(block)
-    score_match = SCORE_RE.search(block)
+    score_match = DUAL_SCORE_RE.search(block) or SCORE_RE.search(block)
     if not heading or not score_match:
         return None
     identity = analysis.parse_plan_identities("## 可行性方案\n" + block)[0]
@@ -72,18 +75,21 @@ def _parse_candidate(block, source_date):
     }
 
 
-def _prior_families(week, data_root):
+def _prior_families(week, data_root, history_families_by_variant=None):
     families = set()
     weeks_read = []
+    history_families_by_variant = history_families_by_variant or {}
     for prior_week in _previous_weeks(week):
         path = data_root / "radar" / f"{prior_week}.md"
         if not path.is_file() or not path.read_text(encoding="utf-8").strip():
             continue
         weeks_read.append(prior_week)
-        families.update(
-            item["family"]
-            for item in analysis.parse_plan_identities(path.read_text(encoding="utf-8"))
-        )
+        for item in analysis.parse_plan_identities(path.read_text(encoding="utf-8")):
+            history_families = history_families_by_variant.get(item["variant"], set())
+            if item["family"].startswith("custom-") and len(history_families) == 1:
+                families.update(history_families)
+            else:
+                families.add(item["family"])
     return families, weeks_read
 
 
@@ -123,6 +129,23 @@ def _select_portfolio(candidates):
 def select_weekly_plans(week, data_root):
     data_root = Path(data_root)
     dates = [day.isoformat() for day in _week_dates(week)]
+    prior_dates = {
+        day.isoformat()
+        for prior_week in _previous_weeks(week)
+        for day in _week_dates(prior_week)
+    }
+    history_by_variant = {}
+    prior_history_families_by_variant = {}
+    history_path = data_root / "feasibility" / "plan-history.jsonl"
+    if history_path.is_file():
+        for line in history_path.read_text(encoding="utf-8").splitlines():
+            if not line.strip():
+                continue
+            record = json.loads(line)
+            if record.get("date") in dates and record.get("variant") and record.get("family"):
+                history_by_variant[(record["date"], record["variant"])] = record["family"]
+            if record.get("date") in prior_dates and record.get("variant") and record.get("family"):
+                prior_history_families_by_variant.setdefault(record["variant"], set()).add(record["family"])
     candidates = []
     dates_read = []
     for source_date in dates:
@@ -133,14 +156,21 @@ def select_weekly_plans(week, data_root):
         if not markdown.strip():
             continue
         dates_read.append(source_date)
-        candidates.extend(
-            candidate
-            for block in _plan_blocks(markdown)
-            if (candidate := _parse_candidate(block, source_date)) is not None
-        )
+        for block in _plan_blocks(markdown):
+            candidate = _parse_candidate(block, source_date)
+            if candidate is None:
+                raise ValueError(
+                    f"{source_date}: 无法解析可行性方案评分：{block.splitlines()[0]}"
+                )
+            candidate["family"] = history_by_variant.get(
+                (source_date, candidate["variant"]), candidate["family"]
+            )
+            candidates.append(candidate)
 
     deduplicated = _deduplicate_current(candidates)
-    prior_families, prior_weeks_read = _prior_families(week, data_root)
+    prior_families, prior_weeks_read = _prior_families(
+        week, data_root, prior_history_families_by_variant
+    )
     blocked_families = sorted({
         candidate["family"] for candidate in deduplicated
         if candidate["family"] in prior_families

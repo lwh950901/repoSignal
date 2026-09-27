@@ -48,12 +48,12 @@
 
 - **节引言**：`## 本周可行性精选` 后的第一段用导语样式（14px、`#5c6b7a`、margin 10px 0）
 - **方案标题**（`### 可行性方案 N：…`）：17px、`#0b3d66`、`border-left:4px solid #ff7a1a`、padding-left 10px、margin 26px 0 10px（与 h2 同族、字号小一档）
-- **方案评分**：标签黑色加粗；值做成深蓝胶囊（白字、background `#0b3d66`、border-radius 999px、padding 2px 12px、15px）；所在段 margin 10px 0 6px
+- **方案评分 / 方案判断**：标签黑色加粗；值做成深蓝胶囊（白字、background `#0b3d66`、border-radius 999px、padding 2px 12px、15px）；所在段 margin 10px 0 6px。新版周报用 `**方案判断**：值得技术试验。…` 代替评分行时，把判断值（首个句号/左括号之前）做成同一胶囊，后续数字与说明保持正文文字
 - **组合方案表 → 真表格**（不再用卡片；`<table width:100% border-collapse:collapse cellpadding=0 cellspacing=0`、13px、margin 10px 0）：
   - 表头行 `<th>`：深海蓝底 `#0b3d66`、白字 13px 加粗、左对齐、`border 1px solid #0b3d66`、padding 5px 6px
-  - 列宽：按表头语义推断——角色 13% / 项目 20% / 来源 15% / 许可证 10%（写在每行同名单元格内联 `width`），**入选理由列自动拿剩余宽度**（5 列时 42%，3 列精简表 67%）；「今日锚点组合」把项目定位整句写进角色列（最长约 60 字），此时角色列自动改用 35%（超过 20 字即触发，见 `ROLE_WIDE`/`ROLE_LABEL_MAX`），避免被压成竖排窄条并撑高整行。所以 3/4/5 列表都能紧凑显示；微信若过滤 width 则退回内容自适应
+  - 列宽：按表头语义推断——表头含「角色」（如 `角色`、`试验角色`）算角色列 13% / 项目 20% / 来源 15% / 许可证 10%（写在每行同名单元格内联 `width`），**其余列自动归入理由列并拿走剩余宽度**（5 列时 42%，3 列精简表 67%，`试验角色/项目/首先验证什么` 也是 13/20/67）；「今日锚点组合」把项目定位整句写进角色列（最长约 60 字），此时角色列自动改用 35%（超过 20 字即触发，见 `ROLE_WIDE`/`ROLE_LABEL_MAX`），避免被压成竖排窄条并撑高整行。所以 3/4/5 列表都能紧凑显示；微信若过滤 width 则退回内容自适应
   - 数据行 `<td>`：`border 1px solid #e9eef4`、padding 5px 6px、`vertical-align:top`、`word-break:break-all`（防长仓库名/日期撑破窄屏，表格不横向溢出）
-  - 列内语义：角色 13px 信号橙加粗；项目等宽字体 13px 深海蓝；来源 12px `#8a95a1`；许可证单元格内为细边框小标签（`border 1px solid #d9e1ea`、12px、radius 4px、padding 2px 6px）；理由 13px 正文色
+  - 列内语义：角色 13px 信号橙加粗（含 `试验角色`）；项目等宽字体 13px 深海蓝；来源 12px `#8a95a1`；许可证单元格内为细边框小标签（`border 1px solid #d9e1ea`、12px、radius 4px、padding 2px 6px）；理由 13px 正文色
   - 表头文字（角色 项目 来源 许可证 入选理由）即 md 表头行；全部单元格文本顺序与 md 逐行一致
 - **风险条目**（行首 `- `）：保留 `-` 字形，包成橙色加粗 span（`color:#ff7a1a;font-weight:bold;margin-right:8px`），其余 15px `#1c2733`、margin 8px 0；行首空格由 margin 承担，不新增圆点等符号
 - 可行性区内的行内代码与正文一致（Menlo/Consolas、background `#eef3f7`、15px）

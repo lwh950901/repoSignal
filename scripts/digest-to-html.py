@@ -36,6 +36,7 @@ CODE = '<code style="font-family:Menlo,Consolas,monospace;background:#eef3f7;bor
 FEAS_H3 = ('<h3 style="font-size:17px;font-weight:bold;color:#0b3d66;border-left:4px solid #ff7a1a;'
            'padding-left:10px;margin:26px 0 10px;">{}</h3>')
 SCORE_P = '<p style="margin:10px 0 6px;"><strong>方案评分</strong>：{}</p>'
+JUDGE_P = '<p style="margin:10px 0 6px;"><strong>方案判断</strong>：{}</p>'
 SCORE_VAL = ('<strong style="color:#fff;background:#0b3d66;border-radius:999px;padding:2px 12px;'
              'font-size:15px;">{}</strong>')
 RISK_ITEM = ('<p style="margin:8px 0;font-size:15px;color:#1c2733;">'
@@ -176,7 +177,7 @@ def col_plan(header, data_rows=()):
     一条竖排窄条、把整行撑到半个屏：该列内容超过 ROLE_LABEL_MAX 字时改用 ROLE_WIDE。"""
     plan = []
     for h in header:
-        if h == '角色':
+        if '角色' in h:  # 角色 / 试验角色
             plan.append('role')
         elif h == '项目':
             plan.append('name')
@@ -337,6 +338,14 @@ def main():
         elif line.startswith('**适合：**'):
             close_card()
             out.append(P.format('<strong>适合：</strong> ' + inline(line[len('**适合：**'):].lstrip())))
+            feas_intro = False
+        elif line.startswith('**方案判断**'):
+            # **方案判断**：值得技术试验。… -> 判断值做成与方案评分同族的胶囊
+            close_card()
+            val = line[len('**方案判断**'):].lstrip().lstrip('：').lstrip()
+            m = re.match(r'([^。（(]+)', val)
+            body = SCORE_VAL.format(m.group(1)) + inline(val[m.end():]) if m else inline(val)
+            out.append(JUDGE_P.format(body))
             feas_intro = False
         elif line.startswith('**方案评分**'):
             # **方案评分**：**83/100（中）** -> 值高亮为徽章样式

@@ -1,4 +1,4 @@
-import { readFile } from "node:fs/promises";
+import { readFile, readdir } from "node:fs/promises";
 import assert from "node:assert/strict";
 
 const issues = new Map([
@@ -24,6 +24,12 @@ for (const [week, projectCount] of issues) {
   assert.doesNotMatch(issueHtml, /SITE_BASE_URL|utm_/iu);
   assert.doesNotMatch(issueHtml, /reportType&quot;:&quot;radar|reportType":"radar/iu);
 }
-assert.match(indexHtml, /href="\/radar\/2026-W31\/">打开最新一期 2026-W31<\/a>/u);
+const latestWeek = (await readdir(new URL("../data/github-project-digest/radar/", import.meta.url)))
+  .filter((name) => /^\d{4}-W\d{2}\.md$/u.test(name))
+  .sort()
+  .at(-1)
+  ?.replace(/\.md$/u, "");
+assert.ok(latestWeek, "at least one radar issue exists");
+assert.ok(indexHtml.includes(`href="/radar/${latestWeek}/">打开最新一期 ${latestWeek}</a>`));
 
 console.log(`Radar build output verified: /radar/ and ${issues.size} weekly issues.`);

@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>开源雷达周刊 2026-W39（微信排版版）</title>
+<!--
+════════════════════════════════════════════════════════════
+发布前操作清单（以下内容不进入正文）
+1. 标题（三选一，≤30 字）：
+   A. 每周 10 个开源项目｜先挑一件具体的事动手试
+   B. 开源雷达 2026-W39：十个工具，先跑起来再接入
+   C. ComfyUI、MCP 与代码图谱：本周 10 个开源项目
+2. 摘要（勾选原创后可填，120 字内）：
+   这期 10 个项目覆盖模型应用、视觉生成、长任务、工具接入与代码检索：方向各不相同，但都能先挑一件具体的事动手试，再决定要不要接入现有系统；文末附 1 个本周可行性方案。
+3. 封面图：上传 public/covers/repository-radar-weekly-subtitle.png
+   （大封面 900×383，小封面另裁 1:1 方图）
+4. 发布时删除正文中两个【发布前删除】占位框
+5. 后台「阅读原文」指向完整周报页面 URL（如已部署）
+6. 勾选「原创」，添加话题标签：#开源项目 #开发者工具 #AI 编程
+正文文字由脚本自动生成，与原版周报逐字一致（已通过 verify-text.sh 校验）。
+════════════════════════════════════════════════════════════
+-->
+</head>
+<body style="margin:0;padding:0;">
+
+<button id="copyArticleBtn" style="position:fixed;right:20px;bottom:24px;z-index:9999;font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;font-size:14px;color:#fff;background:#ff7a1a;border:none;border-radius:999px;padding:10px 18px;box-shadow:0 4px 12px rgba(255,122,26,.35);cursor:pointer;">一键复制全文</button>
+
+<section style="font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;color:#1c2733;font-size:16px;line-height:1.9;letter-spacing:0.5px;max-width:680px;margin:0 auto;padding:24px 16px;">
+
+<section style="border:2px dashed #c9d4e8;border-radius:8px;background:#f7f9fc;color:#7a8aa5;font-size:14px;text-align:center;padding:18px 12px;margin-bottom:20px;">
+【发布前删除】封面图占位：上传 public/covers/repository-radar-weekly-subtitle.png<br>
+大封面 900×383，小封面另裁 1:1 方图（注意小封面会裁中间）
+</section>
+
+<h1 style="font-size:22px;font-weight:bold;color:#0b3d66;margin:0 0 24px;">开源雷达周刊</h1>
+<p style="font-size:15px;font-weight:bold;color:#0b3d66;margin:12px 0 14px;"><strong>本期标题：</strong> 十个开源工具把自动化做成可试用流程</p>
+<p style="font-size:14px;color:#5c6b7a;margin:10px 0;">这期的十个项目覆盖模型应用、视觉生成、长任务、工具接入、代码理解、移动端测试、设备运维和学术检索。方向各不相同，但都可以先挑一件具体的事动手试，再决定要不要接入现有系统。</p>
+<p style="font-size:14px;color:#5c6b7a;margin:10px 0;">开发团队可以重点检查权限、重试、配置和数据边界；个人开发者则可以从单个工具或样例入手，控制试用成本。</p>
+<h2 style="font-size:18px;font-weight:bold;color:#0b3d66;border-left:4px solid #ff7a1a;padding-left:10px;margin:30px 0 6px;">一、模型应用与视觉工作流</h2>
+<h3 style="font-size:17px;font-weight:bold;color:#1c2733;margin:22px 0 4px;"><span style="display:inline-block;width:26px;height:26px;line-height:26px;text-align:center;border-radius:50%;background:#ff7a1a;color:#fff;font-size:15px;font-weight:bold;margin-right:6px;">1.</span> <span style="color:#0b3d66;">LangChain</span></h3>
+<p style="margin:10px 0;"><strong style="color:#0b3d66;">介绍：</strong> LangChain 是面向应用开发者的 Python LLM 应用与 Agent 组件框架，提供模型、工具、检索和编排等可组合抽象。</p>
+<p style="margin:10px 0;"><strong>推荐依据：</strong> 文档、组件测试和生态信号比较完整，本周还有可核验的 Fireworks 集成发布。正在选 Python LLM 应用框架的话，可以把它放进第一轮对比。</p>
+<p style="margin:10px 0;"><strong>适合：</strong> 需要从模型接入、工具调用和检索能力开始搭建 LLM 应用，并希望渐进决定是否引入更复杂编排的 Python 开发者。</p>
+<p style="font-size:15px;color:#5c6b7a;background:#eef3f7;border-left:3px solid #c7d3de;padding:10px 12px;margin:10px 0;"><strong style="color:#999;">注意：</strong> 组件与提供方版本变化较快，外部模型调用可能产生费用并传输数据；应锁定依赖，先做小规模兼容性验证。</p>
+<h3 style="font-size:17px;font-weight:bold;color:#1c2733;margin:22px 0 4px;"><span style="display:inline-block;width:26px;height:26px;line-height:26px;text-align:center;border-radius:50%;background:#ff7a1a;color:#fff;font-size:15px;font-weight:bold;margin-right:6px;">2.</span> <span style="color:#0b3d66;">ComfyUI</span></h3>
+<p style="margin:10px 0;"><strong style="color:#0b3d66;">介绍：</strong> ComfyUI 是面向视觉创作者和应用开发者的本地生成工作流引擎，用节点图编排图像、视频、音频和 3D 任务，并提供 API。</p>
+<p style="margin:10px 0;"><strong>推荐依据：</strong> 节点图、工作流模板、自定义节点和 API 形成了成熟的直接使用路径，能把生成过程保存、复用并接入应用。</p>
+<p style="margin:10px 0;"><strong>适合：</strong> 想把图像、视频或其他生成任务组织成可观察流程，并愿意在本地试验模型与节点组合的创作者和开发者。</p>
+<p style="font-size:15px;color:#5c6b7a;background:#eef3f7;border-left:3px solid #c7d3de;padding:10px 12px;margin:10px 0;"><strong style="color:#999;">注意：</strong> 模型会占用显存和磁盘空间；第三方模型与自定义节点各自带有许可和供应链风险，非稳定分支也可能破坏节点兼容性。</p>
+<h2 style="font-size:18px;font-weight:bold;color:#0b3d66;border-left:4px solid #ff7a1a;padding-left:10px;margin:30px 0 6px;">二、可控的任务与工具连接</h2>
+<h3 style="font-size:17px;font-weight:bold;color:#1c2733;margin:22px 0 4px;"><span style="display:inline-block;width:26px;height:26px;line-height:26px;text-align:center;border-radius:50%;background:#ff7a1a;color:#fff;font-size:15px;font-weight:bold;margin-right:6px;">3.</span> <span style="color:#0b3d66;">Trigger.dev</span></h3>
+<p style="margin:10px 0;"><strong style="color:#0b3d66;">介绍：</strong> Trigger.dev 是面向 TypeScript 开发者的后台任务与持久化工作流平台，可执行可重试、可排队、可观测的长时间 AI 或业务任务。</p>
+<p style="margin:10px 0;"><strong>推荐依据：</strong> 托管和自托管路径都清楚，长任务、重试、幂等、队列和人工介入对应可靠自动化常见的工程问题。</p>
+<p style="margin:10px 0;"><strong>适合：</strong> 需要把会失败、需要恢复或等待外部事件的 TypeScript 任务从普通脚本迁入持久化工作流的团队。</p>
+<p style="font-size:15px;color:#5c6b7a;background:#eef3f7;border-left:3px solid #c7d3de;padding:10px 12px;margin:10px 0;"><strong style="color:#999;">注意：</strong> 托管试用依赖平台账号；自托管要维护数据库、运行环境和密钥，生产前必须验证重试、幂等、超时与成本边界。</p>
+<h3 style="font-size:17px;font-weight:bold;color:#1c2733;margin:22px 0 4px;"><span style="display:inline-block;width:26px;height:26px;line-height:26px;text-align:center;border-radius:50%;background:#ff7a1a;color:#fff;font-size:15px;font-weight:bold;margin-right:6px;">4.</span> <span style="color:#0b3d66;">FastMCP</span></h3>
+<p style="margin:10px 0;"><strong style="color:#0b3d66;">介绍：</strong> FastMCP 是面向 Python 开发者的 MCP Server、Client 和交互式应用框架，可将普通 Python 函数包装成可调用工具。</p>
+<p style="margin:10px 0;"><strong>推荐依据：</strong> API、Quickstart、示例、测试、文档和近期版本发布齐备，适合作为内部能力接入 MCP 的低摩擦起点。</p>
+<p style="margin:10px 0;"><strong>适合：</strong> 已有 Python 业务能力，想先从一个只读工具开始验证 MCP 调用边界的开发者。</p>
+<p style="font-size:15px;color:#5c6b7a;background:#eef3f7;border-left:3px solid #c7d3de;padding:10px 12px;margin:10px 0;"><strong style="color:#999;">注意：</strong> HTTP 部署需要自行配置认证、访问控制和审计；大版本升级可能影响 Server 与 Client 的兼容性，不应直接把示例暴露到公网。</p>
+<h3 style="font-size:17px;font-weight:bold;color:#1c2733;margin:22px 0 4px;"><span style="display:inline-block;width:26px;height:26px;line-height:26px;text-align:center;border-radius:50%;background:#ff7a1a;color:#fff;font-size:15px;font-weight:bold;margin-right:6px;">5.</span> <span style="color:#0b3d66;">GitHub MCP Server</span></h3>
+<p style="margin:10px 0;"><strong style="color:#0b3d66;">介绍：</strong> GitHub MCP Server 是 GitHub 官方维护的 Go MCP Server，将仓库、代码、Issue、PR、Actions 和发布等 GitHub 能力暴露给 AI 工具。</p>
+<p style="margin:10px 0;"><strong>推荐依据：</strong> 官方维护、工具集可选、Docker 与源码路径清楚，并有端到端测试，适合作为 GitHub 自动化的基础设施组件。</p>
+<p style="margin:10px 0;"><strong>适合：</strong> 希望把代码读取、Issue 查询等 GitHub 工作流先以只读方式接入 AI 工具的团队。</p>
+<p style="font-size:15px;color:#5c6b7a;background:#eef3f7;border-left:3px solid #c7d3de;padding:10px 12px;margin:10px 0;"><strong style="color:#999;">注意：</strong> 令牌权限和启用的工具集直接决定写入风险；创建 Issue、PR 或修改仓库前应使用测试仓库、最小权限和人工确认。</p>
+<h3 style="font-size:17px;font-weight:bold;color:#1c2733;margin:22px 0 4px;"><span style="display:inline-block;width:26px;height:26px;line-height:26px;text-align:center;border-radius:50%;background:#ff7a1a;color:#fff;font-size:15px;font-weight:bold;margin-right:6px;">6.</span> <span style="color:#0b3d66;">CodeGraph</span></h3>
+<p style="margin:10px 0;"><strong style="color:#0b3d66;">介绍：</strong> CodeGraph 是面向编码 Agent 的本地代码知识图谱工具，预索引符号、调用边和依赖，并在文件变化时自动同步。</p>
+<p style="margin:10px 0;"><strong>推荐依据：</strong> 它能在本地为代码建立索引，并通过 MCP 提供跨文件检索；README、测试和版本记录也给了动手试用的依据。</p>
+<p style="margin:10px 0;"><strong>适合：</strong> 想在非关键代码库比较结构化代码导航与普通搜索差异，并评估 Agent 上下文使用方式的开发者。</p>
+<p style="font-size:15px;color:#5c6b7a;background:#eef3f7;border-left:3px solid #c7d3de;padding:10px 12px;margin:10px 0;"><strong style="color:#999;">注意：</strong> “更少 Token/更快”是项目方主张，尚未独立复测；安装器会改动 Agent 配置，需先审阅写入内容并在临时仓库测试。</p>
+<h2 style="font-size:18px;font-weight:bold;color:#0b3d66;border-left:4px solid #ff7a1a;padding-left:10px;margin:30px 0 6px;">三、记忆与移动端执行边界</h2>
+<h3 style="font-size:17px;font-weight:bold;color:#1c2733;margin:22px 0 4px;"><span style="display:inline-block;width:26px;height:26px;line-height:26px;text-align:center;border-radius:50%;background:#ff7a1a;color:#fff;font-size:15px;font-weight:bold;margin-right:6px;">7.</span> <span style="color:#0b3d66;">claude-mem</span></h3>
+<p style="margin:10px 0;"><strong style="color:#0b3d66;">介绍：</strong> claude-mem 是面向编码助手的跨会话记忆插件，通过生命周期钩子采集观察、生成摘要，并在后续会话注入相关上下文。</p>
+<p style="margin:10px 0;"><strong>推荐依据：</strong> 从钩子采集到后台处理、检索和客户端适配，仓库把记忆链路展示得比较清楚；本周也有修复和版本更新。</p>
+<p style="margin:10px 0;"><strong>适合：</strong> 想研究“采集、压缩、检索、注入”这条 Agent 记忆链路，并愿意从测试项目开始控制数据范围的开发者。</p>
+<p style="font-size:15px;color:#5c6b7a;background:#eef3f7;border-left:3px solid #c7d3de;padding:10px 12px;margin:10px 0;"><strong style="color:#999;">注意：</strong> 会话可能包含源代码、密钥和个人信息；默认或托管 provider 的采集、同步、保留和删除策略必须先审阅，压缩摘要不能替代原始证据。</p>
+<h3 style="font-size:17px;font-weight:bold;color:#1c2733;margin:22px 0 4px;"><span style="display:inline-block;width:26px;height:26px;line-height:26px;text-align:center;border-radius:50%;background:#ff7a1a;color:#fff;font-size:15px;font-weight:bold;margin-right:6px;">8.</span> <span style="color:#0b3d66;">ARTEMIS</span></h3>
+<p style="margin:10px 0;"><strong style="color:#0b3d66;">介绍：</strong> ARTEMIS 是面向 Android 测试和自动化开发者的自然语言移动端执行工具，支持设备操作、日志与截图采集，并可通过 MCP 接入 AI IDE。</p>
+<p style="margin:10px 0;"><strong>推荐依据：</strong> 仓库提供一键启动、模拟器或真机入口、playground、测试和 MCP 配置，适合在受控设备上研究 Agent 自动化。</p>
+<p style="margin:10px 0;"><strong>适合：</strong> 需要在隔离模拟器或无敏感数据的测试手机上，验证自然语言计划能否转化为可复现移动端操作的测试人员和开发者。</p>
+<p style="font-size:15px;color:#5c6b7a;background:#eef3f7;border-left:3px solid #c7d3de;padding:10px 12px;margin:10px 0;"><strong style="color:#999;">注意：</strong> 项目较新，设备权限和自动安装工具链会扩大本机影响面；官方 benchmark 数字尚未独立复核，不宜直接等同真实 App 的稳定性。</p>
+<h2 style="font-size:18px;font-weight:bold;color:#0b3d66;border-left:4px solid #ff7a1a;padding-left:10px;margin:30px 0 6px;">四、设备交付与研究型检索</h2>
+<h3 style="font-size:17px;font-weight:bold;color:#1c2733;margin:22px 0 4px;"><span style="display:inline-block;width:26px;height:26px;line-height:26px;text-align:center;border-radius:50%;background:#ff7a1a;color:#fff;font-size:15px;font-weight:bold;margin-right:6px;">9.</span> <span style="color:#0b3d66;">WendyOS</span></h3>
+<p style="margin:10px 0;"><strong style="color:#0b3d66;">介绍：</strong> WendyOS 是面向机器人、Jetson、树莓派和 IoT 设备的 Physical AI 基础设施，提供设备安装、应用部署、日志和远程运维 CLI。</p>
+<p style="margin:10px 0;"><strong>推荐依据：</strong> <code style="font-family:Menlo,Consolas,monospace;background:#eef3f7;border-radius:3px;padding:1px 5px;font-size:15px;">wendy install</code>、<code style="font-family:Menlo,Consolas,monospace;background:#eef3f7;border-radius:3px;padding:1px 5px;font-size:15px;">wendy init</code> 与 <code style="font-family:Menlo,Consolas,monospace;background:#eef3f7;border-radius:3px;padding:1px 5px;font-size:15px;">wendy run</code> 给出了清楚的设备交付路径，README、示例、文档和机器人入口也较完整。</p>
+<p style="margin:10px 0;"><strong>适合：</strong> 希望先在备用 Jetson 或树莓派上复现设备安装、部署和日志流程，再评估 ROS2 或机群接入的边缘开发者。</p>
+<p style="font-size:15px;color:#5c6b7a;background:#eef3f7;border-left:3px solid #c7d3de;padding:10px 12px;margin:10px 0;"><strong style="color:#999;">注意：</strong> 社区信号仍小，CLI、云端与 OTA 会触及设备权限和网络边界；实体设备和云服务的可靠性、供应链与长期维护仍需自行验证。</p>
+<h3 style="font-size:17px;font-weight:bold;color:#1c2733;margin:22px 0 4px;"><span style="display:inline-block;width:26px;height:26px;line-height:26px;text-align:center;border-radius:50%;background:#ff7a1a;color:#fff;font-size:15px;font-weight:bold;margin-right:6px;">10.</span> <span style="color:#0b3d66;">ScholarRAG</span></h3>
+<p style="margin:10px 0;"><strong style="color:#0b3d66;">介绍：</strong> ScholarRAG 是面向学习者和 RAG 开发者的学术论文问答系统，以多 Agent 工作流处理 PDF 解析、混合检索、重排和带页码引用的回答。</p>
+<p style="margin:10px 0;"><strong>推荐依据：</strong> 它的模块边界清楚，可沿“解析、召回、重排、编排、引用”逐层复现，适合源码学习和二次开发，而非把教程标签当作质量保证。</p>
+<p style="margin:10px 0;"><strong>适合：</strong> 想用小规模、许可清晰的论文集拆解 RAG 工程链路，并逐层观察检索和引用效果的学习者与开发者。</p>
+<p style="font-size:15px;color:#5c6b7a;background:#eef3f7;border-left:3px solid #c7d3de;padding:10px 12px;margin:10px 0;"><strong style="color:#999;">注意：</strong> 组件和模型较多，检索质量、模型费用、数据许可和部署复杂度都需实测；作者仍在优化，不能把示例提示词、评测结果或默认参数直接照搬生产。</p>
+<h2 style="font-size:18px;font-weight:bold;color:#0b3d66;border-left:4px solid #ff7a1a;padding-left:10px;margin:30px 0 6px;">本周可行性精选</h2>
+<p style="font-size:14px;color:#5c6b7a;margin:10px 0;">这周挑出一条适合先做小范围技术试验的组合。我们还没有访谈或付费证据，也没验证这些组件能否直接接起来，先把它当作待验证的试法。</p>
+<h3 style="font-size:17px;font-weight:bold;color:#0b3d66;border-left:4px solid #ff7a1a;padding-left:10px;margin:26px 0 10px;">可行性方案 1：Agent 质量与花费评测工作台</h3>
+<p style="margin:10px 0 6px;"><strong>方案判断</strong>：<strong style="color:#fff;background:#0b3d66;border-radius:999px;padding:2px 12px;font-size:15px;">值得技术试验</strong>。技术组合成熟度 93/100，需求证据强度 44/100。分数来自初步评估，实际效果还得靠实验验证。</p>
+<p style="margin:10px 0;"><strong>目标客户</strong>：需要复测 Agent 任务质量与运行花费的开发团队；真实需求和预算仍待访谈。</p>
+<p style="margin:10px 0;"><strong>组合方案</strong>：</p>
+<table style="width:100%;border-collapse:collapse;font-size:13px;color:#1c2733;margin:10px 0;" cellpadding="0" cellspacing="0">
+<tr><th style="width:13%;background:#0b3d66;color:#fff;font-size:13px;font-weight:bold;text-align:left;padding:5px 6px;border:1px solid #0b3d66;word-break:break-all;">试验角色</th><th style="width:20%;background:#0b3d66;color:#fff;font-size:13px;font-weight:bold;text-align:left;padding:5px 6px;border:1px solid #0b3d66;word-break:break-all;">项目</th><th style="width:67%;background:#0b3d66;color:#fff;font-size:13px;font-weight:bold;text-align:left;padding:5px 6px;border:1px solid #0b3d66;word-break:break-all;">首先验证什么</th></tr>
+<tr><td style="width:13%;padding:5px 6px;border:1px solid #e9eef4;vertical-align:top;font-size:13px;font-weight:bold;color:#ff7a1a;word-break:break-all;">受控移动端任务样本</td><td style="width:20%;padding:5px 6px;border:1px solid #e9eef4;vertical-align:top;font-family:Menlo,Consolas,monospace;font-size:13px;color:#0b3d66;word-break:break-all;">ARTEMIS</td><td style="width:67%;padding:5px 6px;border:1px solid #e9eef4;vertical-align:top;font-size:13px;color:#1c2733;word-break:break-all;">在隔离模拟器中运行固定任务，保留操作记录与结果。</td></tr>
+<tr><td style="width:13%;padding:5px 6px;border:1px solid #e9eef4;vertical-align:top;font-size:13px;font-weight:bold;color:#ff7a1a;word-break:break-all;">长任务执行与重试</td><td style="width:20%;padding:5px 6px;border:1px solid #e9eef4;vertical-align:top;font-family:Menlo,Consolas,monospace;font-size:13px;color:#0b3d66;word-break:break-all;">Trigger.dev</td><td style="width:67%;padding:5px 6px;border:1px solid #e9eef4;vertical-align:top;font-size:13px;color:#1c2733;word-break:break-all;">验证任务能否重跑，并记录每次执行的状态与用量。</td></tr>
+<tr><td style="width:13%;padding:5px 6px;border:1px solid #e9eef4;vertical-align:top;font-size:13px;font-weight:bold;color:#ff7a1a;word-break:break-all;">多模态评测参考</td><td style="width:20%;padding:5px 6px;border:1px solid #e9eef4;vertical-align:top;font-family:Menlo,Consolas,monospace;font-size:13px;color:#0b3d66;word-break:break-all;">VLMEvalKit</td><td style="width:67%;padding:5px 6px;border:1px solid #e9eef4;vertical-align:top;font-size:13px;color:#1c2733;word-break:break-all;">检查现有评测方式能否用于任务中的视觉能力；模型基准不能直接当作 Agent 端到端质量结论。</td></tr>
+</table>
+
+<p style="margin:10px 0;"><strong>MVP 实验</strong>：用 3 条脱敏的真实任务，在测试环境中连续运行至少 20 次，记录成功率、失败恢复、调用用量与花费，并产出一份可复跑的对照报告。若三个组件无法形成可追踪的数据链，或费用无法归因到单次任务，就停止组合投入，分别保留有价值的单点工具。</p>
+<p style="margin:10px 0;"><strong>主要风险</strong>：ARTEMIS 较新，官方成功率尚未独立复测；Trigger.dev 的托管与自托管路径分别涉及账号及运维成本；VLMEvalKit 的结果受模型、数据集、版本和评判方法影响。先固定版本、权限和测试数据，再判断是否值得扩展。</p>
+<h2 style="font-size:18px;font-weight:bold;color:#0b3d66;border-left:4px solid #ff7a1a;padding-left:10px;margin:30px 0 6px;">本周优先试用</h2>
+<p style="margin:10px 0;">想先动手，可以从三个小实验里挑一个：用 ComfyUI 保存并复跑一个官方视觉工作流；用 FastMCP 把一个只读 Python 函数接入本地 Client；在临时仓库对 CodeGraph 的索引和检索做一组真实导航任务对照。</p>
+<p style="margin:10px 0;">完整周报里还有这十个项目的维护记录、许可证、风险和具体上手建议。</p>
+<p style="font-size:14px;color:#8a95a1;margin:10px 0;"><strong>阅读全文：</strong> 2026-W39 完整周报</p>
+<p style="margin:10px 0;">这十个项目里，你最想先试哪个？它能帮你解决什么问题？</p>
+<hr style="border:none;border-top:1px solid #e3e9ef;margin:28px 0 20px;">
+<section style="background:#eef3f7;border-radius:8px;padding:14px 18px;margin-top:20px;">
+<p style="font-weight:bold;color:#222;margin:0 0 6px;">关于仓库雷达</p>
+<p style="font-size:15px;color:#555;margin:0;">仓库雷达每天寻找新项目，每周挑出值得试的，再把风险和低成本试法写清楚。</p>
+</section>
+<section style="border:2px dashed #c9d4e8;border-radius:8px;background:#f7f9fc;color:#7a8aa5;font-size:14px;text-align:center;padding:14px 12px;margin-top:20px;">
+【发布前删除】后台设置「阅读原文」→ 完整周报页面 URL（如已部署）
+</section>
+</section>
+
+<script>
+(function(){
+  var btn = document.getElementById('copyArticleBtn');
+  if (!btn) return;
+  btn.addEventListener('click', function(){
+    var placeholders = document.querySelectorAll('section[style*="dashed"]');
+    var hidden = [];
+    placeholders.forEach(function(s){ s.style.display = 'none'; hidden.push(s); });
+    var box = document.querySelector('body > section') || document.body;
+    var r = document.createRange();
+    r.selectNodeContents(box);
+    var sel = window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(r);
+    var ok = false;
+    try { ok = document.execCommand('copy'); } catch(e) { ok = false; }
+    sel.removeAllRanges();
+    hidden.forEach(function(s){ s.style.display = ''; });
+    var old = btn.textContent;
+    btn.textContent = ok ? '✅ 已复制，去公众号粘贴' : '❌ 复制失败，请手动框选正文';
+    btn.style.background = ok ? '#0b3d66' : '#b00020';
+    setTimeout(function(){ btn.textContent = old; btn.style.background = '#ff7a1a'; }, 2000);
+  });
+})();
+</script>
+</body>
+</html>
