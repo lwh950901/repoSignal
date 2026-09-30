@@ -1,0 +1,17 @@
+{
+  "attempt": 1,
+  "candidateCount": 58,
+  "date": "2026-10-01",
+  "deadlineAt": "2026-09-30T22:31:59+00:00",
+  "errors": [
+    "developer_tools: Network error: <urlopen error [SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1010)>"
+  ],
+  "historyEntries": 418,
+  "lastProgressAt": "2026-09-30T21:05:55+00:00",
+  "report": "daily/2026-10-01.md",
+  "selectedCount": 4,
+  "stage": "complete",
+  "startedAt": "2026-09-30T21:01:59+00:00",
+  "updatedAt": "2026-09-30T21:05:55+00:00",
+  "verifiedCount": 4
+}
