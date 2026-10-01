@@ -348,6 +348,55 @@ describe("monthly discovery and search conversion", () => {
     }
   });
 
+  it("publishes September's three selected plans with their original fields and only core history", () => {
+    const september = loadMonthlyReports().find((report) => report.slug === "2026-09");
+    expect(september?.topProjects).toHaveLength(5);
+    expect(september?.opportunities).toHaveLength(3);
+    expect(september?.markdown).not.toContain("本月可行性精选");
+    expect(september?.markdown).not.toContain("feasibility/");
+
+    const selected = [
+      { date: "2026-09-14", title: "可溯源的本地知识助手", score: "81/100（中）", repositories: ["deeplethe/utopia", "siyuan-note/siyuan", "sibyl-labs/sibyl-memory"] },
+      { date: "2026-09-25", title: "企业内部知识助手", score: "88/100（高）", repositories: ["langchain-ai/langchain", "topoteretes/cognee", "lyellr88/marm-memory", "tencentcloud/cubesandbox", "coze-dev/coze-loop"] },
+      { date: "2026-09-28", title: "可审计的 Agent 开发交付平台", score: "81/100（中）", repositories: ["tastyeffectco/sandboxd", "promptfoo/promptfoo", "openai/codex-security", "omnigent-ai/omnigent", "diegosouzapw/omniroute"] },
+    ];
+    for (const [index, plan] of selected.entries()) {
+      const original = readFileSync(
+        new URL(`../../data/github-project-digest/feasibility/${plan.date}.md`, import.meta.url), "utf8",
+      );
+      const opportunity = september?.opportunities.find((item) => item.title === plan.title);
+      const start = september!.markdown.indexOf(`### ${index + 1}. ${plan.title}`);
+      const end = september!.markdown.indexOf(index < 2 ? `\n### ${index + 2}. ` : "\n## 研究说明", start + 1);
+      const published = september!.markdown.slice(start, end);
+      expect(original).toContain(plan.title);
+      expect(opportunity).toBeDefined();
+      expect(published).toContain(`原始可行性评分：${plan.score}`);
+      expect(opportunity?.repositories.map((item) => item.repository.toLowerCase())).toEqual(plan.repositories);
+      for (const field of ["真实问题", "市场与现有方案", "产品定义", "为什么现在可行", "仓库组合", "组合链路", "自行开发部分", "MVP 验证", "业务判断", "证据边界", "来源", "原始入选理由", "失败指标", "停止条件"]) {
+        expect(published).toContain(field);
+      }
+      for (const repository of plan.repositories) {
+        expect(original.toLowerCase()).toContain(repository);
+        expect(published.toLowerCase()).toContain(repository);
+      }
+    }
+
+    const research = readFileSync(new URL("../../data/github-project-digest/monthly-research/2026-09/feasibility-selection.md", import.meta.url), "utf8");
+    expect(research).toContain("原始方案数：47");
+    expect(research).toContain("去重后方案数：13");
+    expect(research).toContain("阶段 A 入选数：3");
+
+    const monthlyHistory = readFileSync(new URL("../../data/github-project-digest/history.jsonl", import.meta.url), "utf8")
+      .split("\n").filter(Boolean).map((line) => JSON.parse(line) as { period?: string; role?: string; repo?: string })
+      .filter((item) => item.period === "2026-09" && item.role?.startsWith("monthly_"));
+    const allowed = new Set([
+      ...september!.topProjects.map((item) => item.repository.toLowerCase()),
+      ...september!.opportunities.flatMap((item) => item.repositories.filter((repo) => repo.origin === "本月核心").map((repo) => repo.repository.toLowerCase())),
+    ]);
+    expect(monthlyHistory).toHaveLength(allowed.size);
+    expect(new Set(monthlyHistory.map((item) => item.repo))).toEqual(allowed);
+  });
+
   it("accepts every available opportunity when fewer than three are supplied", () => {
     const report = parseMonthlyReport(
       monthlyDocument([

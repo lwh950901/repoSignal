@@ -17,6 +17,7 @@ const scoreDimensions = [
   ["维护", "maintenance", 10],
   ["采用证据", "adoption", 10],
 ] as const;
+const combinationHeading = "<h4>组合链路</h4>";
 ---
 
 <main id="main-content" class="archive-shell monthly-shell" data-archive-shell>
@@ -137,6 +138,7 @@ const scoreDimensions = [
               <div><dt>核实日期</dt><dd>{opportunity.verifiedAt}</dd></div>
             </dl>
 
+            <div class="opportunity-body" set:html={opportunity.bodyHtml.slice(0, opportunity.bodyHtml.indexOf(combinationHeading))} />
             <div class="monthly-repositories">
               <h4>仓库组合</h4>
               <table>
@@ -153,7 +155,7 @@ const scoreDimensions = [
               </table>
             </div>
 
-            <div class="opportunity-body" set:html={opportunity.bodyHtml} />
+            <div class="opportunity-body" set:html={opportunity.bodyHtml.slice(opportunity.bodyHtml.indexOf(combinationHeading))} />
             <div class="opportunity-sources"><h4>来源</h4><ul class="monthly-sources">{opportunity.sources.map((source) => <li><a href={source.url}>{source.label}</a></li>)}</ul></div>
           </article>
         ))}
