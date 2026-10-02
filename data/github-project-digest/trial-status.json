@@ -1162,6 +1162,22 @@
     "report": "data/github-project-digest/daily/2026-10-02.md",
     "status": "complete"
   },
+  "daily_run_2026-10-03": {
+    "candidate_count": 68,
+    "checkpoint": "data/github-project-digest/daily-runs/2026-10-03.json",
+    "checks": {
+      "candidate_jsonl": true,
+      "dedupe_90d": true,
+      "fixed_format": true,
+      "history_jsonl": true
+    },
+    "date": "2026-10-03",
+    "history_entries_added": 4,
+    "history_entries_after_append": 436,
+    "primary_count": 4,
+    "report": "data/github-project-digest/daily/2026-10-03.md",
+    "status": "complete"
+  },
   "date": "2026-09-04",
   "extra_count": 0,
   "feedback_entries_read": 7,
@@ -1194,18 +1210,18 @@
   },
   "latest_daily_run": {
     "candidate_count": 68,
-    "checkpoint": "data/github-project-digest/daily-runs/2026-10-02.json",
+    "checkpoint": "data/github-project-digest/daily-runs/2026-10-03.json",
     "checks": {
       "candidate_jsonl": true,
       "dedupe_90d": true,
       "fixed_format": true,
       "history_jsonl": true
     },
-    "date": "2026-10-02",
+    "date": "2026-10-03",
     "history_entries_added": 4,
-    "history_entries_after_append": 432,
+    "history_entries_after_append": 436,
     "primary_count": 4,
-    "report": "data/github-project-digest/daily/2026-10-02.md",
+    "report": "data/github-project-digest/daily/2026-10-03.md",
     "status": "complete"
   },
   "latest_run_status": "passed_with_tls_api_rate_limit_and_web_fallback",
