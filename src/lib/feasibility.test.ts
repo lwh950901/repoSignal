@@ -97,7 +97,7 @@ describe("parseFeasibilityReport", () => {
 describe("loadFeasibilityReports", () => {
   it("loads only ISO-dated markdown files and sorts them newest first", () => {
     const reports = loadFeasibilityReports({
-      "/feasibility/KUN-TASK.md": "# supporting instructions",
+      "/feasibility/FEASIBILITY-TASK.md": "# supporting instructions",
       "/feasibility/2026-08-24.md": reportMarkdown.replaceAll("2026-08-26", "2026-08-24"),
       "/feasibility/runs.log": "ignored",
       "/feasibility/2026-08-26.md": reportMarkdown,

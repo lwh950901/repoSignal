@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>开源雷达周刊 2026-W40（微信排版版）</title>
+<!--
+════════════════════════════════════════════════════════════
+发布前操作清单（以下内容不进入正文）
+1. 标题（三选一，≤30 字）：
+   A. 每周 10 个开源项目｜先拿小任务验证，再谈接入
+   B. 开源雷达 2026-W40：从流程编排到本地视觉
+   C. Kestra、MCP 与本地视觉：本周 10 个开源项目
+2. 摘要（勾选原创后可填，120 字内）：
+   本期 10 个项目从流程编排、MCP 接入延伸到 Agent 上下文、评测与模型训练，也覆盖本地视觉和消息机器人；每条都给出低成本试法，文末附 2 个可行性方案。
+3. 封面图：上传 public/covers/repository-radar-weekly-subtitle.png
+   （大封面 900×383，小封面另裁 1:1 方图）
+4. 发布时删除正文中两个【发布前删除】占位框
+5. 后台「阅读原文」指向完整周报页面 URL（如已部署）
+6. 勾选「原创」，添加话题标签：#开源项目 #开发者工具 #AI 编程
+正文文字由脚本自动生成，与原版周报逐字一致（已通过 verify-text.sh 校验）。
+════════════════════════════════════════════════════════════
+-->
+</head>
+<body style="margin:0;padding:0;">
+
+<button id="copyArticleBtn" style="position:fixed;right:20px;bottom:24px;z-index:9999;font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;font-size:14px;color:#fff;background:#ff7a1a;border:none;border-radius:999px;padding:10px 18px;box-shadow:0 4px 12px rgba(255,122,26,.35);cursor:pointer;">一键复制全文</button>
+
+<section style="font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;color:#1c2733;font-size:16px;line-height:1.9;letter-spacing:0.5px;max-width:680px;margin:0 auto;padding:24px 16px;">
+
+<section style="border:2px dashed #c9d4e8;border-radius:8px;background:#f7f9fc;color:#7a8aa5;font-size:14px;text-align:center;padding:18px 12px;margin-bottom:20px;">
+【发布前删除】封面图占位：上传 public/covers/repository-radar-weekly-subtitle.png<br>
+大封面 900×383，小封面另裁 1:1 方图（注意小封面会裁中间）
+</section>
+
+<h1 style="font-size:22px;font-weight:bold;color:#0b3d66;margin:0 0 24px;">开源雷达周刊</h1>
+<p style="font-size:15px;font-weight:bold;color:#0b3d66;margin:12px 0 14px;"><strong>本期标题：</strong> 用小任务检验工作流、模型工具与本地应用</p>
+<p style="font-size:14px;color:#5c6b7a;margin:10px 0;">本周十个项目覆盖流程编排、MCP、RAG、模型评测与训练，也有本地视觉和消息机器人。</p>
+<p style="font-size:14px;color:#5c6b7a;margin:10px 0;">Kestra 的 Docker socket 权限和 CC Switch 的凭据存储，是先跑小任务时要看清的边界。</p>
+<h2 style="font-size:18px;font-weight:bold;color:#0b3d66;border-left:4px solid #ff7a1a;padding-left:10px;margin:30px 0 6px;">一、工作流与工具连接</h2>
+<h3 style="font-size:17px;font-weight:bold;color:#1c2733;margin:22px 0 4px;"><span style="display:inline-block;width:26px;height:26px;line-height:26px;text-align:center;border-radius:50%;background:#ff7a1a;color:#fff;font-size:15px;font-weight:bold;margin-right:6px;">1.</span> <span style="color:#0b3d66;">Python SDK for Model Context Protocol</span></h3>
+<p style="margin:10px 0;"><strong style="color:#0b3d66;">介绍：</strong> Python SDK for Model Context Protocol 是 MCP 的 Python SDK，可构建客户端和服务器，支持 stdio、Streamable HTTP 和 SSE。</p>
+<p style="margin:10px 0;"><strong>推荐依据：</strong> 仓库给出短小的服务器示例和 Inspector 调试入口，适合沿一次工具调用理解客户端、服务端与传输层如何配合。</p>
+<p style="margin:10px 0;"><strong>适合：</strong> 要为 Python 应用或 Agent 接入 MCP 工具，并愿意从只读工具开始验证的开发者。</p>
+<p style="font-size:15px;color:#5c6b7a;background:#eef3f7;border-left:3px solid #c7d3de;padding:10px 12px;margin:10px 0;"><strong style="color:#999;">注意：</strong> 协议与 API 仍在演进；升级时应锁定版本，并检查所用传输的授权和输入校验。周报提到的 v2.3.0 涉及 httpx 2 迁移。</p>
+<h3 style="font-size:17px;font-weight:bold;color:#1c2733;margin:22px 0 4px;"><span style="display:inline-block;width:26px;height:26px;line-height:26px;text-align:center;border-radius:50%;background:#ff7a1a;color:#fff;font-size:15px;font-weight:bold;margin-right:6px;">2.</span> <span style="color:#0b3d66;">Kestra</span></h3>
+<p style="margin:10px 0;"><strong style="color:#0b3d66;">介绍：</strong> Kestra 用 YAML、界面和插件编排数据、AI 与基础设施任务，提供 Docker 快速启动和流程示例。</p>
+<p style="margin:10px 0;"><strong>推荐依据：</strong> 可以从一条定时触发、发起 HTTP 请求并处理失败重试的流程开始，直接观察编排、执行和记录如何串起来。</p>
+<p style="margin:10px 0;"><strong>适合：</strong> 需要将多步自动化任务交给统一平台管理的团队。</p>
+<p style="font-size:15px;color:#5c6b7a;background:#eef3f7;border-left:3px solid #c7d3de;padding:10px 12px;margin:10px 0;"><strong style="color:#999;">注意：</strong> 快速启动示例会挂载 Docker socket；试用应放在隔离环境，生产部署还需核对 worker、存储、网络、权限及 v2 迁移。</p>
+<h2 style="font-size:18px;font-weight:bold;color:#0b3d66;border-left:4px solid #ff7a1a;padding-left:10px;margin:30px 0 6px;">二、Agent 输入、评测与数据层</h2>
+<h3 style="font-size:17px;font-weight:bold;color:#1c2733;margin:22px 0 4px;"><span style="display:inline-block;width:26px;height:26px;line-height:26px;text-align:center;border-radius:50%;background:#ff7a1a;color:#fff;font-size:15px;font-weight:bold;margin-right:6px;">3.</span> <span style="color:#0b3d66;">Headroom</span></h3>
+<p style="margin:10px 0;"><strong style="color:#0b3d66;">介绍：</strong> Headroom 压缩 Agent 的输入上下文，提供库、代理、CLI 和 MCP 接入方式。</p>
+<p style="margin:10px 0;"><strong>推荐依据：</strong> 项目提供固定种子的离线基准；先拿自己的重复工具输出测 token 用量和回答质量，比直接引用项目方的节省数字更有用。</p>
+<p style="margin:10px 0;"><strong>适合：</strong> Agent 工作流中工具输出较长、想评估上下文成本的开发者。</p>
+<p style="font-size:15px;color:#5c6b7a;background:#eef3f7;border-left:3px solid #c7d3de;padding:10px 12px;margin:10px 0;"><strong style="color:#999;">注意：</strong> 压缩收益取决于内容结构，稠密自然语言未必受益；自有基准不能代替真实任务的质量对照。</p>
+<h3 style="font-size:17px;font-weight:bold;color:#1c2733;margin:22px 0 4px;"><span style="display:inline-block;width:26px;height:26px;line-height:26px;text-align:center;border-radius:50%;background:#ff7a1a;color:#fff;font-size:15px;font-weight:bold;margin-right:6px;">4.</span> <span style="color:#0b3d66;">Promptfoo</span></h3>
+<p style="margin:10px 0;"><strong style="color:#0b3d66;">介绍：</strong> Promptfoo 通过声明式配置评测提示词、Agent 和 RAG，也支持红队测试与 CI 集成。</p>
+<p style="margin:10px 0;"><strong>推荐依据：</strong> 从一份配置和一次 eval 就能开始比较输出，再把脱敏回归样例接入开发流程。</p>
+<p style="margin:10px 0;"><strong>适合：</strong> 想给模型应用建立可重复评测和回归检查的团队。</p>
+<p style="font-size:15px;color:#5c6b7a;background:#eef3f7;border-left:3px solid #c7d3de;padding:10px 12px;margin:10px 0;"><strong style="color:#999;">注意：</strong> 结果依赖样本、断言和评分器；外部模型调用需要检查数据处理，红队能力只应用于获准目标。</p>
+<h3 style="font-size:17px;font-weight:bold;color:#1c2733;margin:22px 0 4px;"><span style="display:inline-block;width:26px;height:26px;line-height:26px;text-align:center;border-radius:50%;background:#ff7a1a;color:#fff;font-size:15px;font-weight:bold;margin-right:6px;">5.</span> <span style="color:#0b3d66;">LlamaIndex</span></h3>
+<p style="margin:10px 0;"><strong style="color:#0b3d66;">介绍：</strong> LlamaIndex 是面向文档处理、数据连接和检索的 Python 框架，包含核心库与大量集成包。</p>
+<p style="margin:10px 0;"><strong>推荐依据：</strong> 从单一文档来源跑通解析、索引、检索和引用后，便能逐步比较连接器与检索策略，适合拆解 RAG 数据层。</p>
+<p style="margin:10px 0;"><strong>适合：</strong> 要把自有文档接入问答或检索系统的开发者。</p>
+<p style="font-size:15px;color:#5c6b7a;background:#eef3f7;border-left:3px solid #c7d3de;padding:10px 12px;margin:10px 0;"><strong style="color:#999;">注意：</strong> 集成范围广、版本变化快，应按实际模型和数据源安装依赖；周报还提示关注项目方产品重点的变化。</p>
+<h3 style="font-size:17px;font-weight:bold;color:#1c2733;margin:22px 0 4px;"><span style="display:inline-block;width:26px;height:26px;line-height:26px;text-align:center;border-radius:50%;background:#ff7a1a;color:#fff;font-size:15px;font-weight:bold;margin-right:6px;">6.</span> <span style="color:#0b3d66;">CC Switch</span></h3>
+<p style="margin:10px 0;"><strong style="color:#0b3d66;">介绍：</strong> CC Switch 是集中管理编码 Agent 模型供应商、MCP 和提示词配置的跨平台桌面应用。</p>
+<p style="margin:10px 0;"><strong>推荐依据：</strong> 它把多客户端配置切换做成可直接试用的桌面流程，也能作为本地设置管理和适配器设计的参考。</p>
+<p style="margin:10px 0;"><strong>适合：</strong> 同时使用多个编码 Agent，需要切换供应商和工具配置的个人或团队。</p>
+<p style="font-size:15px;color:#5c6b7a;background:#eef3f7;border-left:3px solid #c7d3de;padding:10px 12px;margin:10px 0;"><strong style="color:#999;">注意：</strong> 应用会读写本机配置与数据库；先备份并在独立测试配置里检查端点和凭据，不能把 README 中推广的中继服务当作安全背书。</p>
+<h2 style="font-size:18px;font-weight:bold;color:#0b3d66;border-left:4px solid #ff7a1a;padding-left:10px;margin:30px 0 6px;">三、任务调度与模型训练</h2>
+<h3 style="font-size:17px;font-weight:bold;color:#1c2733;margin:22px 0 4px;"><span style="display:inline-block;width:26px;height:26px;line-height:26px;text-align:center;border-radius:50%;background:#ff7a1a;color:#fff;font-size:15px;font-weight:bold;margin-right:6px;">7.</span> <span style="color:#0b3d66;">Prefect</span></h3>
+<p style="margin:10px 0;"><strong style="color:#0b3d66;">介绍：</strong> Prefect 用 Python 定义、运行和观测可重试的数据工作流，可从普通脚本中的 flow 和 task 起步。</p>
+<p style="margin:10px 0;"><strong>推荐依据：</strong> 用一个带重试的数据抓取小流程，就能检查日志、失败处理和部署入口是否符合自己的批处理需求。</p>
+<p style="margin:10px 0;"><strong>适合：</strong> 正在把 Python 脚本整理为数据管道或定时任务的团队。</p>
+<p style="font-size:15px;color:#5c6b7a;background:#eef3f7;border-left:3px solid #c7d3de;padding:10px 12px;margin:10px 0;"><strong style="color:#999;">注意：</strong> 周报记录的最新发布中包含开发版；正式使用应固定经过验证的稳定版本，并评估部署运维成本。</p>
+<h3 style="font-size:17px;font-weight:bold;color:#1c2733;margin:22px 0 4px;"><span style="display:inline-block;width:26px;height:26px;line-height:26px;text-align:center;border-radius:50%;background:#ff7a1a;color:#fff;font-size:15px;font-weight:bold;margin-right:6px;">8.</span> <span style="color:#0b3d66;">Oumi</span></h3>
+<p style="margin:10px 0;"><strong style="color:#0b3d66;">介绍：</strong> Oumi 面向开放权重模型的微调、评测和部署，提供工具调用训练配方、执行环境与评分器。</p>
+<p style="margin:10px 0;"><strong>推荐依据：</strong> v0.9 的 tool-use SFT/DPO 配方、工具环境和 RubricJudge，为学习数据格式、训练配置及评测路径提供了可拆解材料。</p>
+<p style="margin:10px 0;"><strong>适合：</strong> 想研究模型工具使用训练和评测实现的开发者。</p>
+<p style="font-size:15px;color:#5c6b7a;background:#eef3f7;border-left:3px solid #c7d3de;padding:10px 12px;margin:10px 0;"><strong style="color:#999;">注意：</strong> 项目标注 Beta，完整训练需要 GPU、显存及后端依赖；先在小模型和小数据上验证，不应照搬分布式训练或生产参数。</p>
+<h2 style="font-size:18px;font-weight:bold;color:#0b3d66;border-left:4px solid #ff7a1a;padding-left:10px;margin:30px 0 6px;">四、本地视觉与消息入口</h2>
+<h3 style="font-size:17px;font-weight:bold;color:#1c2733;margin:22px 0 4px;"><span style="display:inline-block;width:26px;height:26px;line-height:26px;text-align:center;border-radius:50%;background:#ff7a1a;color:#fff;font-size:15px;font-weight:bold;margin-right:6px;">9.</span> <span style="color:#0b3d66;">Frigate</span></h3>
+<p style="margin:10px 0;"><strong style="color:#0b3d66;">介绍：</strong> Frigate 是面向 IP 摄像头和 Home Assistant 的本地监控与目标检测 NVR，支持事件检索及 MQTT 集成。</p>
+<p style="margin:10px 0;"><strong>推荐依据：</strong> README 和 Docker Compose 给出单路摄像头试用入口，能具体检查检测、录像保留和检索是否适合自己的环境。</p>
+<p style="margin:10px 0;"><strong>适合：</strong> 希望在本地处理摄像头事件，并与家庭自动化系统连接的用户。</p>
+<p style="font-size:15px;color:#5c6b7a;background:#eef3f7;border-left:3px solid #c7d3de;padding:10px 12px;margin:10px 0;"><strong style="color:#999;">注意：</strong> 性能受硬件与摄像头兼容性影响；升级前备份配置和数据库，代码的 MIT 许可也不授予 Frigate 名称与商标权。</p>
+<h3 style="font-size:17px;font-weight:bold;color:#1c2733;margin:22px 0 4px;"><span style="display:inline-block;width:26px;height:26px;line-height:26px;text-align:center;border-radius:50%;background:#ff7a1a;color:#fff;font-size:15px;font-weight:bold;margin-right:6px;">10.</span> <span style="color:#0b3d66;">AstrBot</span></h3>
+<p style="margin:10px 0;"><strong style="color:#0b3d66;">介绍：</strong> AstrBot 是连接即时通信平台、模型和插件的 Agent 聊天机器人框架，提供 IM Adapter 与扩展入口。</p>
+<p style="margin:10px 0;"><strong>推荐依据：</strong> 可以先用测试账号接入一个消息平台，沿 Adapter 和插件边界检查消息、模型调用与权限如何流转。</p>
+<p style="margin:10px 0;"><strong>适合：</strong> 需要评估多平台聊天机器人，或想扩展自定义 IM Adapter 的开发者。</p>
+<p style="font-size:15px;color:#5c6b7a;background:#eef3f7;border-left:3px solid #c7d3de;padding:10px 12px;margin:10px 0;"><strong style="color:#999;">注意：</strong> AGPL-3.0 涉及分发和网络服务改造的合规要求；插件与平台接口质量不一，应先审查权限、数据流并使用稳定版本试验。</p>
+<h2 style="font-size:18px;font-weight:bold;color:#0b3d66;border-left:4px solid #ff7a1a;padding-left:10px;margin:30px 0 6px;">本周可行性精选</h2>
+<p style="font-size:14px;color:#5c6b7a;margin:10px 0;">以下两项只供小范围技术试验，客户需求与生产可用性尚未验证。技术成熟度与需求证据分开计分；需求分 49/100 与 59/100 的差距来自“独立来源”分项，两项的用户明确表态都是 0/25，因此都不能推断商业可行。</p>
+<h3 style="font-size:17px;font-weight:bold;color:#0b3d66;border-left:4px solid #ff7a1a;padding-left:10px;margin:26px 0 10px;">可行性方案 1：可观测的 Agent 长任务工作台</h3>
+<p style="margin:10px 0 6px;"><strong>方案判断</strong>：<strong style="color:#fff;background:#0b3d66;border-radius:999px;padding:2px 12px;font-size:15px;">可以先做技术试验；目前没有客户访谈证据，不宜据此判断市场需求</strong>。</p>
+<p style="margin:10px 0;"><strong>业务定位</strong>：尝试用 Airflow、gVisor、MLflow 和 LlamaIndex 串起可记录产出的多步骤任务。先分别试用组件，再验证能否打通流程；产品方向和需求仍待验证。</p>
+<p style="margin:10px 0;"><strong>业务轨道</strong>：探索方向（待验证）</p>
+<p style="margin:10px 0;"><strong>目标客户</strong>：想把多步骤任务交给 Agent 的团队</p>
+<p style="margin:10px 0;"><strong>市场机会</strong>：【待验证假设】团队可能需要把难以串联、难以复现的多步骤任务变成可复用、可审批的流程，目前没有外部需求证据。相关类别最少有 132 个候选项目；这只说明可选择组件，不代表现有组合已经打通或市场需求成立。</p>
+<p style="margin:10px 0;"><strong>需求证据</strong>：49/100（最高等级：项目方自述）；客户问题「多步骤任务串不起来、也复现不了」与预期结果「长任务变成可复用、可审批的流程」由项目能力与目标客户推导，尚无客户访谈证据；付费意愿、采购预算与市场规模均无独立来源。</p>
+<p style="margin:10px 0;"><strong>组合依据</strong>：四个组件分担流程调度、执行隔离、实验记录与文档接入，适合围绕多步骤任务做小规模验证。9 月 29 日日报收录了 <code style="font-family:Menlo,Consolas,monospace;background:#eef3f7;border-radius:3px;padding:1px 5px;font-size:15px;">apache/airflow</code>、<code style="font-family:Menlo,Consolas,monospace;background:#eef3f7;border-radius:3px;padding:1px 5px;font-size:15px;">mlflow/mlflow</code>、<code style="font-family:Menlo,Consolas,monospace;background:#eef3f7;border-radius:3px;padding:1px 5px;font-size:15px;">run-llama/llama_index</code>；<code style="font-family:Menlo,Consolas,monospace;background:#eef3f7;border-radius:3px;padding:1px 5px;font-size:15px;">google/gvisor</code> 来自此前 90 天的项目记录。相关类别候选数为观测 132、Agent 297、网关 176、沙箱 156，最少一类有 132 个；供给充足不等于组合已打通或需求已验证。</p>
+<p style="margin:10px 0;"><strong>组合方案</strong>：</p>
+<table style="width:100%;border-collapse:collapse;font-size:13px;color:#1c2733;margin:10px 0;" cellpadding="0" cellspacing="0">
+<tr><th style="width:35%;background:#0b3d66;color:#fff;font-size:13px;font-weight:bold;text-align:left;padding:5px 6px;border:1px solid #0b3d66;word-break:break-all;">角色</th><th style="width:20%;background:#0b3d66;color:#fff;font-size:13px;font-weight:bold;text-align:left;padding:5px 6px;border:1px solid #0b3d66;word-break:break-all;">项目</th><th style="width:45%;background:#0b3d66;color:#fff;font-size:13px;font-weight:bold;text-align:left;padding:5px 6px;border:1px solid #0b3d66;word-break:break-all;">入选理由</th></tr>
+<tr><td style="width:35%;padding:5px 6px;border:1px solid #e9eef4;vertical-align:top;font-size:13px;font-weight:bold;color:#ff7a1a;word-break:break-all;">以代码定义、调度和监控工作流的成熟编排平台</td><td style="width:20%;padding:5px 6px;border:1px solid #e9eef4;vertical-align:top;font-family:Menlo,Consolas,monospace;font-size:13px;color:#0b3d66;word-break:break-all;">apache/airflow</td><td style="width:45%;padding:5px 6px;border:1px solid #e9eef4;vertical-align:top;font-size:13px;color:#1c2733;word-break:break-all;">成熟发布流程、近期活动和可运行文档入口均可核验，能直接承担工作流自动化；按静态 DAG 场景使用时，质量与维护信号均强。</td></tr>
+<tr><td style="width:35%;padding:5px 6px;border:1px solid #e9eef4;vertical-align:top;font-size:13px;font-weight:bold;color:#ff7a1a;word-break:break-all;">以 Go 编写的用户态 application kernel，通过 runsc 为 Docker/Kubernetes 提供额外容器隔离</td><td style="width:20%;padding:5px 6px;border:1px solid #e9eef4;vertical-align:top;font-family:Menlo,Consolas,monospace;font-size:13px;color:#0b3d66;word-break:break-all;">google/gvisor</td><td style="width:45%;padding:5px 6px;border:1px solid #e9eef4;vertical-align:top;font-size:13px;color:#1c2733;word-break:break-all;">gVisor 通过 runsc 提供用户态容器隔离，可先在测试容器中核对兼容性与性能取舍；原项目筛选评分为 89/100，不应把该分数当作生产安全保证。</td></tr>
+<tr><td style="width:35%;padding:5px 6px;border:1px solid #e9eef4;vertical-align:top;font-size:13px;font-weight:bold;color:#ff7a1a;word-break:break-all;">覆盖机器学习与生成式 AI 实验、评测、追踪和部署的开源平台</td><td style="width:20%;padding:5px 6px;border:1px solid #e9eef4;vertical-align:top;font-family:Menlo,Consolas,monospace;font-size:13px;color:#0b3d66;word-break:break-all;">mlflow/mlflow</td><td style="width:45%;padding:5px 6px;border:1px solid #e9eef4;vertical-align:top;font-size:13px;color:#1c2733;word-break:break-all;">适合沿一条可复现路径理解 AI 应用的观测和评测如何接入部署流程；近期提交和发布保持活跃，多个可拆解的工程模块都有真实实现。</td></tr>
+<tr><td style="width:35%;padding:5px 6px;border:1px solid #e9eef4;vertical-align:top;font-size:13px;font-weight:bold;color:#ff7a1a;word-break:break-all;">面向 AI 应用的文档处理、检索与数据连接框架</td><td style="width:20%;padding:5px 6px;border:1px solid #e9eef4;vertical-align:top;font-family:Menlo,Consolas,monospace;font-size:13px;color:#0b3d66;word-break:break-all;">run-llama/llama_index</td><td style="width:45%;padding:5px 6px;border:1px solid #e9eef4;vertical-align:top;font-size:13px;color:#1c2733;word-break:break-all;">差异化在于数据接入和索引层而非只封装模型调用；可沿“自定义连接器—检索策略—评测和观测”逐步二次开发，且有近期活动、示例与发布记录支撑。</td></tr>
+</table>
+
+<p style="margin:10px 0;"><strong>差异化</strong>：这不是预先固定的产品模板，而是围绕 9 月 29 日项目组合提出的探索方向；组件能否连成可复用流程仍待验证。</p>
+<p style="margin:10px 0;"><strong>双评分</strong>：技术组合成熟度 <strong>93/100（高）</strong>（组件可靠度 33/40 · 组件供给 20/20 · 风险敞口 20/20 · 许可证 10/10 · 完整度 10/10） · 需求证据强度 <strong>49/100（低）</strong>（证据等级 24/40 · 用户明确表态 0/25 · 独立来源 10/20 · 新鲜度 15/15）</p>
+<p style="margin:10px 0;"><strong>MVP 实验</strong>：</p>
+<p style="margin:8px 0;font-size:15px;color:#1c2733;"><span style="color:#ff7a1a;font-weight:bold;margin-right:8px;">-</span>测试场景：在自有环境按「把流程拆成可审批的步骤 → 跑通一条 → 记录产出」跑通一条最小链路，客户与数据都不出实验环境</p>
+<p style="margin:8px 0;font-size:15px;color:#1c2733;"><span style="color:#ff7a1a;font-weight:bold;margin-right:8px;">-</span>测试数据：3 条真实任务的步骤记录（含失败案例）；组件清单内的模型调用记录；1 个不可信任务的样本与权限边界清单；上一轮任务的 trace 与产出样本</p>
+<p style="margin:8px 0;font-size:15px;color:#1c2733;"><span style="color:#ff7a1a;font-weight:bold;margin-right:8px;">-</span>周期：14 天</p>
+<p style="margin:8px 0;font-size:15px;color:#1c2733;"><span style="color:#ff7a1a;font-weight:bold;margin-right:8px;">-</span>成功指标：端到端任务连续跑通 ≥ 20 次，失败可恢复率 100%；用量与路由记录可对齐，成本偏差 ≤ 10%；隔离边界越界 0 次，资源/网络记录可复核</p>
+<p style="margin:8px 0;font-size:15px;color:#1c2733;"><span style="color:#ff7a1a;font-weight:bold;margin-right:8px;">-</span>失败指标：核心链路两轮内跑不通，或需要改组件源码才能继续；上述成功指标低于阈值的一半，或抽检样本无法复现；组件在实验期内维护停滞（>90 天无有效活动）或许可证不合规；必须引入额外闭源/付费组件才能闭环</p>
+<p style="margin:8px 0;font-size:15px;color:#1c2733;"><span style="color:#ff7a1a;font-weight:bold;margin-right:8px;">-</span>停止条件：周期结束未达到成功指标 → 停止，不进入开发投入；命中任一条失败指标 → 立即停止并记录原因；需求侧找不到 3 位可访谈的目标客户 → 停在技术试验阶段</p>
+<p style="margin:10px 0;"><strong>下一步动作</strong>：</p>
+<p style="margin:10px 0;">1. 先做技术试验（14 天，见 MVP 实验），不对需求侧做任何承诺</p>
+<p style="margin:10px 0;"><strong>主要风险</strong>：</p>
+<p style="margin:8px 0;font-size:15px;color:#1c2733;"><span style="color:#ff7a1a;font-weight:bold;margin-right:8px;">-</span><code style="font-family:Menlo,Consolas,monospace;background:#eef3f7;border-radius:3px;padding:1px 5px;font-size:15px;">apache/airflow</code>：组件多、运维成本高；更适合静态且变化较慢的 DAG，不适合事件流处理或小型单机任务。</p>
+<p style="margin:8px 0;font-size:15px;color:#1c2733;"><span style="color:#ff7a1a;font-weight:bold;margin-right:8px;">-</span><code style="font-family:Menlo,Consolas,monospace;background:#eef3f7;border-radius:3px;padding:1px 5px;font-size:15px;">google/gvisor</code>：代码规模和 Linux/Bazel 依赖较大；gVisor 的安全结论、系统调用覆盖与性能取舍不宜直接照搬到生产 Agent 隔离层，必须结合自身威胁模型复测。</p>
+<p style="margin:8px 0;font-size:15px;color:#1c2733;"><span style="color:#ff7a1a;font-weight:bold;margin-right:8px;">-</span><code style="font-family:Menlo,Consolas,monospace;background:#eef3f7;border-radius:3px;padding:1px 5px;font-size:15px;">mlflow/mlflow</code>：项目体量和功能面较大；生产部署涉及后端、制品存储与权限配置，初学时应先运行本地最小示例。</p>
+<p style="margin:8px 0;font-size:15px;color:#1c2733;"><span style="color:#ff7a1a;font-weight:bold;margin-right:8px;">-</span><code style="font-family:Menlo,Consolas,monospace;background:#eef3f7;border-radius:3px;padding:1px 5px;font-size:15px;">run-llama/llama_index</code>：集成范围广、版本变化快；需要按实际模型与数据源选择依赖，避免一次引入整套生态。</p>
+<p style="margin:10px 0;"><strong>验证边界补充：</strong> 该方案的流程拆分与产出记录仍需按自有任务试验。源报告同时列出用量与路由记录、成本偏差和隔离边界指标，但组合表未标明承担路由限额与用量采集的组件；这些指标能否测得应先验证，不能据此认定工作台已具备相应能力。</p>
+<h3 style="font-size:17px;font-weight:bold;color:#0b3d66;border-left:4px solid #ff7a1a;padding-left:10px;margin:26px 0 10px;">可行性方案 2：可审计的 Agent 开发交付平台</h3>
+<p style="margin:10px 0 6px;"><strong>方案判断</strong>：<strong style="color:#fff;background:#0b3d66;border-radius:999px;padding:2px 12px;font-size:15px;">可以先做技术试验；组件供给已有依据，但客户问题尚无访谈或采购证据</strong>。</p>
+<p style="margin:10px 0;"><strong>业务定位</strong>：让 Agent 任务像 CI 一样跑：进沙箱执行、全程留痕、出审计报告，人工批准后才允许写仓库。</p>
+<p style="margin:10px 0;"><strong>业务轨道</strong>：成熟方向（组件供给已核对）</p>
+<p style="margin:10px 0;"><strong>目标客户</strong>：已在使用 coding agent（Codex/Claude Code/Cursor）的研发团队与平台工程组</p>
+<p style="margin:10px 0;"><strong>市场机会</strong>：【待验证假设】团队是否迫切需要解决任务恢复、花费归因和越权检查，目前没有外部需求证据。近 90 天收录的隔离执行与观测类项目增多，说明组件供给已有依据，不说明客户需求已经成立。</p>
+<p style="margin:10px 0;"><strong>需求证据</strong>：59/100（最高等级：项目方自述）；客户问题「Agent 跑挂了无法恢复，花了多少钱、有没有越权也说不清」与预期结果「像 CI 一样可恢复、可审计的 Agent 交付流水线」由项目能力与目标客户推导，尚无客户访谈证据；付费意愿、采购预算与市场规模均无独立来源。</p>
+<p style="margin:10px 0;"><strong>组合依据</strong>：五个组件分别覆盖隔离执行、评测、审计、Agent 编排与模型路由，拟串成类似 CI 的交付流程；能否连通仍需试验。9 月 28 日日报收录了 <code style="font-family:Menlo,Consolas,monospace;background:#eef3f7;border-radius:3px;padding:1px 5px;font-size:15px;">promptfoo/promptfoo</code>，其余组件来自此前项目记录。相关类别候选数为沙箱 165、观测 145、安全 112、Agent 332、网关 193，最少一类有 112 个；这是组件供给参考，不是生产可用或市场需求的证明。</p>
+<p style="margin:10px 0;"><strong>组合方案</strong>：</p>
+<table style="width:100%;border-collapse:collapse;font-size:13px;color:#1c2733;margin:10px 0;" cellpadding="0" cellspacing="0">
+<tr><th style="width:13%;background:#0b3d66;color:#fff;font-size:13px;font-weight:bold;text-align:left;padding:5px 6px;border:1px solid #0b3d66;word-break:break-all;">角色</th><th style="width:20%;background:#0b3d66;color:#fff;font-size:13px;font-weight:bold;text-align:left;padding:5px 6px;border:1px solid #0b3d66;word-break:break-all;">项目</th><th style="width:67%;background:#0b3d66;color:#fff;font-size:13px;font-weight:bold;text-align:left;padding:5px 6px;border:1px solid #0b3d66;word-break:break-all;">入选理由</th></tr>
+<tr><td style="width:13%;padding:5px 6px;border:1px solid #e9eef4;vertical-align:top;font-size:13px;font-weight:bold;color:#ff7a1a;word-break:break-all;">执行沙箱/隔离</td><td style="width:20%;padding:5px 6px;border:1px solid #e9eef4;vertical-align:top;font-family:Menlo,Consolas,monospace;font-size:13px;color:#0b3d66;word-break:break-all;">tastyeffectco/sandboxd</td><td style="width:67%;padding:5px 6px;border:1px solid #e9eef4;vertical-align:top;font-size:13px;color:#1c2733;word-break:break-all;">它解决的是 Agent 真实执行环境而不是又一个 prompt 工具，文档诚实、近期维护密集，适合亲自部署验证。</td></tr>
+<tr><td style="width:13%;padding:5px 6px;border:1px solid #e9eef4;vertical-align:top;font-size:13px;font-weight:bold;color:#ff7a1a;word-break:break-all;">可观测与评测</td><td style="width:20%;padding:5px 6px;border:1px solid #e9eef4;vertical-align:top;font-family:Menlo,Consolas,monospace;font-size:13px;color:#0b3d66;word-break:break-all;">promptfoo/promptfoo</td><td style="width:67%;padding:5px 6px;border:1px solid #e9eef4;vertical-align:top;font-size:13px;color:#1c2733;word-break:break-all;">入口可以从一份配置和一次 eval 开始，足以拆解评测、回归与安全扫描的工程实现；近期提交和版本记录也支持其实现仍在更新。</td></tr>
+<tr><td style="width:13%;padding:5px 6px;border:1px solid #e9eef4;vertical-align:top;font-size:13px;font-weight:bold;color:#ff7a1a;word-break:break-all;">安全审计</td><td style="width:20%;padding:5px 6px;border:1px solid #e9eef4;vertical-align:top;font-family:Menlo,Consolas,monospace;font-size:13px;color:#0b3d66;word-break:break-all;">openai/codex-security</td><td style="width:67%;padding:5px 6px;border:1px solid #e9eef4;vertical-align:top;font-size:13px;color:#1c2733;word-break:break-all;">它把安全扫描的输入固定、结果比较、批量运行和 SDK 化做成了清晰工程接口，是跨领域但与 Agent 工程强相关的实用补位。</td></tr>
+<tr><td style="width:13%;padding:5px 6px;border:1px solid #e9eef4;vertical-align:top;font-size:13px;font-weight:bold;color:#ff7a1a;word-break:break-all;">Agent 编排</td><td style="width:20%;padding:5px 6px;border:1px solid #e9eef4;vertical-align:top;font-family:Menlo,Consolas,monospace;font-size:13px;color:#0b3d66;word-break:break-all;">omnigent-ai/omnigent</td><td style="width:67%;padding:5px 6px;border:1px solid #e9eef4;vertical-align:top;font-size:13px;color:#1c2733;word-break:break-all;">它不是单一 agent wrapper，而是把多代理、协作、策略和部署作为一个工程平台处理；仓库提供策略与部署路径，适合先在受控环境验证这些集成边界。</td></tr>
+<tr><td style="width:13%;padding:5px 6px;border:1px solid #e9eef4;vertical-align:top;font-size:13px;font-weight:bold;color:#ff7a1a;word-break:break-all;">模型网关/成本</td><td style="width:20%;padding:5px 6px;border:1px solid #e9eef4;vertical-align:top;font-family:Menlo,Consolas,monospace;font-size:13px;color:#0b3d66;word-break:break-all;">diegosouzapw/omniroute</td><td style="width:67%;padding:5px 6px;border:1px solid #e9eef4;vertical-align:top;font-size:13px;color:#1c2733;word-break:break-all;">来源记录显示 Stars 超过 5,000，并有 Trending 增长迹象；仓库提供安装、测试、文档和安全说明，适合先做受控本地试用，不能仅凭社区热度判断适用性。</td></tr>
+</table>
+
+<p style="margin:10px 0;"><strong>差异化</strong>：相比单个 harness 或观测工具，它把隔离执行、trace 评测和审计报告串成一条流水线。</p>
+<p style="margin:10px 0;"><strong>双评分</strong>：技术组合成熟度 <strong>81/100（中）</strong>（组件可靠度 33/40 · 组件供给 20/20 · 风险敞口 8/20 · 许可证 10/10 · 完整度 10/10） · 需求证据强度 <strong>59/100（低）</strong>（证据等级 24/40 · 用户明确表态 0/25 · 独立来源 20/20 · 新鲜度 15/15）</p>
+<p style="margin:10px 0;"><strong>MVP 实验</strong>：</p>
+<p style="margin:8px 0;font-size:15px;color:#1c2733;"><span style="color:#ff7a1a;font-weight:bold;margin-right:8px;">-</span>测试场景：在自有环境按「沙箱内执行 → 留痕与审计报告 → 人工批准后写仓库」跑通一条最小链路，客户与数据都不出实验环境</p>
+<p style="margin:8px 0;font-size:15px;color:#1c2733;"><span style="color:#ff7a1a;font-weight:bold;margin-right:8px;">-</span>测试数据：1 个授权靶场或自有仓库的依赖清单；3 条真实任务的步骤记录（含失败案例）；组件清单内的模型调用记录；1 个不可信任务的样本与权限边界清单；上一轮任务的 trace 与产出样本</p>
+<p style="margin:8px 0;font-size:15px;color:#1c2733;"><span style="color:#ff7a1a;font-weight:bold;margin-right:8px;">-</span>周期：14 天</p>
+<p style="margin:8px 0;font-size:15px;color:#1c2733;"><span style="color:#ff7a1a;font-weight:bold;margin-right:8px;">-</span>成功指标：扫描发现的问题 100% 有独立验证结论；端到端任务连续跑通 ≥ 20 次，失败可恢复率 100%；用量与路由记录可对齐，成本偏差 ≤ 10%</p>
+<p style="margin:8px 0;font-size:15px;color:#1c2733;"><span style="color:#ff7a1a;font-weight:bold;margin-right:8px;">-</span>失败指标：核心链路两轮内跑不通，或需要改组件源码才能继续；上述成功指标低于阈值的一半，或抽检样本无法复现；组件在实验期内维护停滞（>90 天无有效活动）或许可证不合规；必须引入额外闭源/付费组件才能闭环</p>
+<p style="margin:8px 0;font-size:15px;color:#1c2733;"><span style="color:#ff7a1a;font-weight:bold;margin-right:8px;">-</span>停止条件：周期结束未达到成功指标 → 停止，不进入开发投入；命中任一条失败指标 → 立即停止并记录原因；需求侧找不到 3 位可访谈的目标客户 → 停在技术试验阶段</p>
+<p style="margin:10px 0;"><strong>下一步动作</strong>：</p>
+<p style="margin:10px 0;">1. 先做技术试验（14 天，见 MVP 实验），不对需求侧做任何承诺</p>
+<p style="margin:10px 0;"><strong>主要风险</strong>：</p>
+<p style="margin:8px 0;font-size:15px;color:#1c2733;"><span style="color:#ff7a1a;font-weight:bold;margin-right:8px;">-</span><code style="font-family:Menlo,Consolas,monospace;background:#eef3f7;border-radius:3px;padding:1px 5px;font-size:15px;">tastyeffectco/sandboxd</code>：仍是 0.x/Beta；默认容器隔离不是 VM，多租户不可信代码场景需要额外 hardening、gVisor 或更强隔离策略。</p>
+<p style="margin:8px 0;font-size:15px;color:#1c2733;"><span style="color:#ff7a1a;font-weight:bold;margin-right:8px;">-</span><code style="font-family:Menlo,Consolas,monospace;background:#eef3f7;border-radius:3px;padding:1px 5px;font-size:15px;">promptfoo/promptfoo</code>：评测结果依赖样本、断言和评分器设计；红队能力应只用于获准的目标，且需控制模型调用成本。</p>
+<p style="margin:8px 0;font-size:15px;color:#1c2733;"><span style="color:#ff7a1a;font-weight:bold;margin-right:8px;">-</span><code style="font-family:Menlo,Consolas,monospace;background:#eef3f7;border-radius:3px;padding:1px 5px;font-size:15px;">openai/codex-security</code>：部分网络安全请求和受保护发现需要 Trusted Access for Cyber；扫描依赖模型、API 权限和成本，不能替代静态分析、依赖扫描、人工审计或完整测试；早期 0.1.x 版本应先固定版本并验证误报/漏报。</p>
+<p style="margin:8px 0;font-size:15px;color:#1c2733;"><span style="color:#ff7a1a;font-weight:bold;margin-right:8px;">-</span><code style="font-family:Menlo,Consolas,monospace;background:#eef3f7;border-radius:3px;padding:1px 5px;font-size:15px;">omnigent-ai/omnigent</code>：项目处于 alpha，未认证 API 看到 open issues 为 547，集成面很大，生产采用前需要先验证策略边界、权限模型和部署运维成本。</p>
+<p style="margin:8px 0;font-size:15px;color:#1c2733;"><span style="color:#ff7a1a;font-weight:bold;margin-right:8px;">-</span><code style="font-family:Menlo,Consolas,monospace;background:#eef3f7;border-radius:3px;padding:1px 5px;font-size:15px;">diegosouzapw/omniroute</code>：统一保存多 Provider 凭据会扩大本地攻击面；路由回退可能改变模型能力、成本和数据地域，部署前必须做最小权限、日志脱敏和故障演练。</p>
+<h2 style="font-size:18px;font-weight:bold;color:#0b3d66;border-left:4px solid #ff7a1a;padding-left:10px;margin:30px 0 6px;">本周优先试用</h2>
+<p style="margin:10px 0;">按手头任务选起点：Python 脚本需要失败重试时看 Prefect；模型输出需要回归对照时看 Promptfoo；本地摄像头先用 Frigate 测单路画面。两项组合方案暂限受控技术试验。</p>
+<p style="margin:10px 0;">完整周报还列出这十项的维护记录、许可证、风险和具体上手建议。</p>
+<p style="font-size:14px;color:#8a95a1;margin:10px 0;"><strong>阅读全文：</strong> 2026-W40 完整周报</p>
+<p style="margin:10px 0;">这十项里，你最想先试哪一个，卡在哪一步？</p>
+<hr style="border:none;border-top:1px solid #e3e9ef;margin:28px 0 20px;">
+<section style="background:#eef3f7;border-radius:8px;padding:14px 18px;margin-top:20px;">
+<p style="font-weight:bold;color:#222;margin:0 0 6px;">关于仓库雷达</p>
+<p style="font-size:15px;color:#555;margin:0;">仓库雷达持续整理值得使用、学习和二次开发的开源项目。日报负责发现，周报负责筛选，也会尽量把风险和低成本试法说清楚。</p>
+</section>
+<section style="border:2px dashed #c9d4e8;border-radius:8px;background:#f7f9fc;color:#7a8aa5;font-size:14px;text-align:center;padding:14px 12px;margin-top:20px;">
+【发布前删除】后台设置「阅读原文」→ 完整周报页面 URL（如已部署）
+</section>
+</section>
+
+<script>
+(function(){
+  var btn = document.getElementById('copyArticleBtn');
+  if (!btn) return;
+  btn.addEventListener('click', function(){
+    var placeholders = document.querySelectorAll('section[style*="dashed"]');
+    var hidden = [];
+    placeholders.forEach(function(s){ s.style.display = 'none'; hidden.push(s); });
+    var box = document.querySelector('body > section') || document.body;
+    var r = document.createRange();
+    r.selectNodeContents(box);
+    var sel = window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(r);
+    var ok = false;
+    try { ok = document.execCommand('copy'); } catch(e) { ok = false; }
+    sel.removeAllRanges();
+    hidden.forEach(function(s){ s.style.display = ''; });
+    var old = btn.textContent;
+    btn.textContent = ok ? '✅ 已复制，去公众号粘贴' : '❌ 复制失败，请手动框选正文';
+    btn.style.background = ok ? '#0b3d66' : '#b00020';
+    setTimeout(function(){ btn.textContent = old; btn.style.background = '#ff7a1a'; }, 2000);
+  });
+})();
+</script>
+</body>
+</html>

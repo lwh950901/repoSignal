@@ -193,26 +193,50 @@ class ReuseAwareSelectionTests(unittest.TestCase):
 
 
 class FeasibilityRenderingTests(unittest.TestCase):
-    def test_combo_table_only_exposes_role_project_and_reason(self):
+    def test_combo_card_exposes_business_name_projects_and_data_flow(self):
         steps = plan_steps([("document", "文档解析"), ("rag", "检索/知识库"),
                             ("agent", "Agent 编排"), ("observability", "观测/评测")])
-        combo = make_combo(steps)
         project = steps[0][2]
+        combo = make_combo(steps)
 
         report = analysis.render(
             [project], [project], [combo], "2026-09-07", "2026-06-09",
             "2026-09-07", 1, 0, None,
         )
 
-        self.assertIn("| 角色 | 项目 | 入选理由 |", report)
-        self.assertNotIn("| 角色 | 项目 | 来源 | 许可证 | 入选理由 |", report)
-        self.assertIn(
-            "| 文档解析 | [`owner/document`](https://github.com/owner/document) | "
-            "可先小范围试用并记录产出。 |",
-            report,
+        # 标题是业务名（不是项目名，也不是能力面拼装名）
+        self.assertIn("### 组合 1：", report)
+        self.assertIn("**项目**：", report)
+        self.assertIn("[`owner/document`](https://github.com/owner/document)", report)
+        # 每个组合必须有数据流链与输入输出表
+        self.assertIn("串成一条链：文档处理 → 检索增强 → 任务编排 → 评测观测", report)
+        self.assertIn("| 角色 | 项目 | 这一步做什么（输入 → 输出） |", report)
+
+    def test_combo_card_keeps_risk_first_sentence_and_drops_removed_sections(self):
+        steps = plan_steps([("document", "文档解析"), ("rag", "检索/知识库"),
+                            ("agent", "Agent 编排"), ("observability", "观测/评测")])
+        project = steps[0][2]
+        risk = ("组件多、运维成本高；更适合静态且变化较慢的任务，不适合事件流处理或小型单机任务；"
+                "还需要按目标环境核对数据库、执行器、权限配置、资源限制、网络访问和升级回滚路径；"
+                "多租户场景的日志隔离、凭据访问和故障演练要在生产采用前逐项检查。")
+        project["fields"].update(risks=risk)
+        combo = make_combo(steps)
+
+        report = analysis.render(
+            [project], [project], [combo], "2026-09-07", "2026-06-09",
+            "2026-09-07", 1, 0, None,
         )
-        self.assertNotIn("**组件数据流**", report)
-        self.assertNotIn("**接入方式**", report)
+
+        # 风险只取源报告首句，不带后面的分句
+        self.assertIn("- `owner/document`：组件多、运维成本高", report)
+        self.assertNotIn("多租户场景的日志隔离", report)
+        # 旧结构里被移除的段落不得复现
+        for gone in ("**业务定位**", "**业务轨道**", "**目标客户**", "**市场机会**",
+                     "**需求证据**", "**组合依据**", "**差异化**", "**双评分**",
+                     "**MVP 实验**", "**主要风险", "**下一步动作**", "**组件数据流**",
+                     "**接入方式**"):
+            self.assertNotIn(gone, report)
+        self.assertNotIn("| 角色 | 项目 | 入选理由 |", report)
 
 
 class AnchorBusinessNamingTests(unittest.TestCase):
@@ -549,7 +573,7 @@ class ExploratoryTrackTests(unittest.TestCase):
     def test_prefers_today_complement_then_low_reuse_history(self):
         today_agent = self.project("owner/today-agent", {"agent": 6},
                                    "Agent 编排框架。", stars=500)
-        today_rag = self.project("owner/today-rag", {"rag": 1},
+        today_rag = self.project("owner/today-rag", {"rag": 5},
                                  "今日知识检索接口。", stars=1)
         history_rag = self.project("owner/history-rag", {"rag": 9},
                                    "历史知识检索接口。", stars=5000)
@@ -604,6 +628,56 @@ class ExploratoryTrackTests(unittest.TestCase):
 
         self.assertEqual(combos, [])
 
+    def test_flow_top_tag_requires_a_clear_winner(self):
+        """主面必须明确胜出；并列或低分时不能作锚点。"""
+        clear = self.project("owner/clear", {"agent": 3, "rag": 2}, "Agent 框架。")
+        low = self.project("owner/low", {"gateway": 1, "comm": 1}, "会议助手。")
+        tied = self.project("owner/tied", {"sandbox": 2, "gateway": 2}, "推理服务。")
+
+        self.assertEqual(analysis.flow_top_tag(clear), "agent")
+        self.assertEqual(analysis.flow_top_tag(low), "")
+        self.assertEqual(analysis.flow_top_tag(tied), "")
+
+    def test_ambiguous_anchor_face_starts_no_direction(self):
+        """主面并列/低分的今日项目不能作锚点，方向由明确胜出的锚点决定。"""
+        ambiguous_low = self.project("owner/tie-low", {"gateway": 1, "comm": 1},
+                                     "会议转写助手。", stars=900)
+        ambiguous_high = self.project("owner/tie-high", {"sandbox": 2, "gateway": 2},
+                                      "本地推理服务。", stars=800)
+        clear = self.project("owner/clear-document", {"document": 5},
+                             "文档解析接口。", stars=100)
+        history = [
+            self.project("owner/history-rag", {"rag": 5}, "知识检索接口。", stars=50),
+            self.project("owner/history-agent", {"agent": 5}, "Agent 框架。", stars=50),
+        ]
+        today = [ambiguous_low, ambiguous_high, clear]
+
+        combos = analysis.build_exploratory_combos(
+            today + history, today, {p["id"] for p in today}, reuse_counts={})
+
+        self.assertEqual([c["anchor_id"] for c in combos], [clear["id"]])
+
+    def test_weak_slot_fill_is_skipped_for_a_qualified_history_component(self):
+        """槽位填充要求面分达标：今日弱命中让位给合格的历史组件。"""
+        today_agent = self.project("owner/today-agent", {"agent": 6},
+                                   "Agent 编排框架。", stars=500)
+        today_rag = self.project("owner/today-rag", {"rag": 1},
+                                 "今日知识检索接口。", stars=50)
+        history_rag = self.project("owner/history-rag", {"rag": 5},
+                                   "历史知识检索接口。", stars=10)
+        history_document = self.project("owner/history-document", {"document": 5},
+                                        "历史文档解析接口。", stars=10)
+        today = [today_agent, today_rag]
+
+        combos = analysis.build_exploratory_combos(
+            [today_agent, today_rag, history_rag, history_document], today,
+            {p["id"] for p in today}, reuse_counts={})
+
+        combo = next(c for c in combos if c["anchor_id"] == today_agent["id"])
+        selected_ids = {p["id"] for p in combo["picks"].values()}
+        self.assertIn(history_rag["id"], selected_ids)
+        self.assertNotIn(today_rag["id"], selected_ids)
+
 
 class DualTrackRenderingTests(unittest.TestCase):
     @staticmethod
@@ -653,7 +727,7 @@ class DualTrackRenderingTests(unittest.TestCase):
         return analysis.render([project], [project], [combo], "2026-09-14",
                                "2026-06-16", "2026-09-14", 1, 0, None)
 
-    def test_render_exposes_track_and_hides_machine_metadata(self):
+    def test_render_shows_exploratory_business_name_and_hides_machine_metadata(self):
         project = self.project("owner/tool", {"agent": 5}, "任务闭环工具。")
         history = self.project("owner/history", {"rag": 5}, "历史检索工具。")
         combo = self.combo("exploratory", project)
@@ -662,22 +736,26 @@ class DualTrackRenderingTests(unittest.TestCase):
 
         report = self.render(combo, project)
 
-        self.assertIn("**业务轨道**：探索方向（待验证）", report)
-        self.assertIn("**方案判断**：", report)
+        # 探索方向的标题按客户问题派生业务名，不用能力面拼装名
+        self.assertIn("### 组合 1：可溯源知识检索助手", report)
+        self.assertIn("**项目**：tool", report)
         self.assertIn("（探索方向待验证）", report)
-        self.assertIn("另有 1 个互补组件来自最近 90 天项目池", report)
+        self.assertIn("- **判断**：继续观察（技术组合成熟度 80/100", report)
         self.assertNotIn("track=exploratory", report)
         self.assertNotIn("plan_family=", report)
-        self.assertNotIn("组件全部来自今日日报", report)
+        self.assertNotIn("本地优先 · 知识增强 · Agent 工作台", report)
 
     def test_render_marks_mature_track_without_validation_notice(self):
         project = self.project("owner/tool", {"agent": 5}, "任务闭环工具。")
         combo = self.combo("mature", project)
-        combo["business"]["evidence_status"] = analysis.EVIDENCE_VERIFIED
+        combo["name"] = "安全 Agent 平台（扫描-修复-验证）"
+        combo["business"]["problem_id"] = "unverified-changes"
 
         report = self.render(combo, project)
 
-        self.assertIn("**业务轨道**：成熟方向（组件供给已核对）", report)
+        # 成熟方向用模板业务名，只去掉末尾括注
+        self.assertIn("### 组合 1：安全 Agent 平台", report)
+        self.assertNotIn("（扫描-修复-验证）", report)
         self.assertNotIn("探索方向待验证", report)
 
     def test_render_states_when_no_plan_qualified(self):
@@ -867,28 +945,43 @@ class ExperimentAndEvidenceTests(unittest.TestCase):
         self.assertTrue(experiment["stop"])
         self.assertTrue(any("停止" in item for item in experiment["stop"]))
 
-    def test_report_prints_the_experiment_block_and_next_actions(self):
+    def test_success_metrics_prioritize_the_seed_face(self):
+        """成功指标先保锚点主面（方向验收口径），其余补足且整体不超过 3 条。"""
+        combo = make_combo(plan_steps([("codeintel", "代码理解"), ("rag", "检索"),
+                                       ("agent", "编排"), ("sandbox", "隔离"),
+                                       ("observability", "评测")]),
+                           track=analysis.TRACK_EXPLORATORY)
+        combo["anchor_face"] = "sandbox"
+
+        experiment = analysis.build_experiment(combo)
+
+        self.assertEqual(experiment["success"][0],
+                         analysis.EXPERIMENT_SUCCESS["sandbox"])
+        self.assertEqual(len(experiment["success"]), 3)
+
+    def test_report_has_no_experiment_block_and_no_next_actions(self):
         combo = self.combo()
         report = analysis.render([combo["picks"]["文档解析"]], [], [combo],
                                  "2026-09-14", "2026-06-16", "2026-09-14", 1, 0, None)
 
-        for label in ("- 测试场景：", "- 测试数据：", "- 周期：", "- 成功指标：",
-                      "- 失败指标：", "- 停止条件："):
-            self.assertIn(label, report)
-        self.assertIn("**下一步动作**：", report)
-        self.assertNotIn("核验 2-3 个核心组件", report)
-        self.assertNotIn("**最大不确定性**：", report)
-        self.assertNotIn("**客户问题**：", report)
+        for gone in ("- 测试场景：", "- 测试数据：", "- 成功指标：",
+                     "- 失败指标：", "- 停止条件：", "**MVP 实验**：",
+                     "**下一步动作**：", "先做技术试验（14 天，见 MVP 实验）",
+                     "核验 2-3 个核心组件", "**最大不确定性**：", "**客户问题**："):
+            self.assertNotIn(gone, report)
 
-    def test_demand_statements_carry_evidence_levels(self):
+    def test_evidence_level_surfaces_in_judgment_and_conclusion(self):
         combo = self.combo()
         report = analysis.render([], [], [combo], "2026-09-14", "2026-06-16",
                                  "2026-09-14", 1, 0, None)
 
-        self.assertIn("**需求证据**：", report)
-        self.assertIn("（最高等级：项目方自述）", report)
-        self.assertIn("【待验证假设】", report)
-        self.assertNotIn("- 【项目方自述】", report)
+        self.assertIn("- **判断**：值得技术试验（技术组合成熟度", report)
+        self.assertIn("最高等级：项目方自述", report)
+        self.assertIn("需求证据强度", report)
+        # 旧的"需求证据"行与自造市场表述都不再出现
+        self.assertNotIn("**需求证据**：", report)
+        self.assertNotIn("【待验证假设】", report)
+        self.assertNotIn("【已确认事实】", report)
 
     def test_templates_and_report_avoid_unfounded_claims(self):
         for tpl in analysis.TEMPLATES:
@@ -904,9 +997,10 @@ class ExperimentAndEvidenceTests(unittest.TestCase):
                                  "2026-09-14", 1, 0, None)
         body = report.split("## 可行性方案", 1)[1]
 
+        # 模板里的无来源断言不进正文；市场类字段整体已从正文移除
         self.assertNotIn("愿意付费", body)
         self.assertNotIn("刚需", body)
-        self.assertIn("（无来源断言，已删除）", body)
+        self.assertNotIn("**市场机会**", report)
 
 
 class ReportStructureTests(unittest.TestCase):
@@ -928,7 +1022,7 @@ class ReportStructureTests(unittest.TestCase):
             [("旧组合", "仅标签相关（缺接口依据）：owner/x")],
         )
 
-        self.assertIn("冷却与重现：企业内部知识助手：冷却期内", report)
+        self.assertIn("冷却与重现（每个方向一行）：\n  企业内部知识助手：冷却期内", report)
         self.assertIn("暂不建议（未列入）：旧方向（缺需求证据（无证据））", report)
         self.assertIn("闭环门槛未过（未列入）：旧组合（仅标签相关（缺接口依据）：owner/x）", report)
 
@@ -936,9 +1030,11 @@ class ReportStructureTests(unittest.TestCase):
         combo = self.combo()
         report = analysis.render([], [], [combo], "2026-09-14", "2026-06-16",
                                  "2026-09-14", 1, 0, None)
-        order = ["## 今日结论", "**方案判断**：", "**业务定位**：", "**目标客户**：",
-                 "**市场机会**：", "**需求证据**：", "**组合依据**：", "**组合方案**：",
-                 "**双评分**：", "**MVP 实验**：", "**下一步动作**："]
+        order = ["## 今日结论", "## 可行性方案", "### 组合 1：", "**项目**：",
+                 "| 角色 | 项目 | 这一步做什么（输入 → 输出） |",
+                 "- **为什么是这几个**：", "- **怎么连**：", "- **接口信号",
+                 "- **要注意的地方", "- **组件新鲜度**：", "- **判断**：",
+                 "## 结论"]
         positions = [report.index(marker) for marker in order]
 
         self.assertEqual(positions, sorted(positions))
@@ -970,7 +1066,7 @@ class ReportStructureTests(unittest.TestCase):
         self.assertIn("本轮无合格方案", report)
         self.assertIn("暂不建议（未列入）：方案 B", report)
         self.assertIn("闭环门槛未过（未列入）：方案 C", report)
-        self.assertIn("冷却与重现：方案 A", report)
+        self.assertIn("冷却与重现（每个方向一行）：\n  方案 A", report)
         self.assertIn("不为每日产出凑数", report)
 
 
@@ -1010,17 +1106,17 @@ class ReportCompatibilityTests(unittest.TestCase):
         self.assertEqual(identity["business"]["evidence_status"], "to-validate")
 
 
-class KunTaskContractTests(unittest.TestCase):
-    """KUN-TASK.md 的契约必须与生成器一致（0–3 个、双评分、四档判断、冷却）。"""
+class FeasibilityTaskContractTests(unittest.TestCase):
+    """FEASIBILITY-TASK.md 的契约必须与生成器一致（0–3 个、双评分、四档判断、冷却）。"""
 
     @classmethod
     def setUpClass(cls):
         cls.path = (Path(__file__).resolve().parent.parent
-                    / "data" / "github-project-digest" / "feasibility" / "KUN-TASK.md")
+                    / "data" / "github-project-digest" / "feasibility" / "FEASIBILITY-TASK.md")
         cls.text = cls.path.read_text(encoding="utf-8") if cls.path.is_file() else ""
 
     def test_contract_uses_the_dual_track_range(self):
-        self.assertTrue(self.text, "KUN-TASK.md 缺失")
+        self.assertTrue(self.text, "FEASIBILITY-TASK.md 缺失")
         self.assertIn("0–3", self.text)
         self.assertIn("成熟方向", self.text)
         self.assertIn("探索方向", self.text)
@@ -1033,36 +1129,45 @@ class KunTaskContractTests(unittest.TestCase):
         self.assertNotIn("报告含 3 个方案", self.text)
         self.assertNotIn("优先推进评分最高", self.text)
 
-    def test_contract_requires_post_generation_naming_step(self):
-        self.assertIn("命名标准", self.text)
-        self.assertIn("生成后", self.text)
+    def test_contract_requires_post_generation_title_review(self):
+        self.assertIn("命名标准（生成后审核优化）", self.text)
+        self.assertIn("审核优化组合标题", self.text)
         self.assertIn("plan_family", self.text)
         self.assertIn("8–20", self.text)
 
-    def test_contract_splits_the_two_scores(self):
-        for token in ("双评分", "技术组合成熟度", "需求证据强度", "组件成熟不等于商业可行"):
+    def test_contract_keeps_two_scores_but_not_as_a_section(self):
+        for token in ("技术组合成熟度", "需求证据强度", "组件成熟不等于商业可行"):
             self.assertIn(token, self.text)
+        # 双评分不再是一个段落，只出现在"判断"行与结论里
+        self.assertNotIn("**双评分**", self.text)
 
     def test_contract_defines_the_four_judgments(self):
         for label in analysis.JUDGMENT_ORDER:
             self.assertIn(label, self.text)
-        self.assertIn("不列入方案列表", self.text)
+        self.assertIn("不列入组合列表", self.text)
 
-    def test_contract_defines_closure_gate_and_evidence_levels(self):
-        for token in ("闭环门槛", "组件数据流", "接入方式", "仅标签相关"):
-            self.assertIn(token, self.text)
-        for level in analysis.EVIDENCE_LEVELS:
-            self.assertIn(level, self.text)
-
-    def test_contract_defines_cooldown_window_and_falsifiable_mvp(self):
-        self.assertIn("7–14", self.text)
-        for token in ("新增关键组件", "证据等级提升", "测试场景", "成功指标",
-                      "失败指标", "停止条件"):
+    def test_contract_defines_closure_gate_and_data_flow(self):
+        for token in ("闭环门槛", "数据流链条", "输入 → 输出", "仅标签相关"):
             self.assertIn(token, self.text)
 
-    def test_contract_retires_low_value_sections(self):
+    def test_contract_requires_the_card_fields(self):
+        for token in ("业务名标题", "**项目**：", "为什么是这几个", "怎么连",
+                      "接口信号", "位置可能不对口", "要注意的地方", "组件新鲜度",
+                      "判断"):
+            self.assertIn(token, self.text)
+
+    def test_contract_retires_market_sections(self):
+        for gone in ("目标客户", "市场机会", "需求证据", "差异化",
+                     "MVP 实验", "最大不确定性", "下一步动作"):
+            self.assertIn(gone, self.text)   # 只出现在"不含这些段落"的说明里
         self.assertNotIn("单点项目机会", self.text)
-        self.assertIn("刚需", self.text)   # 仅出现在禁用措辞说明里
+        self.assertIn("不做市场结论", self.text)
+        self.assertIn("刚需", self.text)      # 仅出现在禁用措辞说明里
+
+    def test_contract_defines_cooldown_window(self):
+        self.assertIn("7–14", self.text)
+        for token in ("新增关键组件", "证据等级提升", "冷却与重现"):
+            self.assertIn(token, self.text)
 
 
 class DailyAnchorRequirementTests(unittest.TestCase):
