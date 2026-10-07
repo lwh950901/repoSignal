@@ -17,8 +17,8 @@
 | 能力 | 调用面 | 核对来源 |
 |---|---|---|
 | 创建会话（含工作区归属） | `ctx.sessionController.create({ workspaceId })` → `{ sessionId, agentPreset? }`；内部会 `workspace.attachSession(sessionId)` | `@deepseek-ai/dsh-api-session-controller/lib/index.js` |
-| 取会话 Agent | `ctx.sessionController.resolveAgent(sessionId)`（内置 schedule 投递时就用它） | `@deepseek-ai/dsh-schedule/lib/index.js` |
-| 投递消息 | `agent.followup(createUserMessage({ content, source: { kind: 'user' } }))`；`followup` 会唤醒会话。**`createUserMessage` 用本仓库内联实现**（`src/message.js`），不要 `import` 宿主包 | `@deepseek-ai/dsh-agent-loop/lib/index.js`、`@deepseek-ai/dsh-subagent-in-process-driver/lib/index.js` |
+| 取会话 Agent | `ctx.sessionController.resolveAgent(sessionId)` → **包装对象**：成功 `{ agent, … }`，失败 `{ error }`；用 `resolved.agent`，别直接当 agent 使（实测踩过） | `@deepseek-ai/dsh-schedule/lib/index.js` |
+| 投递消息 | `agent.followup(createUserMessage({ content: [{ type: 'text', text }], source: { kind: 'user' } }))`，随后 `await ctx.sessions.flush(agent.session)` 确认落盘；`followup` 会唤醒会话。**`createUserMessage` 用本仓库内联实现**（`src/message.js`），不要 `import` 宿主包 | `@deepseek-ai/dsh-schedule/lib/index.js`、`@deepseek-ai/dsh-subagent-in-process-driver/lib/index.js` |
 | 等待回合结束 | `await agent.whenIdle()`，再用 `agent.session.snapshotEvents(boundary)` 读 `turn/end` | 同上 |
 | 会话命名 | `ctx.sessionTitle.rename(session, title)`（session 取自 `agent.session`） | `@deepseek-ai/dsh-session-title/lib/index.js` |
 | 归档会话 | `ctx.workspaceRegistry.archiveSession(sessionId)`；有活跃工作时会拒绝，故必须在回合结束后调用 | `@deepseek-ai/dsh-workspace/lib/index.js` |
@@ -1267,6 +1267,19 @@ function waitForTurnEnd(agent, boundary, timeoutMs) {
   })
 }
 
+/**
+ * resolveAgent 返回的是包装对象：成功为 { agent, ... }，失败为 { error }。
+ * 直接把它当 agent 用会得到 `agent.session === undefined`（最小验证版实测踩过，
+ * 随后 rename 抛错、整个 run 静默失败）。这里统一解包。
+ */
+async function requireAgent(ctx, sessionId) {
+  const resolved = await ctx.sessionController.resolveAgent(sessionId)
+  if (resolved !== null && typeof resolved === 'object' && 'error' in resolved) throw resolved.error
+  const agent = resolved?.agent
+  if (agent === undefined) throw new Error(`resolveAgent(${sessionId}) returned no agent`)
+  return agent
+}
+
 /** 唯一直接依赖 ctx.* 的模块；其余模块保持纯净可测。 */
 export function createHostAdapter(ctx) {
   return {
@@ -1275,13 +1288,15 @@ export function createHostAdapter(ctx) {
       return created.sessionId
     },
     async renameSession(sessionId, title) {
-      const agent = await ctx.sessionController.resolveAgent(sessionId)
+      const agent = await requireAgent(ctx, sessionId)
       await ctx.sessionTitle.rename(agent.session, title)
     },
     async drivePrompt({ sessionId, prompt, timeoutMs = DEFAULT_TIMEOUT_MS }) {
-      const agent = await ctx.sessionController.resolveAgent(sessionId)
+      const agent = await requireAgent(ctx, sessionId)
       const boundary = agent.session.snapshotEvents().length
-      agent.followup(createUserMessage({ content: prompt, source: { kind: 'user' } }))
+      agent.followup(createUserMessage({ content: [{ type: 'text', text: prompt }], source: { kind: 'user' } }))
+      // flush 之后这次投递才算落盘；内置 schedule 的投递同样走这一步
+      await ctx.sessions.flush(agent.session)
       const end = await waitForTurnEnd(agent, boundary, timeoutMs)
       const events = agent.session.snapshotEvents(boundary)
       return { endReason: end?.data?.reason ?? null, finalText: lastAssistantText(events) }
@@ -1290,8 +1305,9 @@ export function createHostAdapter(ctx) {
       await ctx.workspaceRegistry.archiveSession(sessionId)
     },
     async notifyOwner(sessionId, text) {
-      const agent = await ctx.sessionController.resolveAgent(sessionId)
-      agent.followup(createUserMessage({ content: text, source: { kind: 'user' } }))
+      const agent = await requireAgent(ctx, sessionId)
+      agent.followup(createUserMessage({ content: [{ type: 'text', text }], source: { kind: 'user' } }))
+      await ctx.sessions.flush(agent.session)
     },
     workspaceIdForSession(sessionId) {
       const record = ctx.workspaceRegistry.list().find((workspace) => workspace.sessionIds?.includes(sessionId))
@@ -1735,8 +1751,9 @@ function makeCtx() {
     effect: (factory) => { disposers.push(factory()) },
     sessionController: {
       create: async () => { calls.push(['create']); return { sessionId: 'session-new' } },
-      resolveAgent: async () => ({ session: { id: 'session-new' }, whenIdle: async () => {}, followup: () => {} }),
+      resolveAgent: async () => ({ agent: { session: { id: 'session-new' }, whenIdle: async () => {}, followup: () => {} } }),
     },
+    sessions: { flush: async () => {} },
     sessionTitle: { rename: async () => {} },
     workspaceRegistry: { archiveSession: async () => {}, list: () => [] },
   }
@@ -1744,7 +1761,7 @@ function makeCtx() {
 
 test('插件导出名与注入服务', () => {
   assert.equal(name, 'fresh-session-jobs')
-  assert.deepEqual(inject, ['sessionController', 'workspaceRegistry', 'sessionTitle'])
+  assert.deepEqual(inject, ['sessionController', 'workspaceRegistry', 'sessionTitle', 'sessions'])
 })
 
 test('配置无效时不启动，只记一条告警', () => {
@@ -1793,7 +1810,7 @@ import { nextCronOccurrence } from './src/cron.js'
 configureCron({ nextCronOccurrence })
 
 export const name = 'fresh-session-jobs'
-export const inject = ['sessionController', 'workspaceRegistry', 'sessionTitle']
+export const inject = ['sessionController', 'workspaceRegistry', 'sessionTitle', 'sessions']
 
 export function apply(ctx, rawConfig) {
   const log = (message) => {
@@ -1922,6 +1939,11 @@ git commit -m "docs(dsh-plugin): record install and acceptance results"
 ---
 
 ## 自检
+
+**实测状态（2026-10-07）**：最小验证版已在隔离 profile（`web` 模板 + 独立 `$DSH_HOME`）里跑通完整链路——
+新会话创建并挂到工作区、标题 `{title} {YYYY-MM-DD}`、提示词投递、模型应答（`turn/end: completed`）、
+失败也归档、回执送达 owner 会话。裸导入宿主包、`resolveAgent` 返回包装对象、缺 `sessions.flush`
+这三个坑都已在实测中暴露并修进本计划。
 
 **规格覆盖**：§3.1 任务字段 → Task 7/11/12；§3.2 时序 → Task 10；§3.3 回执 → Task 5/10；§3.4 错过与重启 → Task 8/10；§3.5 不变量 → Task 8（归档在结束后）/10（幂等）/12（不写内置域）；§4 组件 → Task 7–12；§5 数据模型 → Task 7/11（任务来自配置、运行状态落 JSON）；§6 状态机 → Task 3/10；§7 失败降级 → Task 10；§9 验收 → Task 13；§11 开放问题 1 → Task 9，问题 3 → Task 11（v1 明确不做工具），问题 4 → Task 2（五字段 Vixie）。
 
