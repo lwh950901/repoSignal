@@ -18,7 +18,7 @@
 |---|---|---|
 | 创建会话（含工作区归属） | `ctx.sessionController.create({ workspaceId })` → `{ sessionId, agentPreset? }`；内部会 `workspace.attachSession(sessionId)` | `@deepseek-ai/dsh-api-session-controller/lib/index.js` |
 | 取会话 Agent | `ctx.sessionController.resolveAgent(sessionId)`（内置 schedule 投递时就用它） | `@deepseek-ai/dsh-schedule/lib/index.js` |
-| 投递消息 | `agent.followup(createUserMessage({ content, source: { kind: 'user' } }))`；`followup` 会唤醒会话 | `@deepseek-ai/dsh-agent-loop/lib/index.js`、`@deepseek-ai/dsh-subagent-in-process-driver/lib/index.js` |
+| 投递消息 | `agent.followup(createUserMessage({ content, source: { kind: 'user' } }))`；`followup` 会唤醒会话。**`createUserMessage` 用本仓库内联实现**（`src/message.js`），不要 `import` 宿主包 | `@deepseek-ai/dsh-agent-loop/lib/index.js`、`@deepseek-ai/dsh-subagent-in-process-driver/lib/index.js` |
 | 等待回合结束 | `await agent.whenIdle()`，再用 `agent.session.snapshotEvents(boundary)` 读 `turn/end` | 同上 |
 | 会话命名 | `ctx.sessionTitle.rename(session, title)`（session 取自 `agent.session`） | `@deepseek-ai/dsh-session-title/lib/index.js` |
 | 归档会话 | `ctx.workspaceRegistry.archiveSession(sessionId)`；有活跃工作时会拒绝，故必须在回合结束后调用 | `@deepseek-ai/dsh-workspace/lib/index.js` |
@@ -27,6 +27,10 @@
 | 插件形态 | `export function apply(ctx, config)` + 可选 `export const inject` / `export const Config`；bundle 用 `dsh.bundle.patch` | `cordis-plugin-development` 技能 `references/host-plugin.md` |
 
 **读取 app.asar 内文件的方法（shell 不能直接读）：**
+
+> **铁律：插件代码里不要出现任何 `@deepseek-ai/*` 的 `import`。** profile 里安装的插件按自身目录解析依赖，
+> 而宿主包在 `app.asar` 内，裸导入会让插件以 `failed to import` 启用失败（最小验证版已实测过一次）。
+> 需要的宿主能力只能走 `apply(ctx)` 的 `ctx`；需要的小工具在本仓库内联实现（见 `src/message.js`）。
 
 ```bash
 python3 - <<'PY'
@@ -61,6 +65,7 @@ dsh-plugins/fresh-session-jobs/
 │   ├── keys.js           # 幂等键与同发生点查找
 │   ├── run-state.js      # 运行状态机与 turn/end 原因归类
 │   ├── session-fold.js   # 从会话事件里取 turn/end 与最后一条 assistant 文本
+│   ├── message.js        # 内联的消息构造（替代 @deepseek-ai/dsh-llm 的 createUserMessage）
 │   ├── receipt.js        # 回执文本组装与摘要截断
 │   ├── retention.js      # 运行记录裁剪（200 条 / 30 天）
 │   ├── job-store.js      # 任务与运行记录存储：内存实现 + storage domain 实现
@@ -74,6 +79,7 @@ dsh-plugins/fresh-session-jobs/
     ├── keys.test.js
     ├── run-state.test.js
     ├── session-fold.test.js
+    ├── message.test.js
     ├── receipt.test.js
     ├── retention.test.js
     ├── job-store.test.js
@@ -545,11 +551,13 @@ git commit -m "feat(dsh-plugin): add occurrence keys and run state machine"
 
 ---
 
-### Task 4: 会话事件折叠
+### Task 4: 会话事件折叠与消息构造
 
 **Files:**
 - Create: `dsh-plugins/fresh-session-jobs/src/session-fold.js`
+- Create: `dsh-plugins/fresh-session-jobs/src/message.js`
 - Test: `dsh-plugins/fresh-session-jobs/tests/session-fold.test.js`
+- Test: `dsh-plugins/fresh-session-jobs/tests/message.test.js`
 
 - [ ] **Step 1: 写失败测试**
 
@@ -578,14 +586,28 @@ test('取最后一条有文本的 assistant 消息', () => {
   assert.equal(lastAssistantText(events), '最终结论 A\n补充 B')
   assert.equal(lastAssistantText([]), '')
 })
+// tests/message.test.js
+import test from 'node:test'
+import assert from 'node:assert/strict'
+import { createUserMessage } from '../src/message.js'
+
+test('产出冻结的 user 消息，带唯一 id 与 role', () => {
+  const message = createUserMessage({ content: '你好', source: { kind: 'user' } })
+  assert.equal(message.role, 'user')
+  assert.equal(message.content, '你好')
+  assert.deepEqual(message.source, { kind: 'user' })
+  assert.equal(typeof message.id, 'string')
+  assert.equal(Object.isFrozen(message), true)
+  assert.notEqual(createUserMessage({ content: 'x' }).id, createUserMessage({ content: 'x' }).id)
+})
 ```
 
 - [ ] **Step 2: 运行测试，确认失败**
 
-Run: `cd dsh-plugins/fresh-session-jobs && node --test tests/session-fold.test.js`
+Run: `cd dsh-plugins/fresh-session-jobs && node --test tests/session-fold.test.js tests/message.test.js`
 Expected: FAIL，模块不存在
 
-- [ ] **Step 3: 实现 src/session-fold.js**
+- [ ] **Step 3: 实现 src/session-fold.js 与 src/message.js**
 
 ```js
 /** 会话事件里最后一个 turn/end。 */
@@ -613,9 +635,28 @@ export function lastAssistantText(events) {
 }
 ```
 
+`src/message.js`（内联宿主工具，**不得**改为 `import` 宿主包）：
+
+```js
+import { randomUUID } from 'node:crypto'
+
+function deepFreeze(value) {
+  if (value !== null && typeof value === 'object' && !Object.isFrozen(value)) {
+    Object.freeze(value)
+    for (const key of Object.keys(value)) deepFreeze(value[key])
+  }
+  return value
+}
+
+/** 等价于 @deepseek-ai/dsh-llm 的 createUserMessage：造一个冻结的 user 消息并给唯一 id。 */
+export function createUserMessage(input) {
+  return deepFreeze({ ...structuredClone(input), id: randomUUID(), role: 'user' })
+}
+```
+
 - [ ] **Step 4: 运行测试，确认通过**
 
-Run: `cd dsh-plugins/fresh-session-jobs && node --test tests/session-fold.test.js`
+Run: `cd dsh-plugins/fresh-session-jobs && node --test tests/session-fold.test.js tests/message.test.js`
 Expected: PASS
 
 - [ ] **Step 5: 提交**
@@ -623,7 +664,7 @@ Expected: PASS
 ```bash
 cd /Users/elvis/Desktop/repo-signal
 git add dsh-plugins/fresh-session-jobs
-git commit -m "feat(dsh-plugin): fold session events for turn end and final text"
+git commit -m "feat(dsh-plugin): fold session events and inline user-message helper"
 ```
 
 ---
@@ -1125,7 +1166,7 @@ git commit -m "feat(dsh-plugin): add scheduler with idempotency and catch-up rul
 - [ ] **Step 3: 实现 src/host.js**
 
 ```js
-import { createUserMessage } from '@deepseek-ai/dsh-llm'
+import { createUserMessage } from './message.js'
 import { lastTurnEnd, lastAssistantText } from './session-fold.js'
 
 const DEFAULT_TIMEOUT_MS = 60 * 60 * 1000
