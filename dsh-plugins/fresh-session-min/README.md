@@ -50,6 +50,19 @@ dsh plugin --profile desktop add /Users/elvis/Desktop/repo-signal/dsh-plugins/fr
 启用失败（本插件第一版就是这样挂的）。宿主能力只能通过 `apply(ctx)` 拿到的 `ctx` 使用；
 需要的小工具（如 `createUserMessage`）自己内联实现。
 
+**`ctx.sessionController.resolveAgent(id)` 返回的是包装对象**：成功是 `{ agent, … }`，失败是 `{ error }`。
+把它直接当 agent 用会得到 `agent.session === undefined`，随后 `sessionTitle.rename` 抛错、整个 run 静默失败
+（现象：会话建出来了，但没有标题、没有投递、也没有归档）。正确写法：
+
+```js
+const resolved = await ctx.sessionController.resolveAgent(sessionId)
+if ('error' in resolved) throw resolved.error
+const agent = resolved.agent
+```
+
+**投递后要 flush 才算落盘**：`agent.followup(message)` 之后 `await ctx.sessions.flush(agent.session)`，
+并且 `inject` 里要加上 `'sessions'`（内置 schedule 的投递同样走这一步）。
+
 ## 卸载
 
 插件页里移除该 bundle 即可；`dsh-plugins/fresh-session-min/` 目录可直接删除。
