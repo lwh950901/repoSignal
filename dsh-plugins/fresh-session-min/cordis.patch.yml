@@ -1,23 +1,31 @@
-# 最小验证版：定时任务「每次触发新建会话」
+# 定时任务「每次触发新建会话」——最小版，已接入真实任务
 #
-# 这是 dsh-plugins/fresh-session-min 的配置。改完这个文件需要让插件重新加载
-# （插件页里重装一次，或重启 DeepSeek Harness）。
+# 改完这个文件需要重装一次插件或重启 DeepSeek Harness 才会生效。
 - insert:
     - id: fresh-session-min
       name: '@local/dsh-fresh-session-min'
       config:
         # 任务名；同时作为新会话标题前缀（标题 = "{title} {YYYY-MM-DD}"）
-        title: 最小版验证任务
+        title: 每日GitHub组合可行性方案
         # 新会话所属工作区 id（repo-signal）
         workspaceId: 3d0269e2-3e85-4e5e-b784-30f1837184f2
         # 每天触发时刻，本机时区（Asia/Shanghai）
         timeOfDay: '06:30'
-        # 验证用：true 时插件加载后立刻跑一次（正式使用请改回 false）
-        runOnStart: true
-        # 回执发到哪里：留空则不发回执。
-        # 这里填的是当前这个对话，方便你直接看到效果。
+        # 加载时若今天 06:30 已过，就当作今天已经跑过（切换/重启当天不补跑）；
+        # 若加载时还没到 06:30，今天照常触发——所以每天早上重启不会误跳过当天
+        skipToday: true
+        # 验证开关：true 时加载后 10 秒立刻跑一次；正式使用保持 false
+        runOnStart: false
+        # 回执发到哪里；留空则不发回执。
+        # 想用专门的回执会话：在工作区里新建一个会话，把它的 id 填到这里。
         receiptSessionId: session-53a154fd-a25b-4de1-b3b9-71caddeecc31
-        # 投递给新会话的提示词。验证阶段刻意用一句轻量任务，避免真跑一遍可行性分析。
+        # 投递给新会话的提示词：只指向契约文件，不复制内容，避免两处漂移
         prompt: |-
-          这是一次定时任务插件的机制验证。请只回复一句话：说明你收到了定时投递、当前工作目录是什么。
-          不要读取任何文件，不要调用任何工具。
+          工作区：/Users/elvis/Desktop/repo-signal；时区：Asia/Shanghai。
+
+          执行契约：data/github-project-digest/feasibility/FEASIBILITY-TASK.md（唯一依据）。
+          请先完整读取该文件，再严格按其中的「执行步骤」执行今日的 GitHub 组合可行性分析，
+          遵守「验证标准」与「规则与边界」：不做市场结论、不补写方案、不联网核验 GitHub。
+
+          结束时简要汇报：本轮组合数量与轨道分布、每个组合的业务名与组件、判断与两个分数、
+          标题改名情况、报告完整路径；失败时说明失败原因与已检查状态。

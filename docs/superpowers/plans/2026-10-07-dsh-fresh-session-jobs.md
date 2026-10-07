@@ -111,7 +111,7 @@ dsh-plugins/fresh-session-jobs/
   "type": "module",
   "exports": { ".": "./index.js" },
   "dsh": { "bundle": { "patch": "./cordis.patch.yml" } },
-  "scripts": { "test": "node --test tests/" }
+  "scripts": { "test": "node --test tests/*.test.js" }
 }
 ```
 
@@ -1546,7 +1546,7 @@ Expected: PASS（6 个 test）
 
 - [ ] **Step 5: 全量测试 + 提交**
 
-Run: `cd dsh-plugins/fresh-session-jobs && node --test tests/`
+Run: `cd dsh-plugins/fresh-session-jobs && node --test tests/*.test.js`
 Expected: PASS（10 个文件全绿）
 
 ```bash
@@ -1879,7 +1879,7 @@ export function apply(ctx, rawConfig) {
 
 - [ ] **Step 5: 全量测试与语法检查**
 
-Run: `cd dsh-plugins/fresh-session-jobs && node --test tests/ && node --check index.js && node --check src/host.js && grep -rn "@deepseek-ai/" index.js src/ || echo "无宿主包导入 ✅"`
+Run: `cd dsh-plugins/fresh-session-jobs && node --test tests/*.test.js && node --check index.js && node --check src/host.js && grep -rn "@deepseek-ai/" index.js src/ || echo "无宿主包导入 ✅"`
 Expected: 测试全绿、`node --check` 无输出、grep 无命中
 
 - [ ] **Step 6: 提交**

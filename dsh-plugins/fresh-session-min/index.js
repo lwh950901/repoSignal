@@ -51,6 +51,16 @@ function minutesSinceMidnight(now) {
   return now.getHours() * 60 + now.getMinutes()
 }
 
+/**
+ * skipToday 的判定：只有"今天的触发时刻已经过去"才把今天视为已跑。
+ * 触发时刻还没到就返回 false——否则每天早上在 06:30 之前重启都会误跳过当天。
+ */
+export function shouldSkipToday(now, timeOfDay) {
+  const [hour, minute] = String(timeOfDay).split(':').map(Number)
+  if (!Number.isInteger(hour) || !Number.isInteger(minute) || hour > 23 || minute > 59) return false
+  return minutesSinceMidnight(now) >= hour * 60 + minute
+}
+
 export function apply(ctx, config) {
   const log = (message) => {
     const text = `[fresh-session-min] ${message}`
@@ -60,6 +70,16 @@ export function apply(ctx, config) {
 
   let lastDay = null
   let busy = false
+
+  const timeOfDay = String(config.timeOfDay ?? '06:30')
+  const [triggerHour, triggerMinute] = timeOfDay.split(':').map(Number)
+  const triggerValid = Number.isInteger(triggerHour) && Number.isInteger(triggerMinute) && triggerHour <= 23 && triggerMinute <= 59
+
+  // skipToday：只压制"加载时今天那个时刻已经过去"的情况（切换/重启当天不补跑一次）。
+  // 若加载时还没到触发时刻，今天照常触发——否则每天早上重启都会误跳过当天。
+  if (config.skipToday === true && shouldSkipToday(new Date(), timeOfDay)) {
+    lastDay = localDay(new Date())
+  }
 
   async function runOnce(reason) {
     if (busy) return
@@ -116,13 +136,12 @@ export function apply(ctx, config) {
     const now = new Date()
     const day = localDay(now)
     if (lastDay === day) return
-    const [hour, minute] = String(config.timeOfDay ?? '06:30').split(':').map(Number)
-    if (!Number.isInteger(hour) || !Number.isInteger(minute)) {
+    if (!triggerValid) {
       log(`timeOfDay 配置无效："${config.timeOfDay}"`)
       lastDay = day
       return
     }
-    if (minutesSinceMidnight(now) < hour * 60 + minute) return
+    if (minutesSinceMidnight(now) < triggerHour * 60 + triggerMinute) return
     lastDay = day
     runOnce('到点触发').catch((error) => log(String(error)))
   }, TICK_MS)

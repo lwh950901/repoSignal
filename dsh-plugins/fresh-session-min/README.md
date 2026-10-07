@@ -1,16 +1,25 @@
-# fresh-session-min：定时任务「每次触发新建会话」最小验证版
+# fresh-session-min：定时任务「每次触发新建会话」
 
-验证四件事是否按规格发生：**新建会话 → 命名 `{任务名} {日期}` → 注入提示词 → 跑完归档 → 回执**。
+最小可用插件，**已接入真实任务**：每天 06:30 新建一个会话执行「每日 GitHub 组合可行性分析」，跑完自动归档，
+并向指定会话发一条结果回执。机制清单：**新建会话 → 命名 `{任务名} {日期}` → 注入提示词 → 跑完归档 → 回执**。
 
-完整版（幂等、跨重启补发、并发保护、多任务与工具、运行历史）见
+完整版（幂等、跨重启补发、并发保护、多任务与运行历史）见
 [docs/superpowers/plans/2026-10-07-dsh-fresh-session-jobs.md](../../docs/superpowers/plans/2026-10-07-dsh-fresh-session-jobs.md)。
+
+## 现状（2026-10-07 起）
+
+- 任务：`每日GitHub组合可行性方案`，`06:30`（Asia/Shanghai），工作区 repo-signal
+- 提示词只指向契约文件 `data/github-project-digest/feasibility/FEASIBILITY-TASK.md`，不复制内容
+- 回执发到 `receiptSessionId` 指定的会话；留空则不发
+- **切换时旧的定时任务必须停掉**：内置 schedule 里那个也属于同一任务、每天 06:30 投递到
+  `session-0faa1c50`。两个都开会双跑、争同一个 `feasibility/` 目录。请在 GUI 的定时任务页删除旧任务。
 
 ## 安装
 
 首选：GUI 左侧 **插件** 页 → 安装 → 选择本目录
 `/Users/elvis/Desktop/repo-signal/dsh-plugins/fresh-session-min`。
 
-备选（需要同时写 profile 层的 patch，属于手工改动，先确认再动）：
+备选（会写 profile 层，属于手工改动，先确认再动）：
 
 ```bash
 dsh plugin --profile desktop add /Users/elvis/Desktop/repo-signal/dsh-plugins/fresh-session-min
@@ -25,7 +34,8 @@ dsh plugin --profile desktop add /Users/elvis/Desktop/repo-signal/dsh-plugins/fr
 | `title` | 任务名，同时是新会话标题前缀 |
 | `workspaceId` | 新会话所属工作区（repo-signal 为 `3d0269e2-3e85-4e5e-b784-30f1837184f2`） |
 | `timeOfDay` | 每天触发时刻，本机时区 |
-| `runOnStart` | **验证开关**：`true` 时插件加载后立刻跑一次 |
+| `skipToday` | 加载时若今天的触发时刻已过，就当作今天跑过（切换/重启当天不补跑）；未到点则不影响今天 |
+| `runOnStart` | **验证开关**：`true` 时加载后 10 秒立刻跑一次 |
 | `receiptSessionId` | 回执投递目标；留空则不发回执 |
 | `prompt` | 投递给新会话的提示词 |
 
@@ -36,12 +46,26 @@ dsh plugin --profile desktop add /Users/elvis/Desktop/repo-signal/dsh-plugins/fr
 3. 跑完后该会话从活跃列表消失、出现在归档里
 4. `receiptSessionId` 指定的会话收到一条 `[定时任务回执]`
 
-## 已知限制（验证版刻意不做）
+（2026-10-07 已在隔离 profile 与桌面 profile 各实测一遍，四条全部通过。）
+
+## 已知限制（最小版刻意不做）
 
 - `lastDay` 只在内存：宿主重启后当天可能重复触发
 - 没有幂等键、没有错过补发、没有并发保护
 - 只能配一个任务，没有工具与运行历史
 - 归档失败只记日志，不改状态
+
+### `skipToday` 的取舍
+
+因为"今天跑没跑"只在内存里，重启后无法区分"今天已经跑过"和"今天还没跑"，只能二选一：
+
+| 取值 | 好处 | 代价 |
+|---|---|---|
+| `true`（当前） | 重启不会重复跑 | 若 06:30 时应用没开、之后才打开，当天会被跳过 |
+| `false` | 应用晚开也会补跑当天 | 06:30 跑过之后再重启，当天会**再跑一次**（重复写 runs.log） |
+
+当前选 `true`：重复跑会污染 `feasibility/runs.log` 与冷却判断，比偶尔漏一天更麻烦。
+这个取舍在完整版里由持久化的幂等键消除（见计划 Task 3/7/8）。
 
 ## 踩过的坑（写 DSH 插件必看）
 
