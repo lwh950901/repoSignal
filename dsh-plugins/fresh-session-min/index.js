@@ -26,7 +26,19 @@ function createUserMessage(input) {
 }
 
 export const name = 'fresh-session-min'
-export const inject = ['sessionController', 'workspaceRegistry', 'sessionTitle']
+export const inject = ['sessionController', 'workspaceRegistry', 'sessionTitle', 'sessions']
+
+/**
+ * resolveAgent 返回的是包装对象：成功为 { agent, ... }，失败为 { error }。
+ * 直接把它当 agent 用会得到 `agent.session === undefined`（实测踩过这个坑）。
+ */
+async function requireAgent(ctx, sessionId) {
+  const resolved = await ctx.sessionController.resolveAgent(sessionId)
+  if (resolved !== null && typeof resolved === 'object' && 'error' in resolved) throw resolved.error
+  const agent = resolved?.agent
+  if (agent === undefined) throw new Error(`resolveAgent(${sessionId}) returned no agent`)
+  return agent
+}
 
 const TICK_MS = 30_000
 const TIME_ZONE = 'Asia/Shanghai'
@@ -59,9 +71,11 @@ export function apply(ctx, config) {
     try {
       const created = await ctx.sessionController.create({ workspaceId: config.workspaceId })
       sessionId = created.sessionId
-      const agent = await ctx.sessionController.resolveAgent(sessionId)
+      const agent = await requireAgent(ctx, sessionId)
       await ctx.sessionTitle.rename(agent.session, `${config.title} ${day}`)
-      agent.followup(createUserMessage({ content: config.prompt, source: { kind: 'user' } }))
+      agent.followup(createUserMessage({ content: [{ type: 'text', text: config.prompt }], source: { kind: 'user' } }))
+      // flush 之后这次投递才算落盘（内置 schedule 的投递也走这一步）
+      await ctx.sessions.flush(agent.session)
       await agent.whenIdle()
       status = '完成'
       try {
@@ -79,15 +93,19 @@ export function apply(ctx, config) {
 
     if (typeof config.receiptSessionId === 'string' && config.receiptSessionId !== '') {
       try {
-        const owner = await ctx.sessionController.resolveAgent(config.receiptSessionId)
+        const owner = await requireAgent(ctx, config.receiptSessionId)
         owner.followup(createUserMessage({
-          content: [
-            `[定时任务回执] ${config.title}`,
-            `状态：${status}`,
-            `新会话：${config.title} ${day}（${sessionId ?? '-'}）`,
-          ].join('\n'),
+          content: [{
+            type: 'text',
+            text: [
+              `[定时任务回执] ${config.title}`,
+              `状态：${status}`,
+              `新会话：${config.title} ${day}（${sessionId ?? '-'}）`,
+            ].join('\n'),
+          }],
           source: { kind: 'user' },
         }))
+        await ctx.sessions.flush(owner.session)
       } catch (error) {
         log(`回执发送失败：${String(error?.message ?? error)}`)
       }
