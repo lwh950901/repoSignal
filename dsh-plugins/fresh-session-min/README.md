@@ -43,6 +43,13 @@ dsh plugin --profile desktop add /Users/elvis/Desktop/repo-signal/dsh-plugins/fr
 - 只能配一个任务，没有工具与运行历史
 - 归档失败只记日志，不改状态
 
+## 踩过的坑（写 DSH 插件必看）
+
+**不要在插件里 `import` 任何 `@deepseek-ai/*` 宿主包。** profile 里安装的插件是按自身目录解析依赖的，
+而宿主包在 `app.asar` 内，裸导入会让插件以 `failed to import` / `Cannot find package '@deepseek-ai/dsh-llm'`
+启用失败（本插件第一版就是这样挂的）。宿主能力只能通过 `apply(ctx)` 拿到的 `ctx` 使用；
+需要的小工具（如 `createUserMessage`）自己内联实现。
+
 ## 卸载
 
 插件页里移除该 bundle 即可；`dsh-plugins/fresh-session-min/` 目录可直接删除。
