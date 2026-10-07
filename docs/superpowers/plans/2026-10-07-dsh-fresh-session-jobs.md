@@ -6,7 +6,7 @@
 
 **Architecture:** 独立宿主插件（旁路调度器），不修改内置 `@deepseek-ai/dsh-schedule`。纯逻辑（时间规则、幂等键、运行状态机、会话事件折叠、回执文本、裁剪、调度核心）与宿主适配层分离：纯逻辑用 `node --test` 全覆盖，宿主适配层集中在 `src/host.js` 一个文件里。
 
-**Tech Stack:** 纯 ESM JavaScript（无构建步骤、无第三方依赖）、Node 内置测试运行器 `node --test`（本机 `/usr/local/bin/node` v24.14.1）、Cordis 插件（profile bundle）、宿主提供的 `@deepseek-ai/dsh-tools`、`@deepseek-ai/dsh-llm`、`@deepseek-ai/dsh-storage-domain`、`@deepseek-ai/schemastery`（随发行版解析，不需要声明依赖）。
+**Tech Stack:** 纯 ESM JavaScript（无构建步骤、**零依赖：不 import 任何 `@deepseek-ai/*` 宿主包**）、Node 内置测试运行器 `node --test`（本机 `/usr/local/bin/node` v24.14.1）、Cordis 插件（profile bundle）、运行状态用自有的 JSON 文件持久化（`node:fs`，不依赖 storage domain）。
 
 **规格：** [docs/superpowers/specs/2026-10-07-dsh-fresh-session-jobs-design.md](../specs/2026-10-07-dsh-fresh-session-jobs-design.md)
 
@@ -22,9 +22,8 @@
 | 等待回合结束 | `await agent.whenIdle()`，再用 `agent.session.snapshotEvents(boundary)` 读 `turn/end` | 同上 |
 | 会话命名 | `ctx.sessionTitle.rename(session, title)`（session 取自 `agent.session`） | `@deepseek-ai/dsh-session-title/lib/index.js` |
 | 归档会话 | `ctx.workspaceRegistry.archiveSession(sessionId)`；有活跃工作时会拒绝，故必须在回合结束后调用 | `@deepseek-ai/dsh-workspace/lib/index.js` |
-| 自有持久化 | `defineDomain({ name, version, tables })` + `ctx.storageDomain.open(spec)`，`domain.table(name).put/get/update` | `@deepseek-ai/dsh-storage-domain/lib/index.js`、`@deepseek-ai/dsh-schedule/lib/index.js` |
-| 注册工具 | `ctx.tools.register(defineTool({ name, description, parameters, execute }))` | `@deepseek-ai/dsh-tool-goal/lib/index.js` |
-| 插件形态 | `export function apply(ctx, config)` + 可选 `export const inject` / `export const Config`；bundle 用 `dsh.bundle.patch` | `cordis-plugin-development` 技能 `references/host-plugin.md` |
+| 运行状态持久化 | 插件自有的 JSON 文件：`$DSH_HOME/fresh-session-jobs/state.json`，写 `.tmp` 后 `rename` | 本计划 Task 7（不依赖 storage domain） |
+| 插件形态 | `export function apply(ctx, config)` + 可选 `export const inject`；bundle 用 `dsh.bundle.patch`；**不 export `Config`**（配置自校验） | `cordis-plugin-development` 技能 `references/host-plugin.md` |
 
 **读取 app.asar 内文件的方法（shell 不能直接读）：**
 
@@ -57,7 +56,7 @@ PY
 dsh-plugins/fresh-session-jobs/
 ├── package.json          # bundle 清单：type=module、exports、dsh.bundle.patch
 ├── cordis.patch.yml      # 向 profile 插入一行插件
-├── index.js              # 插件入口：apply/inject/Config，装配 store+scheduler+runner+tools
+├── index.js              # 插件入口：apply/inject，装配 config+store+scheduler+runner
 ├── NOTES.md              # 任务 9 的 API 核对记录（唯一的事实来源）
 ├── src/
 │   ├── rules.js          # 时间规则：daily / every / cron 的下一个与最近一个发生时点
@@ -68,11 +67,11 @@ dsh-plugins/fresh-session-jobs/
 │   ├── message.js        # 内联的消息构造（替代 @deepseek-ai/dsh-llm 的 createUserMessage）
 │   ├── receipt.js        # 回执文本组装与摘要截断
 │   ├── retention.js      # 运行记录裁剪（200 条 / 30 天）
-│   ├── job-store.js      # 任务与运行记录存储：内存实现 + storage domain 实现
+│   ├── config.js         # 配置装载与校验：任务来自 cordis.patch.yml 的 config.jobs
+│   ├── job-store.js      # 运行状态存储：内存实现 + JSON 文件实现
 │   ├── scheduler.js      # 调度核心：到点、幂等、并发跳过、只补发最近一次
 │   ├── host.js           # 宿主适配层（唯一直接调用 ctx.* 的文件）
-│   ├── runner.js         # 编排一次运行：建会话→命名→投递→等结束→归档→回执
-│   └── tools.js          # fresh_job_* 工具定义
+│   └── runner.js         # 编排一次运行：建会话→命名→投递→等结束→归档→回执
 └── tests/
     ├── rules.test.js
     ├── cron.test.js
@@ -84,10 +83,12 @@ dsh-plugins/fresh-session-jobs/
     ├── retention.test.js
     ├── job-store.test.js
     ├── scheduler.test.js
-    └── runner.test.js
+    ├── runner.test.js
+    ├── config.test.js
+    └── plugin-entry.test.js
 ```
 
-职责边界：`src/host.js` 之外的模块都不 import 任何 `@deepseek-ai/*`，因此可以脱离宿主直接跑测试。`index.js` 只做装配。
+职责边界：**所有 src 文件与 index.js 都不 import 任何 `@deepseek-ai/*`**，只有 `src/host.js` 通过 `apply(ctx)` 传进来的 `ctx` 访问宿主。
 
 ---
 
@@ -859,38 +860,78 @@ git commit -m "feat(dsh-plugin): prune run history by age and count"
 
 ---
 
-### Task 7: 任务存储
+### Task 7: 运行状态存储（内存 + JSON 文件）
 
 **Files:**
 - Create: `dsh-plugins/fresh-session-jobs/src/job-store.js`
 - Test: `dsh-plugins/fresh-session-jobs/tests/job-store.test.js`
+
+任务定义来自配置（Task 11），这里只持久化**运行状态**：每个任务的上次发生点/下次目标，以及全部运行记录。
+落盘位置由 Task 12 决定：`$DSH_HOME/fresh-session-jobs/state.json`。
 
 - [ ] **Step 1: 写失败测试**
 
 ```js
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { createMemoryStore } from '../src/job-store.js'
+import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+import { createMemoryStore, createFileStore } from '../src/job-store.js'
 
-test('任务增删改查', async () => {
-  const store = createMemoryStore()
-  await store.putJob({ id: 'j1', title: '任务一', enabled: true, createdAt: 1 })
-  assert.equal(store.getJob('j1').title, '任务一')
-  await store.putJob({ ...store.getJob('j1'), title: '改名' })
-  assert.equal(store.listJobs().length, 1)
-  assert.equal(store.getJob('j1').title, '改名')
-  await store.deleteJob('j1')
-  assert.equal(store.getJob('j1'), undefined)
+const configJobs = [{
+  id: 'daily-report', title: '每日报告', prompt: '跑一遍', enabled: true,
+  rule: { kind: 'daily', at: '06:30', timeZone: 'Asia/Shanghai' },
+  workspaceId: 'ws-1', ownerSessionId: 'owner-1',
+}]
+
+test('内存实现：任务与运行记录', async () => {
+  const store = createMemoryStore({ jobs: configJobs })
+  await store.putRun({ id: 'r1', jobId: 'daily-report', startedAt: 10, status: 'running' })
+  await store.putRun({ id: 'r1', jobId: 'daily-report', startedAt: 10, status: 'completed' })
+  assert.equal(store.listRuns('daily-report').length, 1)
+  assert.equal(store.listRuns('daily-report')[0].status, 'completed')
+  assert.deepEqual(await store.prune(10), [])
 })
 
-test('运行记录按任务分组，写入即更新，裁剪返回被丢弃的 id', async () => {
-  const store = createMemoryStore()
-  await store.putRun({ id: 'r1', jobId: 'j1', startedAt: 10, status: 'running' })
-  await store.putRun({ id: 'r1', jobId: 'j1', startedAt: 10, status: 'completed' })
-  assert.equal(store.listRuns('j1').length, 1)
-  assert.equal(store.listRuns('j1')[0].status, 'completed')
-  const removed = await store.prune(10)
-  assert.deepEqual(removed, [])
+test('文件实现：运行记录与下次目标跨进程保留', async () => {
+  const path = join(mkdtempSync(join(tmpdir(), 'fsj-')), 'state.json')
+  const first = createFileStore({ path, jobs: configJobs })
+  await first.putRun({ id: 'r1', jobId: 'daily-report', occurrenceAt: 100, startedAt: 100, status: 'completed' })
+  await first.putJob({ ...first.getJob('daily-report'), nextAt: 999 })
+  const second = createFileStore({ path, jobs: configJobs })
+  assert.equal(second.listRuns('daily-report')[0].status, 'completed')
+  assert.equal(second.getJob('daily-report').nextAt, 999)
+  assert.equal(second.getJob('daily-report').title, '每日报告') // 任务定义来自配置
+})
+
+test('文件实现：未写过 nextAt 时不会落成 0', async () => {
+  const path = join(mkdtempSync(join(tmpdir(), 'fsj-')), 'state.json')
+  const store = createFileStore({ path, jobs: configJobs })
+  await store.putJob(store.getJob('daily-report'))
+  assert.equal(store.getJob('daily-report').nextAt, undefined)
+  assert.equal(createFileStore({ path, jobs: configJobs }).getJob('daily-report').nextAt, undefined)
+})
+
+test('文件实现：文件损坏时告警并从空状态启动，随后可正常写入', async () => {
+  const path = join(mkdtempSync(join(tmpdir(), 'fsj-')), 'state.json')
+  writeFileSync(path, '{ 这不是 JSON')
+  const warnings = []
+  const store = createFileStore({ path, jobs: configJobs, log: (message) => warnings.push(message) })
+  assert.equal(store.listRuns('daily-report').length, 0)
+  assert.equal(warnings.length, 1)
+  await store.putRun({ id: 'r1', jobId: 'daily-report', startedAt: 5, status: 'completed' })
+  assert.equal(JSON.parse(readFileSync(path, 'utf8')).runs.length, 1)
+})
+
+test('文件实现：裁剪会删掉最旧记录并立即落盘', async () => {
+  const path = join(mkdtempSync(join(tmpdir(), 'fsj-')), 'state.json')
+  const store = createFileStore({ path, jobs: configJobs })
+  const now = 1_000_000_000_000
+  await store.putRun({ id: 'old', jobId: 'daily-report', startedAt: now - 40 * 24 * 3600 * 1000, status: 'completed' })
+  await store.putRun({ id: 'new', jobId: 'daily-report', startedAt: now - 1000, status: 'completed' })
+  assert.deepEqual(await store.prune(now), ['old'])
+  assert.deepEqual(createFileStore({ path, jobs: configJobs }).listRuns('daily-report').map((run) => run.id), ['new'])
 })
 ```
 
@@ -902,13 +943,22 @@ Expected: FAIL，模块不存在
 - [ ] **Step 3: 实现 src/job-store.js**
 
 ```js
+import { mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs'
+import { dirname } from 'node:path'
 import { pruneRuns } from './retention.js'
 
-/**
- * 存储接口（内存与 storage domain 两种实现共用）：
- *   listJobs(), getJob(id), putJob(job), deleteJob(id),
- *   listRuns(jobId), putRun(run), prune(nowMs)
- */
+const STATE_VERSION = 1
+
+function emptyState() {
+  return { version: STATE_VERSION, jobs: {}, runs: [] }
+}
+
+function normalize(raw) {
+  if (raw === null || typeof raw !== 'object' || raw.version !== STATE_VERSION) throw new Error('unsupported state version')
+  return { version: STATE_VERSION, jobs: raw.jobs ?? {}, runs: Array.isArray(raw.runs) ? raw.runs : [] }
+}
+
+/** 存储接口：listJobs / getJob / putJob / deleteJob / listRuns / putRun / prune。 */
 export function createMemoryStore({ jobs = [], runs = [] } = {}) {
   const jobMap = new Map(jobs.map((job) => [job.id, { ...job }]))
   let runList = runs.map((run) => ({ ...run }))
@@ -921,9 +971,7 @@ export function createMemoryStore({ jobs = [], runs = [] } = {}) {
       runList = runList.filter((run) => run.jobId !== id)
     },
     listRuns: (jobId) => runList.filter((run) => run.jobId === jobId).sort((a, b) => a.startedAt - b.startedAt),
-    async putRun(run) {
-      runList = [...runList.filter((item) => item.id !== run.id), { ...run }]
-    },
+    async putRun(run) { runList = [...runList.filter((item) => item.id !== run.id), { ...run }] },
     async prune(nowMs) {
       const kept = pruneRuns(runList, nowMs)
       const keptIds = new Set(kept.map((run) => run.id))
@@ -934,28 +982,58 @@ export function createMemoryStore({ jobs = [], runs = [] } = {}) {
   }
 }
 
-/** storage domain 实现：tables 为 { jobs, runs } 两个 domainTable。 */
-export function createDomainStore(domain) {
-  const jobs = domain.table('jobs')
-  const runs = domain.table('runs')
+/**
+ * 文件实现：任务定义来自配置，运行状态落在 JSON 文件里。
+ * 每次写入先写 .tmp 再 rename，避免读到半个文件。
+ */
+export function createFileStore({ path, jobs, log = () => {} }) {
+  let state
+  try {
+    state = normalize(JSON.parse(readFileSync(path, 'utf8')))
+  } catch (error) {
+    if (error?.code !== 'ENOENT') log(`[fresh-session-jobs] state file unusable, starting empty: ${String(error?.message ?? error)}`)
+    state = emptyState()
+  }
+
+  function persist() {
+    mkdirSync(dirname(path), { recursive: true })
+    const temporary = `${path}.tmp`
+    writeFileSync(temporary, JSON.stringify(state, null, 2))
+    renameSync(temporary, path)
+  }
+
+  const merged = (job) => ({ ...job, ...(state.jobs[job.id] ?? {}) })
+
   return {
-    listJobs: () => [...jobs.entries()].map(([, job]) => job),
-    getJob: (id) => jobs.get(id),
-    async putJob(job) { await jobs.put(job.id, job) },
-    async deleteJob(id) {
-      const owned = [...runs.entries()].filter(([, run]) => run.jobId === id).map(([runId]) => runId)
-      for (const runId of owned) await runs.delete(runId)
-      await jobs.delete(id)
+    listJobs: () => jobs.map(merged),
+    getJob: (id) => {
+      const job = jobs.find((item) => item.id === id)
+      return job === undefined ? undefined : merged(job)
     },
-    listRuns: (jobId) => [...runs.entries()].map(([, run]) => run).filter((run) => run.jobId === jobId).sort((a, b) => a.startedAt - b.startedAt),
-    async putRun(run) { await runs.put(run.id, run) },
-    async prune(nowMs) {
-      const all = [...runs.entries()].map(([, run]) => run)
-      const keptIds = new Set(pruneRuns(all, nowMs).map((run) => run.id))
-      const removed = []
-      for (const run of all) {
-        if (!keptIds.has(run.id)) { await runs.delete(run.id); removed.push(run.id) }
+    async putJob(job) {
+      const previous = state.jobs[job.id] ?? {}
+      state.jobs[job.id] = {
+        lastOccurrenceAt: job.lastOccurrenceAt ?? previous.lastOccurrenceAt ?? 0,
+        ...(job.nextAt === undefined ? {} : { nextAt: job.nextAt }),
       }
+      persist()
+    },
+    async deleteJob(id) {
+      delete state.jobs[id]
+      state.runs = state.runs.filter((run) => run.jobId !== id)
+      persist()
+    },
+    listRuns: (jobId) => state.runs.filter((run) => run.jobId === jobId).sort((a, b) => a.startedAt - b.startedAt),
+    async putRun(run) {
+      state.runs = [...state.runs.filter((item) => item.id !== run.id), run]
+      persist()
+    },
+    async prune(nowMs) {
+      const kept = pruneRuns(state.runs, nowMs)
+      const keptIds = new Set(kept.map((run) => run.id))
+      const removed = state.runs.filter((run) => !keptIds.has(run.id)).map((run) => run.id)
+      state.runs = kept
+      persist()
       return removed
     },
   }
@@ -965,16 +1043,14 @@ export function createDomainStore(domain) {
 - [ ] **Step 4: 运行测试，确认通过**
 
 Run: `cd dsh-plugins/fresh-session-jobs && node --test tests/job-store.test.js`
-Expected: PASS
-
-（`createDomainStore` 依赖 `domain.table(...).entries()` / `.delete(id)`；任务 9 核对这两个方法名，若实际为其他名称就在此文件内改一处。）
+Expected: PASS（5 个 test）
 
 - [ ] **Step 5: 提交**
 
 ```bash
 cd /Users/elvis/Desktop/repo-signal
 git add dsh-plugins/fresh-session-jobs
-git commit -m "feat(dsh-plugin): add job store with memory and domain backends"
+git commit -m "feat(dsh-plugin): add memory and json-file run-state stores"
 ```
 
 ---
@@ -1090,7 +1166,9 @@ export function createScheduler({ store, runner, nextAtFor, clock = () => Date.n
     for (const job of store.listJobs()) {
       try {
         if (!job.enabled) continue
-        const nextAt = job.nextAt ?? nextAtFor(job, job.createdAt)
+        // 没有持久化目标时，以"现在"为起点算下一个未来发生点：
+        // 新装插件不会去补跑历史上的发生点（首次运行不惊吓用户）
+        const nextAt = job.nextAt ?? nextAtFor(job, clock())
         if (nextAt > nowMs) continue
 
         // 只补发最近一次：从 nextAt 起、不晚于现在的最后一个发生时点
@@ -1157,7 +1235,7 @@ git commit -m "feat(dsh-plugin): add scheduler with idempotency and catch-up rul
 
 - [ ] **Step 1: 用 `cordis_inspect_query` 复核（在 `cordis` preset 的会话里执行；本会话没有该工具）**
 
-依次查询并记录到 `NOTES.md`：`Service` 列出 `sessionController`、`workspaceRegistry`、`storageDomain`、`sessionTitle`、`tools`、`agents` 的方法签名；`Event` 里确认是否存在可订阅的会话事件（用于替代 `whenIdle` 的精确等待，可选）。
+依次查询并记录到 `NOTES.md`：`Service` 列出 `sessionController`、`workspaceRegistry`、`sessionTitle` 的方法签名（`agents` 也一并记录，便于核对会话 id 的读取路径）；`Event` 里确认是否存在可订阅的会话事件（用于替代 `whenIdle` 的精确等待，可选）。
 
 - [ ] **Step 2: 写 NOTES.md**
 
@@ -1463,151 +1541,165 @@ git commit -m "feat(dsh-plugin): orchestrate one run with archive and receipt"
 
 ---
 
-### Task 11: 工具
+### Task 11: 配置装载与校验（替代工具）
 
 **Files:**
-- Create: `dsh-plugins/fresh-session-jobs/src/tools.js`
+- Create: `dsh-plugins/fresh-session-jobs/src/config.js`
+- Test: `dsh-plugins/fresh-session-jobs/tests/config.test.js`
 
-- [ ] **Step 1: 实现 src/tools.js**
+v1 不提供 agent 工具，任务全部写在 bundle 的 `cordis.patch.yml` 的 `config.jobs` 里。
+任务 id 必须**跨重启稳定**（幂等键依赖它），所以缺省 id 由标题派生而不是随机生成。
+
+- [ ] **Step 1: 写失败测试**
 
 ```js
-import { defineTool } from '@deepseek-ai/dsh-tools'
-import { randomUUID } from 'node:crypto'
-import { nextOccurrence } from './rules.js'
+import test from 'node:test'
+import assert from 'node:assert/strict'
+import { parseConfig, slugId } from '../src/config.js'
 
-const RULE_SCHEMA = {
-  type: 'object',
-  required: true,
-  description: '触发规则：{ kind: "daily", at: "06:30", timeZone: "Asia/Shanghai" } | { kind: "every", everySeconds: 3600, timeZone } | { kind: "cron", expression: "30 6 * * *", timeZone }',
-  properties: {
-    kind: { type: 'string', required: true, description: 'daily | every | cron' },
-    at: { type: 'string', description: 'daily 的本地时刻 HH:mm' },
-    everySeconds: { type: 'number', description: 'every 的间隔秒数，最小 60' },
-    expression: { type: 'string', description: 'cron 的五字段表达式' },
-    timeZone: { type: 'string', description: 'IANA 时区，默认 Asia/Shanghai' },
-  },
+const valid = {
+  jobs: [{
+    title: '每日GitHub组合可行性方案',
+    prompt: '执行每日分析',
+    rule: { kind: 'daily', at: '06:30' },
+    workspaceId: 'ws-1',
+    ownerSessionId: 'owner-1',
+  }],
 }
 
-function normalizeRule(rule) {
-  const timeZone = rule.timeZone ?? 'Asia/Shanghai'
-  if (rule.kind === 'daily') return { kind: 'daily', at: rule.at, timeZone }
-  if (rule.kind === 'every') return { kind: 'every', everySeconds: rule.everySeconds, timeZone }
-  if (rule.kind === 'cron') return { kind: 'cron', expression: rule.expression, timeZone }
+test('缺省值：时区、tick、超时、派生 id', () => {
+  const parsed = parseConfig(valid)
+  assert.equal(parsed.tickSeconds, 20)
+  assert.equal(parsed.runTimeoutSeconds, 3600)
+  const [job] = parsed.jobs
+  assert.equal(job.rule.timeZone, 'Asia/Shanghai')
+  assert.equal(job.enabled, true)
+  assert.equal(job.id, 'job-1-每日github组合可行性方案'.toLowerCase())
+})
+
+test('id 稳定：同配置两次解析得到同一 id', () => {
+  assert.deepEqual(parseConfig(valid).jobs.map((job) => job.id), parseConfig(valid).jobs.map((job) => job.id))
+})
+
+test('显式 id 优先，重复 id 报错', () => {
+  const parsed = parseConfig({ jobs: [{ ...valid.jobs[0], id: 'mine' }] })
+  assert.equal(parsed.jobs[0].id, 'mine')
+  assert.throws(() => parseConfig({ jobs: [valid.jobs[0], valid.jobs[0]] }), /duplicate job id/)
+})
+
+test('必填与规则校验', () => {
+  assert.throws(() => parseConfig({}), /jobs/)
+  assert.throws(() => parseConfig({ jobs: [] }), /at least one job/)
+  assert.throws(() => parseConfig({ jobs: [{ ...valid.jobs[0], title: '' }] }), /title/)
+  assert.throws(() => parseConfig({ jobs: [{ ...valid.jobs[0], prompt: undefined }] }), /prompt/)
+  assert.throws(() => parseConfig({ jobs: [{ ...valid.jobs[0], workspaceId: undefined }] }), /workspaceId/)
+  assert.throws(() => parseConfig({ jobs: [{ ...valid.jobs[0], rule: { kind: 'daily', at: '25:00' } }] }), /invalid daily time/)
+  assert.throws(() => parseConfig({ jobs: [{ ...valid.jobs[0], rule: { kind: 'every', everySeconds: 30 } }] }), />= 60/)
+  assert.throws(() => parseConfig({ jobs: [{ ...valid.jobs[0], rule: { kind: 'cron', expression: '* * * *' } }] }), /5 fields/)
+  assert.throws(() => parseConfig({ jobs: [{ ...valid.jobs[0], rule: { kind: 'hourly' } }] }), /unknown rule kind/)
+})
+
+test('slugId：保留中文，去掉空白与标点', () => {
+  assert.equal(slugId('每日 GitHub 组合方案!'), '每日-github-组合方案')
+})
+```
+
+- [ ] **Step 2: 运行测试，确认失败**
+
+Run: `cd dsh-plugins/fresh-session-jobs && node --test tests/config.test.js`
+Expected: FAIL，模块不存在
+
+- [ ] **Step 3: 实现 src/config.js**
+
+```js
+import { nextOccurrence } from './rules.js'
+
+const DEFAULT_TIME_ZONE = 'Asia/Shanghai'
+
+/** 标题 → 稳定 id：小写、空白转连字符、去掉标点，保留中文。 */
+export function slugId(title) {
+  return String(title)
+    .toLowerCase()
+    .replace(/[\s_]+/g, '-')
+    .replace(/[^\p{Letter}\p{Number}-]+/gu, '')
+    .replace(/-{2,}/g, '-')
+    .replace(/^-|-$/g, '')
+}
+
+function requireText(value, field) {
+  if (typeof value !== 'string' || value.trim() === '') throw new Error(`job field "${field}" must be a non-empty string`)
+  return value.trim()
+}
+
+function parseRule(rule, field) {
+  if (rule === null || typeof rule !== 'object') throw new Error(`job field "${field}" must be an object`)
+  const timeZone = rule.timeZone ?? DEFAULT_TIME_ZONE
+  const base = { timeZone }
+  if (rule.kind === 'daily') {
+    const at = requireText(rule.at, `${field}.at`)
+    if (!/^\d{1,2}:\d{2}$/.test(at)) throw new Error(`invalid daily time "${at}"`)
+    const [hour, minute] = at.split(':').map(Number)
+    if (hour > 23 || minute > 59) throw new Error(`invalid daily time "${at}"`)
+    return { kind: 'daily', at, timeZone }
+  }
+  if (rule.kind === 'every') {
+    if (!Number.isSafeInteger(rule.everySeconds) || rule.everySeconds < 60) throw new Error(`job field "${field}.everySeconds" must be an integer >= 60`)
+    return { kind: 'every', everySeconds: rule.everySeconds, timeZone }
+  }
+  if (rule.kind === 'cron') {
+    const expression = requireText(rule.expression, `${field}.expression`)
+    if (expression.split(/\s+/).length !== 5) throw new Error(`cron expression must have 5 fields: "${expression}"`)
+    return { kind: 'cron', expression, timeZone }
+  }
   throw new Error(`unknown rule kind "${rule.kind}"`)
 }
 
-export function registerJobTools(ctx, { store, runner, host, clock = () => Date.now() }) {
-  ctx.tools.register(defineTool({
-    name: 'fresh_job_create',
-    description: '创建一个「每次触发都新建会话执行」的定时任务。任务结束后自动归档该会话，并向创建它的会话发送结果回执。',
-    parameters: {
-      title: { type: 'string', required: true, description: '任务名；同时作为新会话标题前缀' },
-      prompt: { type: 'string', required: true, description: '投递给新会话的完整提示词' },
-      rule: RULE_SCHEMA,
-      workspace_id: { type: 'string', description: '新会话所属工作区 id；省略时取当前会话所在工作区' },
-    },
-    async execute(args, exec) {
-      const sessionId = host.sessionId(exec.agent)
-      const workspaceId = args.workspace_id ?? host.workspaceIdForSession(sessionId)
-      if (workspaceId === undefined) throw new Error('无法从当前会话推断工作区，请显式传 workspace_id')
-      const rule = normalizeRule(args.rule)
-      const job = {
-        id: randomUUID(),
-        title: args.title,
-        prompt: args.prompt,
-        rule,
-        workspaceId,
-        ownerSessionId: sessionId,
-        enabled: true,
-        createdAt: clock(),
-        nextAt: nextOccurrence(rule, clock()),
-      }
-      await store.putJob(job)
-      return { job }
-    },
-  }))
+/** 校验并规范化整份插件配置；任何问题都抛出带字段名的错误，绝不带病启动。 */
+export function parseConfig(raw) {
+  if (raw === null || typeof raw !== 'object') throw new Error('plugin config must be a mapping with a "jobs" list')
+  if (!Array.isArray(raw.jobs)) throw new Error('plugin config must declare a "jobs" list')
+  if (raw.jobs.length === 0) throw new Error('plugin config must declare at least one job')
 
-  ctx.tools.register(defineTool({
-    name: 'fresh_job_list',
-    description: '列出本机全部「每次新建会话」定时任务及其最近运行记录。',
-    parameters: {},
-    async execute() {
-      return {
-        jobs: store.listJobs().map((job) => ({
-          ...job,
-          runs: store.listRuns(job.id).slice(-5).map((run) => ({
-            occurrenceAt: run.occurrenceAt, status: run.status, sessionId: run.sessionId,
-            archived: run.archived, endReason: run.endReason, summaryText: run.summaryText,
-          })),
-        })),
-      }
-    },
-  }))
+  const seen = new Set()
+  const jobs = raw.jobs.map((entry, index) => {
+    if (entry === null || typeof entry !== 'object') throw new Error(`jobs[${index}] must be a mapping`)
+    const title = requireText(entry.title, 'title')
+    const id = entry.id === undefined ? `job-${index + 1}-${slugId(title)}` : requireText(entry.id, 'id')
+    if (seen.has(id)) throw new Error(`duplicate job id "${id}"`)
+    seen.add(id)
+    const job = {
+      id,
+      title,
+      prompt: requireText(entry.prompt, 'prompt'),
+      rule: parseRule(entry.rule, 'rule'),
+      workspaceId: requireText(entry.workspaceId, 'workspaceId'),
+      enabled: entry.enabled !== false,
+    }
+    if (entry.ownerSessionId !== undefined) job.ownerSessionId = requireText(entry.ownerSessionId, 'ownerSessionId')
+    // 规则合法性在这里就用一次 nextOccurrence 兜底验证（cron 必须已 configureCron）
+    nextOccurrence(job.rule, Date.now())
+    return job
+  })
 
-  ctx.tools.register(defineTool({
-    name: 'fresh_job_update',
-    description: '修改任务：启用/停用、改名、换提示词、换规则。规则变化后 nextAt 会重算。',
-    parameters: {
-      id: { type: 'string', required: true, description: '任务 id' },
-      enabled: { type: 'boolean', description: '是否启用' },
-      title: { type: 'string', description: '新任务名' },
-      prompt: { type: 'string', description: '新提示词' },
-      rule: { ...RULE_SCHEMA, required: false },
-    },
-    async execute(args) {
-      const job = store.getJob(args.id)
-      if (job === undefined) throw new Error(`任务 ${args.id} 不存在`)
-      const next = { ...job }
-      if (args.enabled !== undefined) next.enabled = args.enabled
-      if (args.title !== undefined) next.title = args.title
-      if (args.prompt !== undefined) next.prompt = args.prompt
-      if (args.rule !== undefined) {
-        next.rule = normalizeRule(args.rule)
-        next.nextAt = nextOccurrence(next.rule, clock())
-      }
-      next.updatedAt = clock()
-      await store.putJob(next)
-      return { job: next }
-    },
-  }))
-
-  ctx.tools.register(defineTool({
-    name: 'fresh_job_delete',
-    description: '删除任务及其运行记录。已经创建并归档的会话不受影响。',
-    parameters: { id: { type: 'string', required: true, description: '任务 id' } },
-    async execute(args) {
-      const job = store.getJob(args.id)
-      if (job === undefined) throw new Error(`任务 ${args.id} 不存在`)
-      await store.deleteJob(args.id)
-      return { deleted: args.id }
-    },
-  }))
-
-  ctx.tools.register(defineTool({
-    name: 'fresh_job_run_now',
-    description: '立刻按当前规则跑一次（用于验证配置），会新建会话并照常归档、发回执。',
-    parameters: { id: { type: 'string', required: true, description: '任务 id' } },
-    async execute(args) {
-      const job = store.getJob(args.id)
-      if (job === undefined) throw new Error(`任务 ${args.id} 不存在`)
-      const run = await runner.runOnce(job, clock())
-      return { run }
-    },
-  }))
+  return {
+    tickSeconds: raw.tickSeconds ?? 20,
+    runTimeoutSeconds: raw.runTimeoutSeconds ?? 3600,
+    jobs,
+  }
 }
 ```
 
-- [ ] **Step 2: 语法检查**
+- [ ] **Step 4: 运行测试，确认通过**
 
-Run: `cd dsh-plugins/fresh-session-jobs && node --check src/tools.js`
-Expected: 无输出（语法通过）
+Run: `cd dsh-plugins/fresh-session-jobs && node --test tests/config.test.js`
+Expected: PASS（5 个 test）
 
-- [ ] **Step 3: 提交**
+- [ ] **Step 5: 提交**
 
 ```bash
 cd /Users/elvis/Desktop/repo-signal
 git add dsh-plugins/fresh-session-jobs
-git commit -m "feat(dsh-plugin): register fresh_job_* tools"
+git commit -m "feat(dsh-plugin): parse and validate config-declared jobs"
 ```
 
 ---
@@ -1617,91 +1709,132 @@ git commit -m "feat(dsh-plugin): register fresh_job_* tools"
 **Files:**
 - Create: `dsh-plugins/fresh-session-jobs/index.js`
 - Create: `dsh-plugins/fresh-session-jobs/cordis.patch.yml`
+- Test: `dsh-plugins/fresh-session-jobs/tests/plugin-entry.test.js`
 
-- [ ] **Step 1: 实现 index.js**
+入口**不得 import 任何宿主包**（见文首铁律），所以没有 `Config` schema：配置由 `src/config.js` 自己校验。
+
+- [ ] **Step 1: 写失败测试（用桩 ctx 验证装配与配置失败路径）**
 
 ```js
-import z from '@deepseek-ai/schemastery'
-import { defineDomain, domainTable } from '@deepseek-ai/dsh-storage-domain'
-import { createDomainStore } from './src/job-store.js'
+import test from 'node:test'
+import assert from 'node:assert/strict'
+import { mkdtempSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+import { apply, inject, name } from '../index.js'
+
+// 让插件的状态文件落在临时目录，别污染真实的 $DSH_HOME
+process.env.DSH_HOME = mkdtempSync(join(tmpdir(), 'fsj-home-'))
+
+function makeCtx() {
+  const calls = []
+  const disposers = []
+  return {
+    calls, disposers,
+    logger: { warn: (message) => calls.push(['warn', message]) },
+    effect: (factory) => { disposers.push(factory()) },
+    sessionController: {
+      create: async () => { calls.push(['create']); return { sessionId: 'session-new' } },
+      resolveAgent: async () => ({ session: { id: 'session-new' }, whenIdle: async () => {}, followup: () => {} }),
+    },
+    sessionTitle: { rename: async () => {} },
+    workspaceRegistry: { archiveSession: async () => {}, list: () => [] },
+  }
+}
+
+test('插件导出名与注入服务', () => {
+  assert.equal(name, 'fresh-session-jobs')
+  assert.deepEqual(inject, ['sessionController', 'workspaceRegistry', 'sessionTitle'])
+})
+
+test('配置无效时不启动，只记一条告警', () => {
+  const ctx = makeCtx()
+  apply(ctx, { jobs: [] })
+  assert.equal(ctx.disposers.length, 0)
+  assert.match(ctx.calls[0][1], /配置无效/)
+})
+
+test('配置有效时注册一个 effect，卸载时调用 disposer', () => {
+  const ctx = makeCtx()
+  apply(ctx, {
+    jobs: [{
+      id: 'daily-x', title: '每日X', prompt: 'p',
+      rule: { kind: 'every', everySeconds: 3600, timeZone: 'Asia/Shanghai' },
+      workspaceId: 'ws-1', ownerSessionId: 'owner-1', enabled: false,
+    }],
+    tickSeconds: 999,
+  })
+  assert.equal(ctx.disposers.length, 1)
+  assert.equal(typeof ctx.disposers[0], 'function')
+  ctx.disposers[0]()
+})
+```
+
+（`enabled: false` 让这次装配不会真的触发运行；定时器用 `tickSeconds: 999` 拉开。）
+
+- [ ] **Step 2: 运行测试，确认失败**
+
+Run: `cd dsh-plugins/fresh-session-jobs && node --test tests/plugin-entry.test.js`
+Expected: FAIL，`Cannot find module '../index.js'`
+
+- [ ] **Step 3: 实现 index.js**
+
+```js
+import { homedir } from 'node:os'
+import { join } from 'node:path'
+import { parseConfig } from './src/config.js'
+import { createFileStore } from './src/job-store.js'
 import { createScheduler } from './src/scheduler.js'
 import { createRunner } from './src/runner.js'
 import { createHostAdapter } from './src/host.js'
-import { registerJobTools } from './src/tools.js'
 import { nextOccurrence, configureCron } from './src/rules.js'
 import { nextCronOccurrence } from './src/cron.js'
 
 configureCron({ nextCronOccurrence })
 
 export const name = 'fresh-session-jobs'
-export const inject = ['tools', 'sessionController', 'workspaceRegistry', 'storageDomain', 'sessionTitle']
+export const inject = ['sessionController', 'workspaceRegistry', 'sessionTitle']
 
-export const Config = z.object({
-  tickSeconds: z.natural().default(20).description('调度轮询间隔（秒）'),
-  runTimeoutSeconds: z.natural().default(3600).description('单次运行上限（秒）'),
-})
+export function apply(ctx, rawConfig) {
+  const log = (message) => {
+    const text = `[fresh-session-jobs] ${message}`
+    if (typeof ctx.logger?.warn === 'function') ctx.logger.warn(text)
+    else console.warn(text)
+  }
 
-const domainSpec = defineDomain({
-  name: 'fresh-session-jobs',
-  version: 1,
-  tables: {
-    jobs: domainTable(z.object({
-      id: z.string(), title: z.string(), prompt: z.string(),
-      rule: z.object({
-        kind: z.string(), timeZone: z.string(),
-        at: z.string().default(''), everySeconds: z.natural().default(0), expression: z.string().default(''),
-      }),
-      workspaceId: z.string(), ownerSessionId: z.string(),
-      enabled: z.boolean(), createdAt: z.natural(), updatedAt: z.natural().default(0), nextAt: z.natural().default(0),
-    })),
-    runs: domainTable(z.object({
-      id: z.string(), jobId: z.string(), occurrenceAt: z.natural(), sessionId: z.string().default(''),
-      sessionTitle: z.string().default(''), status: z.string(), reason: z.string().default(''),
-      startedAt: z.natural(), endedAt: z.natural().default(0), endReason: z.string().default(''),
-      archived: z.boolean().default(false), receiptAt: z.natural().default(0),
-      summaryText: z.string().default(''),
-    })),
-  },
-})
+  let config
+  try {
+    config = parseConfig(rawConfig)
+  } catch (error) {
+    log(`配置无效，插件不启动：${String(error?.message ?? error)}`)
+    return
+  }
 
-export function apply(ctx, config) {
-  const tickMs = config.tickSeconds * 1000
   const host = createHostAdapter(ctx)
+  const statePath = join(process.env.DSH_HOME ?? join(homedir(), '.dsh'), 'fresh-session-jobs', 'state.json')
 
   ctx.effect(() => {
-    let scheduler = null
-    let disposed = false
-
-    ctx.storageDomain.open(domainSpec).then(async (domain) => {
-      if (disposed) return
-      ctx.effect(() => () => domain.close())
-
-      const store = createDomainStore(domain)
-      const runner = createRunner({ store, host, runTimeoutMs: config.runTimeoutSeconds * 1000 })
-      scheduler = createScheduler({
-        store,
-        runner,
-        tickMs,
-        nextAtFor: (job, fromMs) => nextOccurrence(job.rule, fromMs),
-        log: (message) => ctx.logger?.warn?.(message) ?? console.warn(message),
-      })
-      registerJobTools(ctx, { store, runner, host })
-      await runner.reconcile()
-      scheduler.start()
-      ctx.logger?.info?.('[fresh-session-jobs] started')
-    }).catch((error) => {
-      ctx.logger?.error?.(`[fresh-session-jobs] failed to start: ${String(error?.message ?? error)}`)
+    const store = createFileStore({ path: statePath, jobs: config.jobs, log })
+    const runner = createRunner({ store, host, log, runTimeoutMs: config.runTimeoutSeconds * 1000 })
+    const scheduler = createScheduler({
+      store,
+      runner,
+      tickMs: config.tickSeconds * 1000,
+      nextAtFor: (job, fromMs) => nextOccurrence(job.rule, fromMs),
+      log,
     })
 
-    return () => {
-      disposed = true
-      scheduler?.stop()
-    }
+    runner.reconcile()
+      .then((ids) => { if (ids.length > 0) log(`重启对账：${ids.length} 次运行标记为中断并补发回执`) })
+      .catch((error) => log(`重启对账失败：${String(error?.message ?? error)}`))
+      .finally(() => scheduler.start())
+
+    return () => scheduler.stop()
   })
 }
 ```
 
-- [ ] **Step 2: 建 cordis.patch.yml**
+- [ ] **Step 4: 建 cordis.patch.yml**
 
 ```yaml
 - insert:
@@ -1710,19 +1843,34 @@ export function apply(ctx, config) {
       config:
         tickSeconds: 20
         runTimeoutSeconds: 3600
+        jobs:
+          - id: daily-feasibility
+            title: 每日GitHub组合可行性方案
+            workspaceId: 3d0269e2-3e85-4e5e-b784-30f1837184f2
+            ownerSessionId: session-0faa1c50-8901-47dd-90d3-519208fe40aa
+            rule:
+              kind: daily
+              at: '06:30'
+              timeZone: Asia/Shanghai
+            prompt: |-
+              按工作区契约文件 data/github-project-digest/feasibility/FEASIBILITY-TASK.md 执行今日的
+              GitHub 组合可行性分析：先读该文件并遵守其中的步骤、边界与核验清单，完成后简要汇报
+              本轮组合数、业务名、判断与报告路径。
 ```
 
-- [ ] **Step 3: 全量测试与语法检查**
+（提示词只写"按契约文件执行"，不复制那份长契约，避免两处漂移。）
 
-Run: `cd dsh-plugins/fresh-session-jobs && node --test tests/ && node --check index.js && node --check src/tools.js && node --check src/host.js`
-Expected: 测试全绿、`node --check` 无输出
+- [ ] **Step 5: 全量测试与语法检查**
 
-- [ ] **Step 4: 提交**
+Run: `cd dsh-plugins/fresh-session-jobs && node --test tests/ && node --check index.js && node --check src/host.js && grep -rn "@deepseek-ai/" index.js src/ || echo "无宿主包导入 ✅"`
+Expected: 测试全绿、`node --check` 无输出、grep 无命中
+
+- [ ] **Step 6: 提交**
 
 ```bash
 cd /Users/elvis/Desktop/repo-signal
 git add dsh-plugins/fresh-session-jobs
-git commit -m "feat(dsh-plugin): add plugin entry, config and bundle manifest"
+git commit -m "feat(dsh-plugin): add dependency-free plugin entry and bundle manifest"
 ```
 
 ---
@@ -1734,13 +1882,17 @@ git commit -m "feat(dsh-plugin): add plugin entry, config and bundle manifest"
 
 - [ ] **Step 1: 安装 bundle**
 
-在 `cordis` preset 的会话里调用 `plugin_manager`（`action: install_bundle`，`target` 为 `/Users/elvis/Desktop/repo-signal/dsh-plugins/fresh-session-jobs`）；若该工具不可用，则在 GUI 插件页安装同一目录。
+在 `cordis` preset 的会话里调用 `plugin_manager`（`action: install_bundle`，`target` 为 `/Users/elvis/Desktop/repo-signal/dsh-plugins/fresh-session-jobs`）；
+若该工具不可用，则在 GUI 插件页安装同一目录，或 `dsh plugin --profile desktop add /Users/elvis/Desktop/repo-signal/dsh-plugins/fresh-session-jobs`（后两者都要确认后执行）。
 判定标准：安装结果 `application: applied`，且 `list_plugins` 里出现 `fresh-session-jobs` 行。
 
-- [ ] **Step 2: 冒烟：建任务并立刻跑一次**
+**注意**：改完插件源码（含 `index.js`、`src/*.js`、`cordis.patch.yml` 里的 jobs 配置）后必须重启应用或重装 bundle，
+loader 缓存的是上一次的模块代际；只改 patch 配置时重装 bundle 即可。
 
-在某个会话里依次调用 `fresh_job_create`（rule 用 `{ kind: 'every', everySeconds: 3600 }` 便于观察）与 `fresh_job_run_now`，确认：
-新会话出现在目标工作区、标题为 `{任务名} {YYYY-MM-DD}`、首条消息带 `[定时任务]` 首行、运行结束后出现在归档集合、原会话收到一条回执。
+- [ ] **Step 2: 冒烟：先用测试任务跑通机制**
+
+把 `cordis.patch.yml` 的 jobs 临时换成一个轻量任务（`rule: { kind: 'every', everySeconds: 60 }`、提示词只回一句话），
+重启后确认：新会话出现、标题为 `{title} {YYYY-MM-DD}`、首条消息带 `[定时任务]` 首行、跑完进归档、owner 会话收到回执。
 
 - [ ] **Step 3: 逐条执行规格 §9 的验收清单**
 
@@ -1754,7 +1906,10 @@ git commit -m "feat(dsh-plugin): add plugin entry, config and bundle manifest"
 8. 卸载插件后内置 schedule 任务行为与存储不变（回归）
 9. 手工验收：把「每日GitHub组合可行性方案」迁到本插件跑一天，对照原会话只收到一条回执、归档里能找到该会话
 
-第 6 条的验证方式：`fresh_job_create` 一个 1 分钟后触发的任务，在触发后 10 秒内用 `kill` 结束宿主进程并重启应用，检查运行记录被记为 `interrupted` 且收到回执。
+第 6 条验证方式：把某个任务设成 2 分钟后触发，触发后 10 秒内 `kill` 宿主进程并重启应用，
+检查 `state.json` 里该 run 变成 `interrupted` 且 owner 会话收到回执。
+
+第 7 条验证方式：给任务配一个足够长的提示词（或用 `every` 60 秒 + 长任务），让上一次运行跨过下一次发生时点。
 
 - [ ] **Step 4: 记录结果并提交**
 
@@ -1768,12 +1923,19 @@ git commit -m "docs(dsh-plugin): record install and acceptance results"
 
 ## 自检
 
-**规格覆盖**：§3.1 任务字段 → Task 7/11/12；§3.2 时序 → Task 10；§3.3 回执 → Task 5/10；§3.4 错过与重启 → Task 8/10；§3.5 不变量 → Task 8（归档在结束后）/10（幂等）/12（不写内置域）；§4 组件 → Task 7–12；§5 数据模型 → Task 7/12；§6 状态机 → Task 3/10；§7 失败降级 → Task 10；§9 验收 → Task 13；§11 开放问题 1 → Task 9，问题 3 → Task 11（已定 `fresh_job_*` 前缀），问题 4 → Task 2（五字段 Vixie）。
+**规格覆盖**：§3.1 任务字段 → Task 7/11/12；§3.2 时序 → Task 10；§3.3 回执 → Task 5/10；§3.4 错过与重启 → Task 8/10；§3.5 不变量 → Task 8（归档在结束后）/10（幂等）/12（不写内置域）；§4 组件 → Task 7–12；§5 数据模型 → Task 7/11（任务来自配置、运行状态落 JSON）；§6 状态机 → Task 3/10；§7 失败降级 → Task 10；§9 验收 → Task 13；§11 开放问题 1 → Task 9，问题 3 → Task 11（v1 明确不做工具），问题 4 → Task 2（五字段 Vixie）。
+
+**照规格的偏离（已确认，均因宿主限制或 YAGNI）**：
+
+1. **零依赖**：插件不得 `import` 任何 `@deepseek-ai/*`。profile 里安装的插件按自身目录解析依赖，宿主包在 app.asar 内，裸导入会 `failed to import`（最小验证版实测）；npm 上的 `@deepseek-ai/dsh-tools` / `dsh-llm` 只有 `0.0.1-rc.1` 占位版本，不能当依赖装。因此规格 §4 里的"Tools"组件与 storage domain 持久化都被替换。
+2. **任务由配置声明**（`cordis.patch.yml` 的 `config.jobs`），不提供 `fresh_job_*` 工具，也没有客户端 UI。改任务 = 改配置 + 重装/重启。
+3. **持久化自管**：`$DSH_HOME/fresh-session-jobs/state.json`（只存每任务的上次发生点/下次目标 + 运行记录），不写内置 schedule 的任何域，也不用 storage domain。
+4. **`agentOptions` 未接线**：`ctx.sessionController.create()` 不接受模型参数，新会话用 profile 默认，与规格 §8「v1 已知限制」一致。
 
 **已知取舍**：
 
 - 不实现 `cron` 的名称别名（`MON`/`JAN`），只支持数字、`*`、列表、区间与步长。
 - `runTimeoutSeconds` 超时归类为 `failed`（规格未单列该项，回执里带 `run timeout` 原因）。
 - 归档一律不使用 `stopActivity`，因此归档失败只会在回执里标注「未归档」，不会强杀会话。
-- **`agentOptions`（模型/推理档位覆盖）在 v1 未接线**：`ctx.sessionController.create()` 不接受模型参数，新会话使用 profile 默认，与规格 §8「v1 已知限制」一致；任务 11 的 create 工具因此不暴露 `model` 参数。
-- 会话 id 的读取路径（`agent.session.header.id` vs `agent.session.id`）与 `domain.table().entries()/.delete()` 的方法名，由任务 9 的 `cordis_inspect_query` 核对后以 NOTES.md 为准调整，两处都已集中在单一文件内。
+- 会话 id 的读取路径（`agent.session.header.id` vs `agent.session.id`）由任务 9 用 `cordis_inspect_query` 核对后以 NOTES.md 为准调整，取值已集中在 `src/host.js` 一处。
+- 配置文件里没有 `ownerSessionId` 的任务不会发回执（规格假定 owner 必填；实现里降级为可省略 + 记日志）。
