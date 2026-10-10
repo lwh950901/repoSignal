@@ -1480,3 +1480,30 @@ Use the minimal wrapper `text(r.output);` for command output.
 - **Notes**: Reissued the same read-only inspection with a valid wrapper.
 
 ---
+
+
+## [ERR-20261011-001] shell-quote-check
+
+**Logged**: 2026-10-11T05:10:37+08:00
+**Priority**: low
+**Status**: resolved
+**Area**: tooling
+
+### Summary
+A one-off process cleanup command did not start because of an unmatched shell quote.
+
+### Error
+```text
+zsh: unmatched quote
+```
+
+### Context
+- The shell rejected the command before it could signal a process; no files were changed by the failed command.
+- A corrected, scoped check was used afterward.
+
+### Suggested Fix
+Keep cleanup commands minimal and verify shell quoting before execution; prefer a known process ID over broad name-based termination.
+
+### Resolution
+- **Resolved**: 2026-10-11T05:10:37+08:00
+- **Notes**: No lingering scanner process was found; candidate verification continued through the allowed GitHub page fallback.
