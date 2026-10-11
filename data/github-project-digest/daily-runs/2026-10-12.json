@@ -1,0 +1,18 @@
+{
+  "attempt": 1,
+  "candidateCount": 0,
+  "date": "2026-10-12",
+  "deadlineAt": "2026-10-11T22:31:35+00:00",
+  "errors": [
+    "mature: Traceback (most recent call last):\n  File \"/Users/elvis/.codex/skills/find-github-projects/scripts/github_project_scan.py\", line 556, in <module>\n    raise SystemExit(main())\n                     ^^^^^^\n  File \"/Users/elvis/.codex/skills/fi",
+    "emerging: Traceback (most recent call last):\n  File \"/Users/elvis/.codex/skills/find-github-projects/scripts/github_project_scan.py\", line 556, in <module>\n    raise SystemExit(main())\n                     ^^^^^^\n  File \"/Users/elvis/.codex/skills/fi",
+    "learning_rag: Traceback (most recent call last):\n  File \"/Users/elvis/.codex/skills/find-github-projects/scripts/github_project_scan.py\", line 556, in <module>\n    raise SystemExit(main())\n                     ^^^^^^\n  File \"/Users/elvis/.codex/skills/fi",
+    "developer_tools: Traceback (most recent call last):\n  File \"/Users/elvis/.codex/skills/find-github-projects/scripts/github_project_scan.py\", line 556, in <module>\n    raise SystemExit(main())\n                     ^^^^^^\n  File \"/Users/elvis/.codex/skills/fi",
+    "cross_domain: Traceback (most recent call last):\n  File \"/Users/elvis/.codex/skills/find-github-projects/scripts/github_project_scan.py\", line 556, in <module>\n    raise SystemExit(main())\n                     ^^^^^^\n  File \"/Users/elvis/.codex/skills/fi"
+  ],
+  "lastProgressAt": "2026-10-11T21:01:46+00:00",
+  "stage": "discovery_failed",
+  "startedAt": "2026-10-11T21:01:35+00:00",
+  "updatedAt": "2026-10-11T21:01:52+00:00",
+  "verifiedCount": 0
+}
