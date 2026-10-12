@@ -205,7 +205,7 @@ class FeasibilityRenderingTests(unittest.TestCase):
         )
 
         # 标题是业务名（不是项目名，也不是能力面拼装名）
-        self.assertIn("### 组合 1：", report)
+        self.assertIn("### 1. ", report)
         self.assertIn("**项目**：", report)
         self.assertIn("[`owner/document`](https://github.com/owner/document)", report)
         # 每个组合必须有数据流链与输入输出表
@@ -230,9 +230,10 @@ class FeasibilityRenderingTests(unittest.TestCase):
         # 风险只取源报告首句，不带后面的分句
         self.assertIn("- `owner/document`：组件多、运维成本高", report)
         self.assertNotIn("多租户场景的日志隔离", report)
-        # 旧结构里被移除的段落不得复现
+        # 旧结构里被移除的叙述段落不得复现；
+        # 评分与证据等级只保留站点渲染需要的紧凑数据行（见 site parser：双评分/需求证据）。
         for gone in ("**业务定位**", "**业务轨道**", "**目标客户**", "**市场机会**",
-                     "**需求证据**", "**组合依据**", "**差异化**", "**双评分**",
+                     "**需求证据**：", "**组合依据**", "**差异化**",
                      "**MVP 实验**", "**主要风险", "**下一步动作**", "**组件数据流**",
                      "**接入方式**"):
             self.assertNotIn(gone, report)
@@ -737,10 +738,10 @@ class DualTrackRenderingTests(unittest.TestCase):
         report = self.render(combo, project)
 
         # 探索方向的标题按客户问题派生业务名，不用能力面拼装名
-        self.assertIn("### 组合 1：可溯源知识检索助手", report)
+        self.assertIn("### 1. 可溯源知识检索助手", report)
         self.assertIn("**项目**：tool", report)
         self.assertIn("（探索方向待验证）", report)
-        self.assertIn("- **判断**：继续观察（技术组合成熟度 80/100", report)
+        self.assertIn("**方案判断**：继续观察（依据：技术组合成熟度 80/100", report)
         self.assertNotIn("track=exploratory", report)
         self.assertNotIn("plan_family=", report)
         self.assertNotIn("本地优先 · 知识增强 · Agent 工作台", report)
@@ -754,7 +755,7 @@ class DualTrackRenderingTests(unittest.TestCase):
         report = self.render(combo, project)
 
         # 成熟方向用模板业务名，只去掉末尾括注
-        self.assertIn("### 组合 1：安全 Agent 平台", report)
+        self.assertIn("### 1. 安全 Agent 平台", report)
         self.assertNotIn("（扫描-修复-验证）", report)
         self.assertNotIn("探索方向待验证", report)
 
@@ -975,7 +976,7 @@ class ExperimentAndEvidenceTests(unittest.TestCase):
         report = analysis.render([], [], [combo], "2026-09-14", "2026-06-16",
                                  "2026-09-14", 1, 0, None)
 
-        self.assertIn("- **判断**：值得技术试验（技术组合成熟度", report)
+        self.assertIn("**方案判断**：值得技术试验（依据：技术组合成熟度", report)
         self.assertIn("最高等级：项目方自述", report)
         self.assertIn("需求证据强度", report)
         # 旧的"需求证据"行与自造市场表述都不再出现
@@ -1030,10 +1031,11 @@ class ReportStructureTests(unittest.TestCase):
         combo = self.combo()
         report = analysis.render([], [], [combo], "2026-09-14", "2026-06-16",
                                  "2026-09-14", 1, 0, None)
-        order = ["## 今日结论", "## 可行性方案", "### 组合 1：", "**项目**：",
+        order = ["## 今日结论", "## 可行性方案", "### 1. ", "**项目**：",
                  "| 角色 | 项目 | 这一步做什么（输入 → 输出） |",
                  "- **为什么是这几个**：", "- **怎么连**：", "- **接口信号",
-                 "- **要注意的地方", "- **组件新鲜度**：", "- **判断**：",
+                 "- **要注意的地方", "- **组件新鲜度**：", "**方案判断**：",
+                 "**双评分**：",
                  "## 结论"]
         positions = [report.index(marker) for marker in order]
 

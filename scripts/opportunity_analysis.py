@@ -2079,7 +2079,7 @@ def _render_combo(c, today_ids, idx, run_date):
     steps = c["flow"]
     L = []
     A = L.append
-    A("### 组合 {}：{}".format(idx, _combo_business_name(c)))
+    A("### {}. {}".format(idx, _combo_business_name(c)))
     A("")
     A("**项目**：{}".format(" + ".join(
         s["project"]["id"].split("/")[-1] for s in steps)))
@@ -2149,9 +2149,18 @@ def _render_combo(c, today_ids, idx, run_date):
         A("  - 其中 {} 个超过 30 天没更新：{}；这几步最容易踩到「文档还在、依赖已烂」的坑。".format(
             len(stale), "、".join("`{}`".format(x) for x in stale)))
     ev = c.get("demand") or {}
-    A("- **判断**：{}（技术组合成熟度 {}/100 · 需求证据强度 {}/100，最高等级：{}）。".format(
-        c.get("judgment", ""), c.get("tech_score", c.get("score", 0)),
-        c.get("demand_score", 0), ev.get("level", EVIDENCE_NONE)))
+    tech = c.get("tech_score", c.get("score", 0))
+    demand = c.get("demand_score", 0)
+    level = ev.get("level", EVIDENCE_NONE)
+    # 站点解析器要求这些标签位于行首：方案判断、需求证据等级、双评分（含分项）。
+    A("**方案判断**：{}（依据：技术组合成熟度 {}/100，需求侧仅 {}/100（{}））".format(
+        c.get("judgment", ""), tech, demand, level))
+    A("")
+    A("**需求证据**（{}/100，最高等级：{}）".format(demand, level))
+    A("")
+    A("**双评分**：{} · {}".format(
+        score_line("技术组合成熟度", tech, c.get("tech_parts") or []),
+        score_line("需求证据强度", demand, c.get("demand_parts") or [])))
     return L
 
 
