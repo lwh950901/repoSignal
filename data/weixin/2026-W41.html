@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>开源雷达周刊 2026-W41（微信排版版）</title>
+<!--
+════════════════════════════════════════════════════════════
+发布前操作清单（以下内容不进入正文）
+1. 标题（三选一，≤30 字）：
+   A. 每周 10 个开源项目｜先拿一段代码或一个测试网页试用
+   B. 开源雷达 2026-W41：从编码代理到浏览器自动化
+   C. OpenCode、Skyvern：本周 10 个开源项目
+2. 摘要（勾选原创后可填，120 字内）：
+   本期 10 个项目覆盖编码代理、模型路由、浏览器自动化与数据工作流，也有设计和 AI 工程资料索引；每条都给出低成本试法：先拿一段代码、一个测试网页或一份小数据试用，再核对权限、版本与来源。
+3. 封面图：上传 public/covers/repository-radar-weekly-subtitle.png
+   （大封面 900×383，小封面另裁 1:1 方图）
+4. 发布时删除正文中两个【发布前删除】占位框
+5. 后台「阅读原文」指向完整周报页面 URL（如已部署）
+6. 勾选「原创」，添加话题标签：#开源项目 #开发者工具 #AI 编程
+正文文字由脚本自动生成，与原版周报逐字一致（已通过 verify-text.sh 校验）。
+════════════════════════════════════════════════════════════
+-->
+</head>
+<body style="margin:0;padding:0;">
+
+<button id="copyArticleBtn" style="position:fixed;right:20px;bottom:24px;z-index:9999;font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;font-size:14px;color:#fff;background:#ff7a1a;border:none;border-radius:999px;padding:10px 18px;box-shadow:0 4px 12px rgba(255,122,26,.35);cursor:pointer;">一键复制全文</button>
+
+<section style="font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;color:#1c2733;font-size:16px;line-height:1.9;letter-spacing:0.5px;max-width:680px;margin:0 auto;padding:24px 16px;">
+
+<section style="border:2px dashed #c9d4e8;border-radius:8px;background:#f7f9fc;color:#7a8aa5;font-size:14px;text-align:center;padding:18px 12px;margin-bottom:20px;">
+【发布前删除】封面图占位：上传 public/covers/repository-radar-weekly-subtitle.png<br>
+大封面 900×383，小封面另裁 1:1 方图（注意小封面会裁中间）
+</section>
+
+<h1 style="font-size:22px;font-weight:bold;color:#0b3d66;margin:0 0 24px;">开源雷达周刊</h1>
+<p style="font-size:15px;font-weight:bold;color:#0b3d66;margin:12px 0 14px;"><strong>本期标题：</strong> 编码工具、自动化流程与资源索引先从小任务试起</p>
+<p style="font-size:14px;color:#5c6b7a;margin:10px 0;">本周十个项目覆盖编码代理、浏览器与数据工作流，也有设计和 AI 工程资料索引。</p>
+<p style="font-size:14px;color:#5c6b7a;margin:10px 0;">先拿一段代码、一个测试网页或一份小数据试用，再看权限、版本和来源是否适合自己的场景。</p>
+<h2 style="font-size:18px;font-weight:bold;color:#0b3d66;border-left:4px solid #ff7a1a;padding-left:10px;margin:30px 0 6px;">一、编码代理与模型入口</h2>
+<h3 style="font-size:17px;font-weight:bold;color:#1c2733;margin:22px 0 4px;"><span style="display:inline-block;width:26px;height:26px;line-height:26px;text-align:center;border-radius:50%;background:#ff7a1a;color:#fff;font-size:15px;font-weight:bold;margin-right:6px;">1.</span> <span style="color:#0b3d66;">OpenCode</span>：在本地仓库试用编码代理</h3>
+<p style="margin:10px 0;"><strong style="color:#0b3d66;">介绍：</strong> OpenCode 提供终端、IDE 和桌面端入口，可通过不同模型完成代码库问答、规划与实现。</p>
+<p style="margin:10px 0;"><strong>推荐依据：</strong> 周报五维复核为 93/100；GitHub Releases 页面显示 v1.18.35 于 10 月 6 日发布。它适合用一个小仓库观察代理怎样安排工具权限和模型工作流。</p>
+<p style="margin:10px 0;"><strong>适合：</strong> 想在现有仓库中评估编码代理的开发者，先从只读问答或小范围 plan/build 任务开始。</p>
+<p style="font-size:15px;color:#5c6b7a;background:#eef3f7;border-left:3px solid #c7d3de;padding:10px 12px;margin:10px 0;"><strong style="color:#999;">注意：</strong> 调用云端模型会发送代码上下文并产生费用；桌面端仍标为 beta，接入私有代码前应核对模型配置、工具权限与数据发送范围。</p>
+<h3 style="font-size:17px;font-weight:bold;color:#1c2733;margin:22px 0 4px;"><span style="display:inline-block;width:26px;height:26px;line-height:26px;text-align:center;border-radius:50%;background:#ff7a1a;color:#fff;font-size:15px;font-weight:bold;margin-right:6px;">2.</span> <span style="color:#0b3d66;">Claude Code Router</span>：为 Claude Code 配置模型路由</h3>
+<p style="margin:10px 0;"><strong style="color:#0b3d66;">介绍：</strong> Claude Code Router 是本地模型路由网关，可按配置把 Claude Code 请求分配给不同模型或服务商，并提供管理界面。</p>
+<p style="margin:10px 0;"><strong>推荐依据：</strong> 周报五维复核为 84/100，Release 页面显示 v3.1.3 于 10 月 9 日发布。单机配置一个路由，就能检查请求实际去向和日志内容。</p>
+<p style="margin:10px 0;"><strong>适合：</strong> 已在 Claude Code 工作流中使用多个模型、需要比较路由策略的开发者。</p>
+<p style="font-size:15px;color:#5c6b7a;background:#eef3f7;border-left:3px solid #c7d3de;padding:10px 12px;margin:10px 0;"><strong style="color:#999;">注意：</strong> 网关会接触模型凭据和请求内容；若把默认本地监听地址改为远程监听，须先处理认证、网络隔离和日志审查。</p>
+<h3 style="font-size:17px;font-weight:bold;color:#1c2733;margin:22px 0 4px;"><span style="display:inline-block;width:26px;height:26px;line-height:26px;text-align:center;border-radius:50%;background:#ff7a1a;color:#fff;font-size:15px;font-weight:bold;margin-right:6px;">3.</span> <span style="color:#0b3d66;">Caveman</span>：测量编码代理的上下文压缩</h3>
+<p style="margin:10px 0;"><strong style="color:#0b3d66;">介绍：</strong> Caveman 提供压缩和整理编码代理上下文的 CLI、代理集成与基准材料。</p>
+<p style="margin:10px 0;"><strong>推荐依据：</strong> 周报五维复核为 84/100。README 自报 54 次 Claude Code 运行中输入 token 减少 33.2%；这给了读者一套可复现、也需要检验正确性代价的试验起点。</p>
+<p style="margin:10px 0;"><strong>适合：</strong> 正在研究编码代理上下文成本、愿意用固定任务集比较 token 消耗与输出质量的团队。</p>
+<p style="font-size:15px;color:#5c6b7a;background:#eef3f7;border-left:3px solid #c7d3de;padding:10px 12px;margin:10px 0;"><strong style="color:#999;">注意：</strong> 项目方基准不能外推到其他仓库或模型；遥测默认开启，私有代码试用前应审查发送内容，并按需使用 <code style="font-family:Menlo,Consolas,monospace;background:#eef3f7;border-radius:3px;padding:1px 5px;font-size:15px;">caveman telemetry off</code> 或 <code style="font-family:Menlo,Consolas,monospace;background:#eef3f7;border-radius:3px;padding:1px 5px;font-size:15px;">DO_NOT_TRACK=1</code>。</p>
+<h3 style="font-size:17px;font-weight:bold;color:#1c2733;margin:22px 0 4px;"><span style="display:inline-block;width:26px;height:26px;line-height:26px;text-align:center;border-radius:50%;background:#ff7a1a;color:#fff;font-size:15px;font-weight:bold;margin-right:6px;">4.</span> <span style="color:#0b3d66;">Claw Code</span>：拆解 Rust 编码代理脚手架</h3>
+<p style="margin:10px 0;"><strong style="color:#0b3d66;">介绍：</strong> Claw Code 用 Rust 重写 Claude Code 工作流，并公开使用、兼容性和路线图材料；仓库自称供研究的“展品”。</p>
+<p style="margin:10px 0;"><strong>推荐依据：</strong> 周报五维复核为 81/100。Cargo workspace、任务测试和 <code style="font-family:Menlo,Consolas,monospace;background:#eef3f7;border-radius:3px;padding:1px 5px;font-size:15px;">PARITY.md</code> 给研究任务编排与移植边界的人提供了具体材料。</p>
+<p style="margin:10px 0;"><strong>适合：</strong> 想拆解 Agent harness、Rust 移植和兼容性测试的开发者，可先从源码构建并运行 <code style="font-family:Menlo,Consolas,monospace;background:#eef3f7;border-radius:3px;padding:1px 5px;font-size:15px;">claw doctor</code>。</p>
+<p style="font-size:15px;color:#5c6b7a;background:#eef3f7;border-left:3px solid #c7d3de;padding:10px 12px;margin:10px 0;"><strong style="color:#999;">注意：</strong> 它不是生产级替代品，且没有正式 Release；旧 crates.io 同名 stub 已弃用，自维护代理产生的代码变化也需人工审查。</p>
+<h2 style="font-size:18px;font-weight:bold;color:#0b3d66;border-left:4px solid #ff7a1a;padding-left:10px;margin:30px 0 6px;">二、浏览器自动化与应用流程</h2>
+<h3 style="font-size:17px;font-weight:bold;color:#1c2733;margin:22px 0 4px;"><span style="display:inline-block;width:26px;height:26px;line-height:26px;text-align:center;border-radius:50%;background:#ff7a1a;color:#fff;font-size:15px;font-weight:bold;margin-right:6px;">5.</span> <span style="color:#0b3d66;">Skyvern</span>：把网页操作接入自动化流程</h3>
+<p style="margin:10px 0;"><strong style="color:#0b3d66;">介绍：</strong> Skyvern 让 Python 程序以自然语言目标驱动网页操作，提供可编程接口和兼容 Playwright 的 SDK。</p>
+<p style="margin:10px 0;"><strong>推荐依据：</strong> 周报五维复核为 88/100，文档、容器化快速开始和 SDK 让端到端浏览器任务有明确试用路径。</p>
+<p style="margin:10px 0;"><strong>适合：</strong> 需要在自有或获授权网站上自动填写表单、提取数据或编排多步浏览器任务的团队。</p>
+<p style="font-size:15px;color:#5c6b7a;background:#eef3f7;border-left:3px solid #c7d3de;padding:10px 12px;margin:10px 0;"><strong style="color:#999;">注意：</strong> AGPL-3.0、默认遥测、网站条款和个人数据处理都需提前核对；先在测试站点跑最小流程，再检查凭据保存与网络出口。</p>
+<h3 style="font-size:17px;font-weight:bold;color:#1c2733;margin:22px 0 4px;"><span style="display:inline-block;width:26px;height:26px;line-height:26px;text-align:center;border-radius:50%;background:#ff7a1a;color:#fff;font-size:15px;font-weight:bold;margin-right:6px;">6.</span> <span style="color:#0b3d66;">RocketRide Server</span>：试跑节点式 AI 工作流</h3>
+<p style="margin:10px 0;"><strong style="color:#0b3d66;">介绍：</strong> RocketRide Server 是可视化 AI 工作流服务端，可把模型、代码节点和外部工具连接为可执行流程，配有 SDK 与 VS Code 扩展。</p>
+<p style="margin:10px 0;"><strong>推荐依据：</strong> 周报五维复核为 87/100；本地启动路径和多语言 SDK 适合验证节点式编排是否贴合团队开发方式。</p>
+<p style="margin:10px 0;"><strong>适合：</strong> 希望在本地先跑通一条模型、代码与工具组合流程的开发团队。</p>
+<p style="font-size:15px;color:#5c6b7a;background:#eef3f7;border-left:3px solid #c7d3de;padding:10px 12px;margin:10px 0;"><strong style="color:#999;">注意：</strong> Releases 页的 v3.4.0 是预发布版本，且混有不同产品线版本，稳定 Server 版本未确认；自定义节点的权限、隔离和失败恢复仍需实测。</p>
+<h3 style="font-size:17px;font-weight:bold;color:#1c2733;margin:22px 0 4px;"><span style="display:inline-block;width:26px;height:26px;line-height:26px;text-align:center;border-radius:50%;background:#ff7a1a;color:#fff;font-size:15px;font-weight:bold;margin-right:6px;">7.</span> <span style="color:#0b3d66;">Taipy</span>：把 Python 处理流程做成数据应用</h3>
+<p style="margin:10px 0;"><strong style="color:#0b3d66;">介绍：</strong> Taipy 将 Python 数据处理、交互式界面和应用流程组合为数据应用框架。</p>
+<p style="margin:10px 0;"><strong>推荐依据：</strong> 周报五维复核为 82/100；文档、示例和 API 参考齐全，可用 quickstart 做一个小型原型，观察处理逻辑与界面的衔接。</p>
+<p style="margin:10px 0;"><strong>适合：</strong> 需要评估 Python 数据应用框架、愿意先做小型原型的团队。</p>
+<p style="font-size:15px;color:#5c6b7a;background:#eef3f7;border-left:3px solid #c7d3de;padding:10px 12px;margin:10px 0;"><strong style="color:#999;">注意：</strong> 周报看到的最新 Release 条目为较早的 4.2.0.dev9 开发版，未确认更新的稳定版；部署、依赖支持和与现有 Python 栈的兼容性都要核对。</p>
+<h2 style="font-size:18px;font-weight:bold;color:#0b3d66;border-left:4px solid #ff7a1a;padding-left:10px;margin:30px 0 6px;">三、数据接口与资料索引</h2>
+<h3 style="font-size:17px;font-weight:bold;color:#1c2733;margin:22px 0 4px;"><span style="display:inline-block;width:26px;height:26px;line-height:26px;text-align:center;border-radius:50%;background:#ff7a1a;color:#fff;font-size:15px;font-weight:bold;margin-right:6px;">8.</span> <span style="color:#0b3d66;">Douyin/TikTok Download API</span>：研究多入口采集接口</h3>
+<p style="margin:10px 0;"><strong style="color:#0b3d66;">介绍：</strong> Douyin/TikTok Download API 提供抖音与 TikTok 下载和数据访问 API，包含 REST、MCP 与命令行入口。</p>
+<p style="margin:10px 0;"><strong>推荐依据：</strong> 周报五维复核为 80/100；Docker、测试、CI 与 v5 重构材料，适合研究异步采集服务如何组织接口和版本迁移。</p>
+<p style="margin:10px 0;"><strong>适合：</strong> 在有权限且符合平台条款的受控场景中评估采集接口的开发者。</p>
+<p style="font-size:15px;color:#5c6b7a;background:#eef3f7;border-left:3px solid #c7d3de;padding:10px 12px;margin:10px 0;"><strong style="color:#999;">注意：</strong> 页面签名和身份池等逆向实现带来条款、版权、隐私及封号风险；v5 与 v4 不兼容，不应依赖公开演示服务，Docker 镜像也应固定到具体 SHA。</p>
+<h3 style="font-size:17px;font-weight:bold;color:#1c2733;margin:22px 0 4px;"><span style="display:inline-block;width:26px;height:26px;line-height:26px;text-align:center;border-radius:50%;background:#ff7a1a;color:#fff;font-size:15px;font-weight:bold;margin-right:6px;">9.</span> <span style="color:#0b3d66;">Awesome Design MD</span>：对照原站阅读设计文档</h3>
+<p style="margin:10px 0;"><strong style="color:#0b3d66;">介绍：</strong> Awesome Design MD 整理公开网站的 DESIGN.md 分析，提供分类、来源链接和浅色、深色预览；它是资料库，不是可运行的软件。</p>
+<p style="margin:10px 0;"><strong>推荐依据：</strong> 周报五维复核为 82/100。条目的九部分结构可供设计师和开发者研究如何把视觉观察写成可检索的设计说明。</p>
+<p style="margin:10px 0;"><strong>适合：</strong> 想学习设计系统分析或为原型寻找文档结构的设计师与开发者。</p>
+<p style="font-size:15px;color:#5c6b7a;background:#eef3f7;border-left:3px solid #c7d3de;padding:10px 12px;margin:10px 0;"><strong style="color:#999;">注意：</strong> 分析可能过时或不准确；仓库的 MIT 许可不等于取得第三方品牌、商标或视觉资产的使用权，应对照原站逐项确认。</p>
+<h3 style="font-size:17px;font-weight:bold;color:#1c2733;margin:22px 0 4px;"><span style="display:inline-block;width:26px;height:26px;line-height:26px;text-align:center;border-radius:50%;background:#ff7a1a;color:#fff;font-size:15px;font-weight:bold;margin-right:6px;">10.</span> <span style="color:#0b3d66;">Awesome AI Engineering</span>：按主题找工程资料</h3>
+<p style="margin:10px 0;"><strong style="color:#0b3d66;">介绍：</strong> Awesome AI Engineering 汇集 AI、LLM 等分类链接，是学习资源索引，并不提供一套可运行的软件实现。</p>
+<p style="margin:10px 0;"><strong>推荐依据：</strong> 周报以额外发现入围，五维复核为 70/100；宽泛的主题目录适合先定位阅读方向，再逐条核查原始资料。</p>
+<p style="margin:10px 0;"><strong>适合：</strong> 想按明确主题寻找 AI 工程课程、文档或项目线索的学生和自学者。</p>
+<p style="font-size:15px;color:#5c6b7a;background:#eef3f7;border-left:3px solid #c7d3de;padding:10px 12px;margin:10px 0;"><strong style="color:#999;">注意：</strong> 列表收录不代表质量背书；部分年份标签可能过时，外部链接的时效、许可与内容准确性需要逐个确认。</p>
+<h2 style="font-size:18px;font-weight:bold;color:#0b3d66;border-left:4px solid #ff7a1a;padding-left:10px;margin:30px 0 6px;">本周优先试用</h2>
+<p style="margin:10px 0;">要检查编码代理怎样处理权限，先在小仓库试 OpenCode；要验证浏览器任务的稳定性，用自有测试页面试 Skyvern；要评估 Python 数据应用，就给 Taipy 一份小数据跑 quickstart。想找设计或学习资料时，把两个索引当入口，并回到原始来源核对。</p>
+<p style="font-size:14px;color:#8a95a1;margin:10px 0;"><strong>阅读全文：</strong> 2026-W41 完整周报</p>
+<p style="margin:10px 0;">如果只选一个项目做半小时试用，你会给它什么任务，又会用什么结果决定继续或停止？</p>
+<hr style="border:none;border-top:1px solid #e3e9ef;margin:28px 0 20px;">
+<section style="background:#eef3f7;border-radius:8px;padding:14px 18px;margin-top:20px;">
+<p style="font-weight:bold;color:#222;margin:0 0 6px;">关于仓库雷达</p>
+<p style="font-size:15px;color:#555;margin:0;">仓库雷达持续整理值得使用、学习和二次开发的开源项目。日报负责发现，周报负责筛选，也会尽量把风险和低成本试法说清楚。</p>
+</section>
+<section style="border:2px dashed #c9d4e8;border-radius:8px;background:#f7f9fc;color:#7a8aa5;font-size:14px;text-align:center;padding:14px 12px;margin-top:20px;">
+【发布前删除】后台设置「阅读原文」→ 完整周报页面 URL（如已部署）
+</section>
+</section>
+
+<script>
+(function(){
+  var btn = document.getElementById('copyArticleBtn');
+  if (!btn) return;
+  btn.addEventListener('click', function(){
+    var placeholders = document.querySelectorAll('section[style*="dashed"]');
+    var hidden = [];
+    placeholders.forEach(function(s){ s.style.display = 'none'; hidden.push(s); });
+    var box = document.querySelector('body > section') || document.body;
+    var r = document.createRange();
+    r.selectNodeContents(box);
+    var sel = window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(r);
+    var ok = false;
+    try { ok = document.execCommand('copy'); } catch(e) { ok = false; }
+    sel.removeAllRanges();
+    hidden.forEach(function(s){ s.style.display = ''; });
+    var old = btn.textContent;
+    btn.textContent = ok ? '✅ 已复制，去公众号粘贴' : '❌ 复制失败，请手动框选正文';
+    btn.style.background = ok ? '#0b3d66' : '#b00020';
+    setTimeout(function(){ btn.textContent = old; btn.style.background = '#ff7a1a'; }, 2000);
+  });
+})();
+</script>
+</body>
+</html>
