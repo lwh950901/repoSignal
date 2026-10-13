@@ -40,7 +40,7 @@ async function requireAgent(ctx, sessionId) {
   return agent
 }
 
-const TICK_MS = 30_000
+
 const TIME_ZONE = 'Asia/Shanghai'
 
 function localDay(now) {
@@ -61,6 +61,31 @@ export function shouldSkipToday(now, timeOfDay) {
   return minutesSinceMidnight(now) >= hour * 60 + minute
 }
 
+/** 两次轮询的墙钟间隔明显超过轮询周期 → 机器睡过（墙钟在走，进程没被调度）。 */
+export function isSleepGap(gapMs, pollMs, factor = 4) {
+  return gapMs > pollMs * factor
+}
+
+/** 按“清醒时间”判断停摆：lastProgressMs 只在有进展、或检测到睡眠之后前移。 */
+export function isStalled(nowMs, lastProgressMs, stallMs) {
+  return nowMs - lastProgressMs >= stallMs
+}
+
+function sleep(ms) {
+  return new Promise((resolve) => {
+    const handle = setTimeout(resolve, ms)
+    if (typeof handle.unref === 'function') handle.unref()
+  })
+}
+
+function countEvents(agent) {
+  try {
+    return agent.session?.snapshotEvents?.().length ?? 0
+  } catch {
+    return 0
+  }
+}
+
 export function apply(ctx, config) {
   const log = (message) => {
     const text = `[fresh-session-min] ${message}`
@@ -70,15 +95,75 @@ export function apply(ctx, config) {
 
   let lastDay = null
   let busy = false
+  let skippedNotifiedDay = null
 
   const timeOfDay = String(config.timeOfDay ?? '06:30')
   const [triggerHour, triggerMinute] = timeOfDay.split(':').map(Number)
   const triggerValid = Number.isInteger(triggerHour) && Number.isInteger(triggerMinute) && triggerHour <= 23 && triggerMinute <= 59
+  // 停摆看门狗：按“清醒时间”计，机器睡过的间隔不计入（笔记本合盖一夜不该被误判超时）。
+  const tickMs = Math.max(1, Number(config.tickSeconds ?? 30)) * 1000
+  const pollMs = Math.max(1, Number(config.pollSeconds ?? 30)) * 1000
+  const stallMs = Math.max(0.05, Number(config.stallMinutes ?? 30)) * 60 * 1000
 
   // skipToday：只压制"加载时今天那个时刻已经过去"的情况（切换/重启当天不补跑一次）。
-  // 若加载时还没到触发时刻，今天照常触发——否则每天早上重启都会误跳过当天。
+  // 若加载时还没到触发时刻，今天照常触发——否则每天早上在 06:30 之前重启都会误跳过当天。
   if (config.skipToday === true && shouldSkipToday(new Date(), timeOfDay)) {
     lastDay = localDay(new Date())
+  }
+
+  async function sendReceipt(lines) {
+    if (typeof config.receiptSessionId !== 'string' || config.receiptSessionId === '') return
+    try {
+      const owner = await requireAgent(ctx, config.receiptSessionId)
+      owner.followup(createUserMessage({
+        content: [{ type: 'text', text: lines.join('\n') }],
+        source: { kind: 'user' },
+      }))
+      await ctx.sessions.flush(owner.session)
+    } catch (error) {
+      log(`回执发送失败：${String(error?.message ?? error)}`)
+    }
+  }
+
+  /**
+   * 等回合结束，但停摆预算只算"清醒时间"：
+   * - 轮询间隔远超周期 → 判定为睡眠，重置计时（今天 06:31→21:15 那次就是被合盖挂起的）；
+   * - 有新的会话事件 → 视为有进展，重置计时；
+   * - 清醒状态下连续无进展超过 stallMs → 取消回合并按失败收尾。
+   */
+  async function waitForIdle(agent) {
+    // 只订阅一次：若每次轮询都新建 whenIdle，短轮询会永远先返回，真正的 idle 永远观察不到。
+    const idle = agent.whenIdle().then(() => true)
+    let lastCheck = Date.now()
+    let lastProgress = Date.now()
+    let events = countEvents(agent)
+    while (true) {
+      const finished = await Promise.race([idle, sleep(pollMs).then(() => false)])
+      if (finished) return
+      const now = Date.now()
+      const gap = now - lastCheck
+      lastCheck = now
+      if (isSleepGap(gap, pollMs)) {
+        lastProgress = now
+        log(`等待回合时检测到约 ${Math.round(gap / 60000)} 分钟的睡眠间隔，停摆计时重置`)
+        continue
+      }
+      const next = countEvents(agent)
+      if (next !== events) {
+        events = next
+        lastProgress = now
+        continue
+      }
+      if (isStalled(now, lastProgress, stallMs)) {
+        try {
+          agent.cancel()
+        } catch {
+          // 取消失败不影响按停摆收尾
+        }
+        const budget = stallMs < 60_000 ? `${Math.round(stallMs / 1000)} 秒` : `${Math.round(stallMs / 60000)} 分钟`
+        throw new Error(`回合停摆超过 ${budget}且无新事件，已取消`)
+      }
+    }
   }
 
   async function runOnce(reason) {
@@ -96,7 +181,7 @@ export function apply(ctx, config) {
       agent.followup(createUserMessage({ content: [{ type: 'text', text: config.prompt }], source: { kind: 'user' } }))
       // flush 之后这次投递才算落盘（内置 schedule 的投递也走这一步）
       await ctx.sessions.flush(agent.session)
-      await agent.whenIdle()
+      await waitForIdle(agent)
       status = '完成'
       try {
         await ctx.workspaceRegistry.archiveSession(sessionId)
@@ -111,25 +196,11 @@ export function apply(ctx, config) {
       busy = false
     }
 
-    if (typeof config.receiptSessionId === 'string' && config.receiptSessionId !== '') {
-      try {
-        const owner = await requireAgent(ctx, config.receiptSessionId)
-        owner.followup(createUserMessage({
-          content: [{
-            type: 'text',
-            text: [
-              `[定时任务回执] ${config.title}`,
-              `状态：${status}`,
-              `新会话：${config.title} ${day}（${sessionId ?? '-'}）`,
-            ].join('\n'),
-          }],
-          source: { kind: 'user' },
-        }))
-        await ctx.sessions.flush(owner.session)
-      } catch (error) {
-        log(`回执发送失败：${String(error?.message ?? error)}`)
-      }
-    }
+    await sendReceipt([
+      `[定时任务回执] ${config.title}`,
+      `状态：${status}`,
+      `新会话：${config.title} ${day}（${sessionId ?? '-'}）`,
+    ])
   }
 
   const timer = setInterval(() => {
@@ -142,9 +213,23 @@ export function apply(ctx, config) {
       return
     }
     if (minutesSinceMidnight(now) < triggerHour * 60 + triggerMinute) return
+    if (busy) {
+      // 不再静默跳过：只提醒一次，并且不把今天标记为已跑——
+      // 上一次跑完后当天还在窗口内就补跑，避免整天无声无息地丢掉。
+      if (skippedNotifiedDay !== day) {
+        skippedNotifiedDay = day
+        log('上一次运行仍在进行，本轮暂缓；跑完后当天会补跑')
+        sendReceipt([
+          `[定时任务回执] ${config.title}`,
+          '状态：暂缓（上一次运行仍在进行）',
+          `说明：${day} 的运行会在上一次结束后自动补跑；若整天未补上，会再发一条回执。`,
+        ]).catch((error) => log(String(error)))
+      }
+      return
+    }
     lastDay = day
     runOnce('到点触发').catch((error) => log(String(error)))
-  }, TICK_MS)
+  }, tickMs)
 
   ctx.effect(() => () => clearInterval(timer))
 
