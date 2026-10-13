@@ -1,0 +1,14 @@
+{
+  "attempt": 1,
+  "candidateCount": 0,
+  "date": "2026-10-14",
+  "deadlineAt": "2026-10-13T22:26:28+00:00",
+  "errors": [
+    "discover process exited without producing output or checkpoint updates; stopping to avoid a second discovery run"
+  ],
+  "lastProgressAt": "2026-10-13T20:57:36+00:00",
+  "stage": "needs_discovery",
+  "startedAt": "2026-10-13T20:56:28+00:00",
+  "updatedAt": "2026-10-13T20:57:36+00:00",
+  "verifiedCount": 0
+}
