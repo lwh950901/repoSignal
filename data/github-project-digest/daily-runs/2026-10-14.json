@@ -1,14 +1,18 @@
 {
-  "attempt": 1,
-  "candidateCount": 0,
+  "attempt": 2,
+  "candidateCount": 68,
   "date": "2026-10-14",
-  "deadlineAt": "2026-10-13T22:26:28+00:00",
+  "deadlineAt": "2026-10-14T06:26:16+00:00",
   "errors": [
     "discover process exited without producing output or checkpoint updates; stopping to avoid a second discovery run"
   ],
-  "lastProgressAt": "2026-10-13T20:57:36+00:00",
-  "stage": "needs_discovery",
-  "startedAt": "2026-10-13T20:56:28+00:00",
-  "updatedAt": "2026-10-13T20:57:36+00:00",
-  "verifiedCount": 0
+  "historyEntries": 450,
+  "lastProgressAt": "2026-10-14T04:58:42+00:00",
+  "previousStartedAt": "2026-10-13T20:56:28+00:00",
+  "report": "daily/2026-10-14.md",
+  "selectedCount": 2,
+  "stage": "complete",
+  "startedAt": "2026-10-14T04:56:16+00:00",
+  "updatedAt": "2026-10-14T04:58:42+00:00",
+  "verifiedCount": 2
 }
