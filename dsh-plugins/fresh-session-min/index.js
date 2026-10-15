@@ -86,6 +86,26 @@ function countEvents(agent) {
   }
 }
 
+/**
+ * 取会话里最后一条 assistant 文本，压平空白并截断，用作回执摘要。
+ * 回执里的「完成」只说明会话跑完了；摘要才能让收件人一眼看出有没有产出方案。
+ */
+export function summarizeAssistantText(events, maxChars = 80) {
+  for (let index = events.length - 1; index >= 0; index -= 1) {
+    const event = events[index]
+    if (event?.type !== 'assistant/message') continue
+    const text = (event.data?.message?.content ?? [])
+      .filter((block) => block?.type === 'text' && typeof block.text === 'string')
+      .map((block) => block.text)
+      .join(' ')
+      .replace(/\s+/g, ' ')
+      .trim()
+    if (text === '') continue
+    return text.length > maxChars ? `${text.slice(0, maxChars - 1)}…` : text
+  }
+  return ''
+}
+
 export function apply(ctx, config) {
   const log = (message) => {
     const text = `[fresh-session-min] ${message}`
@@ -172,11 +192,12 @@ export function apply(ctx, config) {
     const now = new Date()
     const day = localDay(now)
     let sessionId = null
+    let agent = null
     let status = '失败'
     try {
       const created = await ctx.sessionController.create({ workspaceId: config.workspaceId })
       sessionId = created.sessionId
-      const agent = await requireAgent(ctx, sessionId)
+      agent = await requireAgent(ctx, sessionId)
       await ctx.sessionTitle.rename(agent.session, `${config.title} ${day}`)
       agent.followup(createUserMessage({ content: [{ type: 'text', text: config.prompt }], source: { kind: 'user' } }))
       // flush 之后这次投递才算落盘（内置 schedule 的投递也走这一步）
@@ -196,11 +217,21 @@ export function apply(ctx, config) {
       busy = false
     }
 
-    await sendReceipt([
+    const receipt = [
       `[定时任务回执] ${config.title}`,
       `状态：${status}`,
       `新会话：${config.title} ${day}（${sessionId ?? '-'}）`,
-    ])
+    ]
+    if (agent !== null) {
+      let summary = ''
+      try {
+        summary = summarizeAssistantText(agent.session?.snapshotEvents?.() ?? [])
+      } catch {
+        // 读不到事件就不加摘要，回执照常发
+      }
+      if (summary !== '') receipt.push(`摘要：${summary}`)
+    }
+    await sendReceipt(receipt)
   }
 
   const timer = setInterval(() => {

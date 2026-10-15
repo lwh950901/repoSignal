@@ -2278,8 +2278,13 @@ def main(argv=None):
         print(f"错误: 当天日报缺失（daily/{args.date}.md），本次可行性方案跳过执行",
               file=sys.stderr)
         return 2
-    if not projects or not today_projects:
-        print("错误: 最近 90 天窗口内未解析到项目，或锚点日报为空", file=sys.stderr)
+    if not projects:
+        print("错误: 最近 90 天窗口内未解析到任何项目（daily/ 与 weekly/ 均无有效条目），本次跳过",
+              file=sys.stderr)
+        return 2
+    if not today_projects:
+        print(f"错误: 锚点日报 daily/{args.date}.md 未解析到项目（今日无推荐），本次跳过",
+              file=sys.stderr)
         return 2
     cutoff = date.fromisoformat(args.date) - timedelta(days=90)
     today_ids = {p["id"] for p in today_projects}
