@@ -390,3 +390,38 @@ print(json.dumps([{
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class DiscoveryRotationTest(unittest.TestCase):
+    """星标档位轮换：同一日期可复现，相邻日期至少有一个 lane 换档。"""
+
+    def test_same_date_is_deterministic(self):
+        self.assertEqual(runner.discovery_queries("2026-10-18"), runner.discovery_queries("2026-10-18"))
+
+    def test_adjacent_dates_rotate_at_least_one_lane(self):
+        today = runner.discovery_queries("2026-10-18")
+        tomorrow = runner.discovery_queries("2026-10-19")
+        changed = [lane for lane in today if today[lane] != tomorrow[lane]]
+        self.assertTrue(changed, "相邻日期没有任何 lane 换档，轮换失效")
+
+    def test_all_lanes_keep_theme_window_and_archive_filter(self):
+        queries = runner.discovery_queries("2026-10-18")
+        self.assertEqual(set(queries), set(runner.DISCOVERY_QUERIES))
+        for lane, query in queries.items():
+            self.assertIn("archived:false", query)
+            self.assertIn("pushed:>=", query)
+            self.assertIn("stars:", query)
+            self.assertNotIn("{", query)
+        self.assertIn("coding agent", queries["growth"])
+        self.assertIn("mcp server", queries["developer_tools"])
+
+    def test_each_lane_cycles_through_every_band(self):
+        bands = runner.STAR_BAND_VARIANTS
+        for lane, variants in bands.items():
+            seen = set()
+            for day in range(1, len(variants) + 1):
+                queries = runner.discovery_queries(f"2026-10-{day:02d}")
+                for band in variants:
+                    if band in queries[lane]:
+                        seen.add(band)
+            self.assertEqual(seen, set(variants), f"{lane} 没有覆盖全部档位")

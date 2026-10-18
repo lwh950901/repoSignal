@@ -30,12 +30,23 @@ SLOT_LANES = {
 }
 UNCLEAR_LICENSES = {"", "NOASSERTION", "OTHER", "UNKNOWN", "NONE"}
 DISCOVERY_QUERIES = {
-    "growth": "coding agent stars:>5000 pushed:>={recent60} archived:false",
-    "mature": "workflow automation stars:>1000 pushed:>={recent90} archived:false",
-    "emerging": "ai agents framework stars:>200 pushed:>={recent60} archived:false",
-    "learning_rag": "llm evaluation stars:>100 pushed:>={recent180} archived:false",
-    "developer_tools": "mcp server stars:>100 pushed:>={recent90} archived:false",
-    "cross_domain": "local ai stars:>100 pushed:>={recent90} archived:false",
+    "growth": "coding agent {stars} pushed:>={recent60} archived:false",
+    "mature": "workflow automation {stars} pushed:>={recent90} archived:false",
+    "emerging": "ai agents framework {stars} pushed:>={recent60} archived:false",
+    "learning_rag": "llm evaluation {stars} pushed:>={recent180} archived:false",
+    "developer_tools": "mcp server {stars} pushed:>={recent90} archived:false",
+    "cross_domain": "local ai {stars} pushed:>={recent90} archived:false",
+}
+# 星标档位轮换：固定档位会让每天捞回同一批高星仓库，随后全被 90 天去重吃掉
+# （2026-10-15 / 10-16 连续两天 68 个候选与前一天 100% 重合、67 个被筛除）。
+# 每个 lane 的首项是原阈值（保底质量），其余档位按日期确定性轮换，重跑同一天结果一致。
+STAR_BAND_VARIANTS: dict[str, tuple[str, ...]] = {
+    "growth": ("stars:>5000", "stars:2000..10000", "stars:1000..5000"),
+    "mature": ("stars:>1000", "stars:300..3000", "stars:>3000"),
+    "emerging": ("stars:>200", "stars:200..2000", "stars:>1000"),
+    "learning_rag": ("stars:>100", "stars:100..1000", "stars:>500"),
+    "developer_tools": ("stars:>100", "stars:100..2000", "stars:>500"),
+    "cross_domain": ("stars:>100", "stars:100..1000", "stars:>500"),
 }
 DEFAULT_SCANNER = (
     Path.home()
@@ -217,6 +228,22 @@ def _query_values(run_date: str) -> dict[str, str]:
     }
 
 
+def discovery_queries(run_date: str) -> dict[str, str]:
+    """按日期确定性轮换每个 lane 的星标档位，其余主题与时间窗不变。
+
+    同一个日期总是得到同一组查询（可复现），相邻日期至少有一个 lane 换档，
+    避免每天返回同一批仓库后被 90 天去重规则整批筛掉。
+    """
+    values = _query_values(run_date)
+    ordinal = date.fromisoformat(run_date).toordinal()
+    queries: dict[str, str] = {}
+    for index, (lane, template) in enumerate(DISCOVERY_QUERIES.items()):
+        bands = STAR_BAND_VARIANTS[lane]
+        band = bands[(ordinal + index) % len(bands)]
+        queries[lane] = template.format(stars=band, **values)
+    return queries
+
+
 def _tls_error(message: str) -> bool:
     lowered = message.lower()
     return any(
@@ -368,10 +395,7 @@ def discover(
         checkpoint.record_progress(run_date, root, "authentication_failed", error=str(exc))
         raise
     per_lane_timeout = max(1.0, min(float(timeout_seconds), remaining_seconds))
-    values = _query_values(run_date)
-    queries = {
-        lane: template.format(**values) for lane, template in DISCOVERY_QUERIES.items()
-    }
+    queries = discovery_queries(run_date)
 
     results: dict[str, dict[str, Any]] = {}
     with ThreadPoolExecutor(max_workers=len(queries)) as executor:
