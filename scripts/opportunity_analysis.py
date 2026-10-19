@@ -520,17 +520,25 @@ def extract_stars(project):
     return int(float(s))
 
 
-def load_project_pool(data_root, run_date):
+def load_project_pool(data_root, run_date, anchor_days=1):
     """加载项目池，返回 (today_projects, pool_projects, n_daily, n_weekly, anchor_date)。
 
-    today_projects：当天日报 daily/<run_date>.md 解析的项目；
-    pool_projects：最近 90 天窗口内全部唯一项目（含 today 项目），每项带 source_date。
-    当天无日报时返回空结果（anchor_date 为空串），调用方按输入缺失处理。
+    today_projects：锚点窗口内日报解析的项目。默认窗口只有 run_date 当天（日度模式）；
+    anchor_days>1 时取最近 anchor_days 天（含 run_date）的日报作为材料，供周度模式使用。
+    pool_projects：最近 90 天窗口内全部唯一项目（含锚点项目），每项带 source_date。
+    锚点窗口内没有任何日报时返回空结果（anchor_date 为空串），调用方按输入缺失处理。
     """
     cutoff = date.fromisoformat(run_date) - timedelta(days=90)
     run_d = date.fromisoformat(run_date)
-    # 锚点只认当天日报：缺失即视为输入缺失，不回退到更早的日报（当天无日报不出方案）
-    if not (data_root / "daily" / f"{run_date}.md").is_file():
+    span = max(1, int(anchor_days))
+    window_start = run_d - timedelta(days=span - 1)
+    window_reports = [
+        f for f in (data_root / "daily").glob("*.md")
+        if (m := DAILY_FILE_RE.match(f.name))
+        and window_start <= date.fromisoformat(m.group(1)) <= run_d
+    ]
+    # 锚点窗口内必须至少有一份日报；窗口默认是当天，所以日度模式仍然不回退到更早日期
+    if not window_reports:
         return None, None, 0, 0, ""
     anchor_date = run_date
     projects = []
@@ -559,7 +567,7 @@ def load_project_pool(data_root, run_date):
             else:
                 by_repo[repo] = e
                 projects.append(e)
-            if m.group(1) == anchor_date:
+            if date.fromisoformat(m.group(1)) >= window_start:
                 today_ids.add(repo)
     for f in sorted((data_root / "weekly").glob("*.md")):
         m = WEEK_RE.match(f.stem)
@@ -2074,7 +2082,7 @@ def _freshness_note(p, run_date):
     return "最近活动 {}（{} 天前）".format(pushed, days)
 
 
-def _render_combo(c, today_ids, idx, run_date):
+def _render_combo(c, today_ids, idx, run_date, anchor_label="今日"):
     """渲染一个组合：业务名标题 → 项目成员 → 数据流链 → 输入输出表 → 据实说明。"""
     steps = c["flow"]
     L = []
@@ -2091,16 +2099,16 @@ def _render_combo(c, today_ids, idx, run_date):
     A("|---|---|---|")
     for s in steps:
         p = s["project"]
-        mark = "**今日发现** " if p["id"] in today_ids else ""
+        mark = f"**{anchor_label}发现** " if p["id"] in today_ids else ""
         A("| {} | {}[`{}`]({}) | {} → {} |".format(
             _face_role(s), mark, p["repo"], p["url"],
             _tidy(s.get("input")), _tidy(s.get("output"))))
     A("")
     anchors = [s for s in steps if s["project"]["id"] in today_ids]
     anchor_txt = "、".join("`{}`".format(s["project"]["id"]) for s in anchors) or "无"
-    A("- **为什么是这几个**：今日发现的项目有 {} 个（{}），其余 {} 个从最近 90 天补齐；"
+    A("- **为什么是这几个**：{}发现的项目有 {} 个（{}），其余 {} 个从最近 90 天补齐；"
       "每个位置的入选条件是该能力面得分最高的可用项目。".format(
-          len(anchors), anchor_txt, len(steps) - len(anchors)))
+          anchor_label, len(anchors), anchor_txt, len(steps) - len(anchors)))
     A("- **怎么连**：这条链的每一步都通过了闭环门槛（有输入输出、上下游接得上、能力面不重复）；"
       "但「链内接得上」不等于「这几个项目之间已经验证过集成」——"
       "真接起来时可能要在相邻两步之间写一段胶水代码。")
@@ -2166,7 +2174,7 @@ def _render_combo(c, today_ids, idx, run_date):
 
 def render(projects, today_projects, combos, run_date, cutoff, anchor_date,
            n_daily_files, n_weekly_files, llm_text, cooldown_notes=None,
-           dropped=None, rejected=None, no_plan_reason=None):
+           dropped=None, rejected=None, no_plan_reason=None, anchor_days=1):
     """按新的阅读顺序渲染报告：
 
     今日结论 → 可行性方案 → 结论。每个组合以业务名作标题（成熟方向用模板业务名，
@@ -2175,6 +2183,7 @@ def render(projects, today_projects, combos, run_date, cutoff, anchor_date,
     """
     n = len(projects)
     today_ids = {p["id"] for p in today_projects}
+    anchor_label = "今日" if anchor_days <= 1 else "本周"
     cooldown_notes = cooldown_notes or []
     dropped = dropped or []
     rejected = rejected or []
@@ -2183,12 +2192,22 @@ def render(projects, today_projects, combos, run_date, cutoff, anchor_date,
     A = L.append
     A(f"# GitHub 项目组合可行性方案｜{run_date}")
     A("")
-    A("> 自动生成的组合研究草稿：以今日日报 `daily/{}.md`（{} 个项目）为起点，"
-      "再结合最近 90 天发现的项目，给出 0–3 个多项目组合{}；"
-      "只说明怎么拼、拼起来能做什么，不做市场验证。".format(
-          anchor_date, len(today_projects),
-          "（探索方向待验证）" if any(c.get("track") == TRACK_EXPLORATORY
-                                      for c in combos) else ""))
+    if anchor_days > 1:
+        window_start = (date.fromisoformat(run_date)
+                        - timedelta(days=anchor_days - 1)).isoformat()
+        A("> 自动生成的组合研究草稿：以最近 {} 天日报（{}..{}，共 {} 个项目）为材料，"
+          "再结合最近 90 天发现的项目，给出 0–3 个多项目组合{}；"
+          "只说明怎么拼、拼起来能做什么，不做市场验证。".format(
+              anchor_days, window_start, run_date, len(today_projects),
+              "（探索方向待验证）" if any(c.get("track") == TRACK_EXPLORATORY
+                                          for c in combos) else ""))
+    else:
+        A("> 自动生成的组合研究草稿：以今日日报 `daily/{}.md`（{} 个项目）为起点，"
+          "再结合最近 90 天发现的项目，给出 0–3 个多项目组合{}；"
+          "只说明怎么拼、拼起来能做什么，不做市场验证。".format(
+              anchor_date, len(today_projects),
+              "（探索方向待验证）" if any(c.get("track") == TRACK_EXPLORATORY
+                                          for c in combos) else ""))
     A("")
     A("## 今日结论")
     A("")
@@ -2222,7 +2241,7 @@ def render(projects, today_projects, combos, run_date, cutoff, anchor_date,
             no_plan_reason or "成熟方向与探索方向都未达到合格线，不构成组合产出"))
         A("")
     for i, c in enumerate(combos, 1):
-        for line in _render_combo(c, today_ids, i, run_date):
+        for line in _render_combo(c, today_ids, i, run_date, anchor_label):
             A(line)
         A("")
     if combos:
@@ -2257,8 +2276,10 @@ def main(argv=None):
     ap.add_argument("--output", type=Path, default=None,
                     help="报告输出路径（默认 feasibility/日期.md）")
     ap.add_argument("--no-llm", action="store_true", help="跳过 LLM 增强")
+    ap.add_argument("--anchor-days", type=int, default=1,
+                    help="锚点窗口天数：1=只认当天日报（日度，默认）；7=周度模式，取最近 7 天日报作材料")
     ap.add_argument("--check", action="store_true",
-                    help="只校验输入并打印项目池摘要，不写报告（当天日报缺失时退出码 2）")
+                    help="只校验输入并打印项目池摘要，不写报告（锚点窗口无日报时退出码 2）")
     ap.add_argument("--rebuild-history", action="store_true",
                     help="从历史报告重建 plan-history.jsonl 后退出（一次性迁移）")
     args = ap.parse_args(argv)
@@ -2272,25 +2293,34 @@ def main(argv=None):
         print(f"OK: rebuilt plan-history.jsonl（{count} 条记录）")
         return 0
 
+    if args.anchor_days < 1:
+        print(f"错误: --anchor-days 必须 ≥ 1：{args.anchor_days}", file=sys.stderr)
+        return 2
     today_projects, projects, n_daily, n_weekly, anchor_date = load_project_pool(
-        args.data_root, args.date)
+        args.data_root, args.date, args.anchor_days)
     if not anchor_date:
-        print(f"错误: 当天日报缺失（daily/{args.date}.md），本次可行性方案跳过执行",
-              file=sys.stderr)
+        if args.anchor_days > 1:
+            window_start = (date.fromisoformat(args.date)
+                            - timedelta(days=args.anchor_days - 1)).isoformat()
+            print(f"错误: 锚点窗口 {window_start}..{args.date} 内没有日报"
+                  f"（最近 {args.anchor_days} 天），本次跳过", file=sys.stderr)
+        else:
+            print(f"错误: 当天日报缺失（daily/{args.date}.md），本次可行性方案跳过执行",
+                  file=sys.stderr)
         return 2
     if not projects:
         print("错误: 最近 90 天窗口内未解析到任何项目（daily/ 与 weekly/ 均无有效条目），本次跳过",
               file=sys.stderr)
         return 2
     if not today_projects:
-        print(f"错误: 锚点日报 daily/{args.date}.md 未解析到项目（今日无推荐），本次跳过",
-              file=sys.stderr)
+        anchor_label = "锚点窗口内日报" if args.anchor_days > 1 else f"锚点日报 daily/{args.date}.md"
+        print(f"错误: {anchor_label} 未解析到项目（无推荐），本次跳过", file=sys.stderr)
         return 2
     cutoff = date.fromisoformat(args.date) - timedelta(days=90)
     today_ids = {p["id"] for p in today_projects}
 
     if args.check:
-        print(f"POOL date={args.date} anchor={anchor_date} "
+        print(f"POOL date={args.date} anchor={anchor_date} anchor_days={args.anchor_days} "
               f"today={len(today_projects)} unique={len(projects)} "
               f"daily_files={n_daily} weekly_files={n_weekly}")
         return 0
@@ -2337,7 +2367,8 @@ def main(argv=None):
     llm_text = llm_enhance(projects, combos, args.no_llm)
     report = render(projects, today_projects, combos, args.date,
                     cutoff.isoformat(), anchor_date, n_daily, n_weekly, llm_text,
-                    cooldown_notes, dropped_candidates, rejected, no_plan_reason)
+                    cooldown_notes, dropped_candidates, rejected, no_plan_reason,
+                    anchor_days=args.anchor_days)
 
     out_dir = args.data_root / "feasibility"
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -2359,7 +2390,8 @@ def main(argv=None):
                                                     if c.get("judgment") == label))
                               for label in JUDGMENT_ORDER[:-1]
                               if any(c.get("judgment") == label for c in combos))
-        fh.write(f"{ts} OK anchor={anchor_date} window=90d cutoff={cutoff.isoformat()} "
+        fh.write(f"{ts} OK anchor={anchor_date} anchor_days={args.anchor_days} "
+                 f"window=90d cutoff={cutoff.isoformat()} "
                  f"daily={n_daily} weekly={n_weekly} projects={len(projects)} "
                  f"candidates={len(mature_candidates) + len(exploratory_candidates)} "
                  f"combos={len(combos)} mature={mature_n} exploratory={exploratory_n} "

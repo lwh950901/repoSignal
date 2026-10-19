@@ -1229,6 +1229,33 @@ class DailyAnchorRequirementTests(unittest.TestCase):
             encoding="utf-8")
         self.assertIn("anchor=2026-09-14", runs_log)
 
+    def test_weekly_window_uses_recent_daily_reports_as_material(self):
+        for day in ("2026-09-08", "2026-09-10", "2026-09-12"):
+            self.write_daily(day, f"owner/w{day[-2:]}")
+        # 运行日当天没有日报；anchor_days=7 时窗口内的日报仍作为材料
+        today_projects, _, _, _, anchor = analysis.load_project_pool(
+            self.root, "2026-09-14", anchor_days=7)
+
+        self.assertEqual(anchor, "2026-09-14")
+        self.assertEqual(sorted(p["id"] for p in today_projects),
+                         ["owner/w08", "owner/w10", "owner/w12"])
+
+        exit_code = analysis.main(["--date", "2026-09-14", "--data-root", str(self.root),
+                                   "--no-llm", "--anchor-days", "7"])
+
+        self.assertEqual(exit_code, 0)
+        report = (self.root / "feasibility" / "2026-09-14.md").read_text(encoding="utf-8")
+        self.assertIn("以最近 7 天日报", report)
+        runs_log = (self.root / "feasibility" / "runs.log").read_text(encoding="utf-8")
+        self.assertIn("anchor_days=7", runs_log)
+
+    def test_weekly_window_without_any_daily_skips(self):
+        exit_code = analysis.main(["--date", "2026-09-14", "--data-root", str(self.root),
+                                   "--no-llm", "--anchor-days", "7"])
+
+        self.assertEqual(exit_code, 2)
+        self.assertFalse((self.root / "feasibility").exists())
+
     def test_generated_report_carries_the_new_contract_sections(self):
         self.write_daily("2026-09-12", "owner/old")
         self.write_daily("2026-09-14", "owner/new")
