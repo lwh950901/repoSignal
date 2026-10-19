@@ -31,7 +31,9 @@
      supply-checked）+ 最多 2 个探索方向（今天发现的可用项目 + 最近 90 天的发现里
      ≥2 个互补组件，to-validate）；
      没有合格探索方向时允许少于 3 个，0 个方案时报告明确写“本轮无合格方案”。
-  5. 跨日去重：同一 plan_family 冷却 7-14 天（COOLDOWN_MIN_DAYS ~ COOLDOWN_DAYS）。
+  5. 跨日去重：同一 plan_family 冷却 4-7 天（COOLDOWN_MIN_DAYS ~ COOLDOWN_DAYS）。
+     2026-10-19 起任务改为每周一次（周日 05:00），冷却窗口相应收窄到 4-7 天：
+     上周出现的方向在下一周（7 天）可自然重新合格。
      冷却期内无条件跳过；冷却中段只有新增关键组件或证据等级提升才允许提前重现，
      并在报告里说明理由。
   6. 可选增强：设置 OPPORTUNITY_LLM_API_KEY（或 OPENAI_API_KEY）时调用
@@ -617,8 +619,8 @@ MIN_PLAN_COMPONENTS = 3      # 闭环门槛：起点 + 处理 + 终点，至少 
 ANCHOR_FACE_MIN_SCORE = 2    # 探索锚点主面最低分：低于此分或并列不算明确方向
 SLOT_FACE_MIN_SCORE = 2      # 互补槽位最低面分：单纯 >0 的弱命中不当能力
 SLOT_FACE_TOP_N = 2          # 互补槽位面必须落在项目前 N 个面分档内
-COOLDOWN_MIN_DAYS = 7        # 冷却前段：同一 plan_family 无条件跳过
-COOLDOWN_DAYS = 14           # 冷却总长：超过后自然重新合格
+COOLDOWN_MIN_DAYS = 4        # 冷却前段：同一 plan_family 无条件跳过（对齐每周一次的任务节奏）
+COOLDOWN_DAYS = 7            # 冷却总长：超过后自然重新合格（= 周任务的运行间隔）
 EXPERIMENT_DAYS = 14         # MVP 实验默认观察周期（天）
 TRACK_MATURE = "mature"
 TRACK_EXPLORATORY = "exploratory"
@@ -1102,10 +1104,10 @@ def load_family_history(data_root, run_date, window_days=COOLDOWN_DAYS):
 def cooldown_decision(family, history, candidate):
     """跨日去重的冷却判定（返回 (是否跳过, 说明)）。
 
-    规则：同一 plan_family 冷却 COOLDOWN_MIN_DAYS~COOLDOWN_DAYS 天（7-14 天）。
-      - 冷却前段（< 7 天）：无条件跳过；
-      - 冷却中段（7-13 天）：只有新增关键组件或证据等级提升才允许提前重现；
-      - 超过 14 天：自然重新合格。
+    规则：同一 plan_family 冷却 COOLDOWN_MIN_DAYS~COOLDOWN_DAYS 天（4-7 天）。
+      - 冷却前段（< 4 天）：无条件跳过；
+      - 冷却中段（4-6 天）：只有新增关键组件或证据等级提升才允许提前重现；
+      - 达到 7 天：自然重新合格（正好是周任务的运行间隔）。
     """
     record = history.get(family)
     if not record:

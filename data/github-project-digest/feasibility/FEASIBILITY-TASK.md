@@ -64,6 +64,7 @@
 - 报告说明行写「以最近 N 天日报（起始日..运行日，共 K 个项目）为材料」；
 - 只有窗口内**没有任何日报**才跳过；单天缺日报（如周日）不影响；
 - 不回退到窗口之外的日报，也不用更早日报替代。
+- 冷却窗口按每周节奏对齐（4–7 天），上周方向可在下一周重新入选。
 - 用法：`python3 scripts/opportunity_analysis.py --check --anchor-days 7`，
   然后 `python3 scripts/opportunity_analysis.py --anchor-days 7`。
 
@@ -92,7 +93,8 @@
    - 方案身份：`plan_family` 由业务语义（customer + problem + expected_outcome）
      派生，与标题措辞、技术词、组件集合无关；成熟方向沿用模板 slug。`variant`
      仍由组件集合派生。仅换标题、换项目或换技术词不会产生新的业务方向。
-   - 跨日去重（对所有运行生效，含补跑历史日期）：同一 `plan_family` **冷却 7–14 天**
+   - 跨日去重（对所有运行生效，含补跑历史日期）：同一 `plan_family` **冷却 4–7 天**
+     （与每周一次的任务节奏对齐：上周出现的方向在下一周自然重新合格）
      （`COOLDOWN_MIN_DAYS`–`COOLDOWN_DAYS`）。冷却期内无条件跳过；冷却中段
      （7–13 天）只有在**新增关键组件或证据等级提升**时才允许提前
      重现，报告会在"今日结论 → 冷却与重现"里说明理由。依据是 `feasibility/plan-history.jsonl`

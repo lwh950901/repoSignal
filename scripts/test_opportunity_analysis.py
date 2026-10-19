@@ -306,7 +306,7 @@ class AnchorBusinessNamingTests(unittest.TestCase):
             self.assertIn(tpl["name"], analysis.TEMPLATE_BUSINESS)
             self.assertGreaterEqual(len(tpl["slots"]), 2)
 
-    def test_cooldown_blocks_within_the_first_seven_days(self):
+    def test_cooldown_blocks_before_the_minimum_window(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             (root / "feasibility").mkdir()
@@ -338,7 +338,7 @@ class AnchorBusinessNamingTests(unittest.TestCase):
                 "| 编排 | [`owner/old`](https://github.com/owner/old) |\n",
                 encoding="utf-8",
             )
-            history = analysis.load_family_history(root, "2026-09-19")
+            history = analysis.load_family_history(root, "2026-09-14")
 
         unchanged = {"picks": {"编排": {"id": "owner/old"}}, "business": {}}
         upgraded = {"picks": {"编排": {"id": "owner/new"}}, "business": {}}
@@ -1167,7 +1167,7 @@ class FeasibilityTaskContractTests(unittest.TestCase):
         self.assertIn("刚需", self.text)      # 仅出现在禁用措辞说明里
 
     def test_contract_defines_cooldown_window(self):
-        self.assertIn("7–14", self.text)
+        self.assertIn("4–7", self.text)
         for token in ("新增关键组件", "证据等级提升", "冷却与重现"):
             self.assertIn(token, self.text)
 
