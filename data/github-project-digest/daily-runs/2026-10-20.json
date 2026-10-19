@@ -1,0 +1,14 @@
+{
+  "attempt": 1,
+  "candidateCount": 0,
+  "date": "2026-10-20",
+  "deadlineAt": "2026-10-19T22:28:04+00:00",
+  "errors": [
+    "Discovery not attempted: required pre-authorized minimal network escalation is unavailable in this execution environment; default-sandbox fallback is prohibited."
+  ],
+  "lastProgressAt": "2026-10-19T20:58:16+00:00",
+  "stage": "needs_discovery",
+  "startedAt": "2026-10-19T20:58:04+00:00",
+  "updatedAt": "2026-10-19T20:58:16+00:00",
+  "verifiedCount": 0
+}
