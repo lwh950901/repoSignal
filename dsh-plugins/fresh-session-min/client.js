@@ -11,6 +11,7 @@ window.__ModuleLoader__.load({
       timeOfDay: '06:30',
       timeZone: 'Asia/Shanghai',
       workspace: 'repo-signal',
+      trigger: '内置定时任务（每天 06:30，绑定旧会话）',
       receipt: '本对话（session-53a154fd）',
       promptSource: 'data/github-project-digest/feasibility/FEASIBILITY-TASK.md',
       reportDir: 'data/github-project-digest/feasibility/',
@@ -67,11 +68,12 @@ window.__ModuleLoader__.load({
         h(
           'p',
           { style: styles.subtitle },
-          '由插件 @local/dsh-fresh-session-min 托管：每次触发都在工作区新建一个会话执行，跑完自动归档，并向回执会话发一条带摘要的通知。',
+          '当前触发由内置定时任务负责（每天 06:30，出现在自动化任务页）；插件的自动触发已关闭（autoRun: false），不会再双跑。',
         ),
         h(
           'div',
           { style: styles.card },
+          h(Row, { label: '触发方式' }, SNAPSHOT.trigger),
           h(Row, { label: '触发时间' }, '每天 ' + SNAPSHOT.timeOfDay + '（' + SNAPSHOT.timeZone + '）'),
           h(Row, { label: '工作区' }, SNAPSHOT.workspace),
           h(Row, { label: '回执会话' }, SNAPSHOT.receipt),

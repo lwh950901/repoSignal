@@ -16,6 +16,9 @@
         skipToday: true
         # 验证开关：true 时加载后 10 秒立刻跑一次；正式使用保持 false
         runOnStart: false
+        # 2026-10-19 起：定时改回内置 schedule 任务（在 GUI 自动化任务页可见可改），
+        # 插件自身不再自动触发，避免双跑；需要手动验证时把它临时改回 true。
+        autoRun: false
         # 回执发到哪里；留空则不发回执。
         # 想用专门的回执会话：在工作区里新建一个会话，把它的 id 填到这里。
         receiptSessionId: session-53a154fd-a25b-4de1-b3b9-71caddeecc31

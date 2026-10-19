@@ -234,7 +234,11 @@ export function apply(ctx, config) {
     await sendReceipt(receipt)
   }
 
-  const timer = setInterval(() => {
+  // autoRun=false 时只保留手动/工具触发，不启动每日定时器。
+  // 用于把定时交回内置 schedule 任务（可见于 GUI 自动化任务页），避免双跑。
+  const autoRun = config.autoRun !== false
+  if (!autoRun) log('autoRun 已关闭：不启动每日定时器')
+  const timer = autoRun ? setInterval(() => {
     const now = new Date()
     const day = localDay(now)
     if (lastDay === day) return
@@ -260,9 +264,9 @@ export function apply(ctx, config) {
     }
     lastDay = day
     runOnce('到点触发').catch((error) => log(String(error)))
-  }, tickMs)
+  }, tickMs) : null
 
-  ctx.effect(() => () => clearInterval(timer))
+  if (timer !== null) ctx.effect(() => () => clearInterval(timer))
 
   if (config.runOnStart === true) {
     lastDay = localDay(new Date())
