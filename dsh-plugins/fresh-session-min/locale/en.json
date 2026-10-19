@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Daily GitHub portfolio feasibility plan",
+    "description": "Runs daily at 06:30 in a fresh session; configuration lives in dsh-plugins/fresh-session-min/cordis.patch.yml"
+  }
+}

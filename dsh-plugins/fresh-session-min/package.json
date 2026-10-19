@@ -1,15 +1,40 @@
 {
   "name": "@local/dsh-fresh-session-min",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "type": "module",
-  "exports": {
-    ".": "./index.js"
+  "description": "每天 06:30 自动新建会话执行可行性分析，跑完归档并发回执（插件托管的定时任务）。",
+  "meta": {
+    "title": "每日GitHub组合可行性方案",
+    "description": "每天 06:30 新建会话执行可行性分析；配置见仓库 dsh-plugins/fresh-session-min/cordis.patch.yml"
   },
-  "description": "最小验证版：定时任务每次触发都新建会话执行，跑完归档，并向指定会话发一条回执。",
+  "icon": "./icon.svg",
+  "exports": {
+    ".": "./index.js",
+    "./client": "./client.js",
+    "./package.json": "./package.json",
+    "./locale/*.json": "./locale/*.json"
+  },
+  "files": [
+    "index.js",
+    "client.js",
+    "cordis.patch.yml",
+    "icon.svg",
+    "locale/*.json",
+    "src/**",
+    "tests/**"
+  ],
   "dsh": {
     "bundle": {
       "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "immediately": true,
+      "inject": [
+        "@deepseek-ai/dsh-client-ui-layout",
+        "@deepseek-ai/dsh-client-ui-sidebar"
+      ]
     }
   },
   "scripts": {

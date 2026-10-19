@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "每日GitHub组合可行性方案",
+    "description": "每天 06:30 新建会话执行可行性分析；配置见仓库 dsh-plugins/fresh-session-min/cordis.patch.yml"
+  }
+}
