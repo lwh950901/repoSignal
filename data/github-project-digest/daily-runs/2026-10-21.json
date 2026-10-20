@@ -1,0 +1,14 @@
+{
+  "attempt": 1,
+  "candidateCount": 0,
+  "date": "2026-10-21",
+  "deadlineAt": "2026-10-20T22:37:19+00:00",
+  "errors": [
+    "发现阶段需要预授权最小网络升级权限；当前自动化执行环境禁止传递 sandbox_permissions，因此未运行 discover，也未降级至默认沙箱。需人工在允许该权限的环境从检查点续跑。"
+  ],
+  "lastProgressAt": "2026-10-20T21:07:27+00:00",
+  "stage": "needs_discovery",
+  "startedAt": "2026-10-20T21:07:19+00:00",
+  "updatedAt": "2026-10-20T21:07:27+00:00",
+  "verifiedCount": 0
+}
