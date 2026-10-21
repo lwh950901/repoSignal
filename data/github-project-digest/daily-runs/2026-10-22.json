@@ -1,0 +1,14 @@
+{
+  "attempt": 1,
+  "candidateCount": 0,
+  "date": "2026-10-22",
+  "deadlineAt": "2026-10-21T22:30:05+00:00",
+  "errors": [
+    "discover not run: required sandbox_permissions=require_escalated unavailable in this execution environment; default-sandbox fallback prohibited"
+  ],
+  "lastProgressAt": "2026-10-21T21:00:12+00:00",
+  "stage": "needs_discovery",
+  "startedAt": "2026-10-21T21:00:05+00:00",
+  "updatedAt": "2026-10-21T21:00:13+00:00",
+  "verifiedCount": 0
+}
